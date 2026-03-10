@@ -13,20 +13,17 @@ const baseNode = {
   y: 10,
   width: 200,
   height: 100,
-  data: {},
+  data: {
+    goal: 'Define system goal',
+    primaryResponsibilities: ['Provide orchestration']
+  },
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString()
 }
 
 describe('NodeInspector', () => {
   it('renders empty state when node is not selected', () => {
-    render(
-      <NodeInspector
-        node={undefined}
-        onUpdateNode={vi.fn()}
-        onOpenDetail={vi.fn()}
-      />
-    )
+    render(<NodeInspector node={undefined} onUpdateNode={vi.fn()} onOpenDetail={vi.fn()} />)
 
     expect(screen.getByText(/Select a node to edit properties/i)).toBeInTheDocument()
   })
@@ -34,9 +31,7 @@ describe('NodeInspector', () => {
   it('emits title updates', () => {
     const onUpdateNode = vi.fn()
 
-    render(
-      <NodeInspector node={baseNode} onUpdateNode={onUpdateNode} onOpenDetail={vi.fn()} />
-    )
+    render(<NodeInspector node={baseNode} onUpdateNode={onUpdateNode} onOpenDetail={vi.fn()} />)
 
     fireEvent.change(screen.getByLabelText('Title'), { target: { value: 'Billing Service' } })
 
@@ -69,5 +64,174 @@ describe('NodeInspector', () => {
 
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', { width: 216 })
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', { height: 111 })
+  })
+
+  it('validates N1 payload fields while editing and blocks invalid persistence', () => {
+    const onUpdateNode = vi.fn()
+
+    render(<NodeInspector node={baseNode} onUpdateNode={onUpdateNode} onOpenDetail={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('Goal'), { target: { value: '' } })
+    expect(screen.getByText('This field is required')).toBeInTheDocument()
+    expect(onUpdateNode).not.toHaveBeenCalledWith('node_1', expect.objectContaining({ data: expect.anything() }))
+
+    fireEvent.change(screen.getByLabelText('Goal'), { target: { value: 'Updated system goal' } })
+    expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
+      data: {
+        goal: 'Updated system goal',
+        primaryResponsibilities: ['Provide orchestration']
+      }
+    })
+  })
+
+  it('hides open detail for non-eligible N1 node types', () => {
+    render(
+      <NodeInspector
+        node={{
+          ...baseNode,
+          type: 'decision',
+          data: { decision: 'Use queue-based integration' }
+        }}
+        onUpdateNode={vi.fn()}
+        onOpenDetail={vi.fn()}
+      />
+    )
+
+    expect(screen.queryByRole('button', { name: 'Open detail' })).not.toBeInTheDocument()
+  })
+
+  it('renders N2 class fields and persists valid class payload', () => {
+    const onUpdateNode = vi.fn()
+
+    render(
+      <NodeInspector
+        node={{
+          ...baseNode,
+          level: 'N2',
+          type: 'class',
+          data: { responsibility: 'Manage state transitions' }
+        }}
+        parentContext={{
+          immediate: { level: 'N1', boardName: 'Root Board', nodeTitle: 'Billing Service' }
+        }}
+        onUpdateNode={onUpdateNode}
+        onOpenDetail={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText(/Parent \(N1\): Root Board \/ Billing Service/i)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Responsibility'), {
+      target: { value: 'Coordinate account aggregates' }
+    })
+
+    expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
+      data: { responsibility: 'Coordinate account aggregates' }
+    })
+  })
+
+  it('validates N2 api contract required fields before persisting', () => {
+    const onUpdateNode = vi.fn()
+
+    render(
+      <NodeInspector
+        node={{
+          ...baseNode,
+          level: 'N2',
+          type: 'api_contract',
+          data: {
+            kind: 'http',
+            inputSummary: ['account id'],
+            outputSummary: ['account']
+          }
+        }}
+        onUpdateNode={onUpdateNode}
+        onOpenDetail={vi.fn()}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText('Input summary (one per line)'), { target: { value: '' } })
+    expect(screen.getByText(/Add at least one input/i)).toBeInTheDocument()
+    expect(onUpdateNode).not.toHaveBeenCalledWith('node_1', expect.objectContaining({ data: expect.anything() }))
+  })
+
+  it('hides open detail for non-eligible N2 notes', () => {
+    render(
+      <NodeInspector
+        node={{
+          ...baseNode,
+          level: 'N2',
+          type: 'free_note_input',
+          data: { expectedInputsText: 'incoming payload shape' }
+        }}
+        onUpdateNode={vi.fn()}
+        onOpenDetail={vi.fn()}
+      />
+    )
+
+    expect(screen.queryByRole('button', { name: 'Open detail' })).not.toBeInTheDocument()
+  })
+
+  it('renders N3 method fields, parent chain, and persists valid payload', () => {
+    const onUpdateNode = vi.fn()
+
+    render(
+      <NodeInspector
+        node={{
+          ...baseNode,
+          level: 'N3',
+          type: 'method',
+          data: {
+            signature: 'execute(input): output',
+            purpose: 'Process command'
+          }
+        }}
+        parentContext={{
+          immediate: { level: 'N2', boardName: 'Billing detail', nodeTitle: 'AccountService' },
+          ancestor: { level: 'N1', boardName: 'Root Board', nodeTitle: 'Billing' }
+        }}
+        onUpdateNode={onUpdateNode}
+        onOpenDetail={vi.fn()}
+      />
+    )
+
+    expect(screen.getByText(/Parent \(N2\): Billing detail \/ AccountService/i)).toBeInTheDocument()
+    expect(screen.getByText(/Ancestor \(N1\): Root Board \/ Billing/i)).toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Purpose'), {
+      target: { value: 'Handle account lifecycle command' }
+    })
+
+    expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
+      data: {
+        signature: 'execute(input): output',
+        purpose: 'Handle account lifecycle command'
+      }
+    })
+    expect(screen.queryByRole('button', { name: 'Open detail' })).not.toBeInTheDocument()
+  })
+
+  it('blocks invalid N3 method payload persistence', () => {
+    const onUpdateNode = vi.fn()
+
+    render(
+      <NodeInspector
+        node={{
+          ...baseNode,
+          level: 'N3',
+          type: 'method',
+          data: {
+            signature: 'execute(input): output',
+            purpose: 'Process command'
+          }
+        }}
+        onUpdateNode={onUpdateNode}
+        onOpenDetail={vi.fn()}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText('Signature'), { target: { value: '' } })
+    expect(screen.getByText('This field is required')).toBeInTheDocument()
+    expect(onUpdateNode).not.toHaveBeenCalledWith('node_1', expect.objectContaining({ data: expect.anything() }))
   })
 })

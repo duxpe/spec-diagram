@@ -8,7 +8,12 @@ import { AppShell } from '@/components/layout/AppShell'
 import { RelationPanel } from '@/components/panels/RelationPanel'
 import { BoardToolbar } from '@/components/toolbar/BoardToolbar'
 import { useBoardAutosave } from '@/features/autosave/useBoardAutosave'
+import { ExportPromptType, PromptExportBundle } from '@/domain/models/export'
 import { SemanticNodeType } from '@/domain/models/semantic-node'
+import {
+  buildPromptZipFileName,
+  createPromptZipBlob
+} from '@/domain/services/prompt-export-service'
 import { useBoardStore } from '@/state/board-store'
 import { useUiStore } from '@/state/ui-store'
 import { useWorkspaceStore } from '@/state/workspace-store'
@@ -23,6 +28,9 @@ export function BoardPage(): JSX.Element {
   const openWorkspace = useWorkspaceStore((state) => state.openWorkspace)
   const refreshCurrentWorkspace = useWorkspaceStore((state) => state.refreshCurrentWorkspace)
   const exportWorkspace = useWorkspaceStore((state) => state.exportWorkspace)
+  const generateWorkspacePromptBundle = useWorkspaceStore(
+    (state) => state.generateWorkspacePromptBundle
+  )
   const importWorkspace = useWorkspaceStore((state) => state.importWorkspace)
 
   const loadBoard = useBoardStore((state) => state.loadBoard)
@@ -46,7 +54,10 @@ export function BoardPage(): JSX.Element {
   const isImportDialogOpen = useUiStore((state) => state.isImportDialogOpen)
   const setImportDialogOpen = useUiStore((state) => state.setImportDialogOpen)
 
-  const [exportPayload, setExportPayload] = useState('')
+  const [exportJsonPayload, setExportJsonPayload] = useState('')
+  const [isExportJsonLoading, setIsExportJsonLoading] = useState(false)
+  const [promptBundle, setPromptBundle] = useState<PromptExportBundle>()
+  const [isPromptExportLoading, setIsPromptExportLoading] = useState(false)
 
   useBoardAutosave()
 
@@ -106,23 +117,55 @@ export function BoardPage(): JSX.Element {
     }
   }
 
-  const handleOpenExport = async (): Promise<void> => {
+  const handleOpenExport = (): void => {
+    setExportJsonPayload('')
+    setPromptBundle(undefined)
+    setIsExportJsonLoading(false)
+    setIsPromptExportLoading(false)
+    setExportDialogOpen(true)
+  }
+
+  const handleRequestJsonExport = async (): Promise<void> => {
+    if (isExportJsonLoading || exportJsonPayload) return
+
+    setIsExportJsonLoading(true)
     try {
       const payload = await exportWorkspace(workspaceId)
-      setExportPayload(payload)
-      setExportDialogOpen(true)
+      setExportJsonPayload(payload)
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Failed to export workspace')
+    } finally {
+      setIsExportJsonLoading(false)
     }
   }
 
-  const copyExportPayload = async (): Promise<void> => {
-    if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
-      await navigator.clipboard.writeText(exportPayload)
-      return
+  const handleGeneratePromptBundle = async (exportType: ExportPromptType): Promise<void> => {
+    setIsPromptExportLoading(true)
+    try {
+      const bundle = await generateWorkspacePromptBundle(workspaceId, exportType)
+      setPromptBundle(bundle)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Failed to generate prompt export')
+    } finally {
+      setIsPromptExportLoading(false)
     }
+  }
 
-    window.prompt('Copy the JSON export payload:', exportPayload)
+  const handleDownloadPromptZip = async (): Promise<void> => {
+    if (!promptBundle) return
+
+    try {
+      const blob = await createPromptZipBlob(promptBundle)
+      const fileName = buildPromptZipFileName(promptBundle)
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = fileName
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Failed to download prompt ZIP')
+    }
   }
 
   const handleImportWorkspace = async (jsonInput: string): Promise<void> => {
@@ -152,9 +195,18 @@ export function BoardPage(): JSX.Element {
                 Board: {currentBoard?.name ?? 'Loading...'} ({currentBoard?.level ?? '...'})
               </p>
               {parentContext ? (
-                <p>
-                  Parent: {parentContext.boardName} / {parentContext.nodeTitle}
-                </p>
+                <>
+                  <p>
+                    Parent ({parentContext.immediate.level}): {parentContext.immediate.boardName} /{' '}
+                    {parentContext.immediate.nodeTitle}
+                  </p>
+                  {parentContext.ancestor ? (
+                    <p>
+                      Ancestor ({parentContext.ancestor.level}): {parentContext.ancestor.boardName} /{' '}
+                      {parentContext.ancestor.nodeTitle}
+                    </p>
+                  ) : null}
+                </>
               ) : null}
             </div>
             <div className="board-header__actions">
@@ -170,18 +222,20 @@ export function BoardPage(): JSX.Element {
         sidebar={
           <div className="stack">
             <BoardToolbar
+              level={currentBoard?.level ?? 'N1'}
               onCreateNode={handleCreateNode}
               onSave={() => {
                 void saveCurrentBoard()
               }}
               onOpenExport={() => {
-                void handleOpenExport()
+                handleOpenExport()
               }}
               onOpenImport={() => {
                 setImportDialogOpen(true)
               }}
             />
             <RelationPanel
+              level={currentBoard?.level ?? 'N1'}
               nodes={nodes}
               onCreateRelation={(sourceNodeId, targetNodeId, type) => {
                 createRelation(sourceNodeId, targetNodeId, type)
@@ -192,6 +246,7 @@ export function BoardPage(): JSX.Element {
         inspector={
           <NodeInspector
             node={selectedNode}
+            parentContext={parentContext}
             onUpdateNode={updateNode}
             onOpenDetail={(nodeId) => {
               void handleOpenDetail(nodeId)
@@ -223,11 +278,20 @@ export function BoardPage(): JSX.Element {
 
       <ExportDialog
         open={isExportDialogOpen}
-        payload={exportPayload}
-        onClose={() => setExportDialogOpen(false)}
-        onCopy={() => {
-          void copyExportPayload()
+        jsonPayload={exportJsonPayload}
+        jsonLoading={isExportJsonLoading}
+        promptBundle={promptBundle}
+        promptLoading={isPromptExportLoading}
+        onRequestJson={() => {
+          void handleRequestJsonExport()
         }}
+        onGeneratePrompts={(type) => {
+          void handleGeneratePromptBundle(type)
+        }}
+        onDownloadPromptZip={() => {
+          void handleDownloadPromptZip()
+        }}
+        onClose={() => setExportDialogOpen(false)}
       />
 
       <ImportDialog

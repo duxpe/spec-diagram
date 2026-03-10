@@ -1,6 +1,11 @@
 import { Board, SemanticLevel } from '@/domain/models/board'
 import { Relation, RelationType } from '@/domain/models/relation'
 import { SemanticNode, SemanticNodeType } from '@/domain/models/semantic-node'
+import {
+  getDefaultNodeData,
+  isNodeTypeAllowedForLevel,
+  isRelationTypeAllowedForLevel
+} from '@/domain/semantics/semantic-catalog'
 import { NavigationService } from '@/domain/services/navigation-service'
 import { createId } from '@/utils/ids'
 import { nowIso } from '@/utils/dates'
@@ -60,19 +65,24 @@ export class BoardService {
     y?: number
   }): SemanticNode {
     const now = nowIso()
+    const type = input.type ?? 'system'
+
+    if (!isNodeTypeAllowedForLevel(input.level, type)) {
+      throw new Error(`Node type "${type}" is not allowed in ${input.level}`)
+    }
 
     return {
       id: createId('node'),
       workspaceId: input.workspaceId,
       boardId: input.boardId,
       level: input.level,
-      type: input.type ?? 'system',
+      type,
       title: input.title ?? 'New Node',
       x: input.x ?? 120,
       y: input.y ?? 80,
       width: 220,
       height: 110,
-      data: {},
+      data: getDefaultNodeData(input.level, type),
       createdAt: now,
       updatedAt: now
     }
@@ -81,6 +91,7 @@ export class BoardService {
   static createRelation(input: {
     workspaceId: string
     boardId: string
+    level: SemanticLevel
     sourceNodeId: string
     targetNodeId: string
     type?: RelationType
@@ -90,6 +101,12 @@ export class BoardService {
   }): Relation {
     if (input.sourceNodeId === input.targetNodeId) {
       throw new Error('Relation requires distinct source and target nodes')
+    }
+
+    const type = input.type ?? 'depends_on'
+
+    if (!isRelationTypeAllowedForLevel(input.level, type)) {
+      throw new Error(`Relation type "${type}" is not allowed in ${input.level}`)
     }
 
     if (input.sourceBoardId !== input.targetBoardId || input.sourceBoardId !== input.boardId) {
@@ -104,7 +121,7 @@ export class BoardService {
       boardId: input.boardId,
       sourceNodeId: input.sourceNodeId,
       targetNodeId: input.targetNodeId,
-      type: input.type ?? 'depends_on',
+      type,
       label: input.label,
       createdAt: now,
       updatedAt: now

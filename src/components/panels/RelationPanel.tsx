@@ -1,33 +1,49 @@
-import { FormEvent, useMemo, useState } from 'react'
+import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { SemanticLevel } from '@/domain/models/board'
 import { RelationType } from '@/domain/models/relation'
 import { SemanticNode } from '@/domain/models/semantic-node'
-
-const RELATION_TYPES: RelationType[] = [
-  'depends_on',
-  'calls',
-  'reads',
-  'writes',
-  'implements',
-  'extends',
-  'uses',
-  'exposes',
-  'contains',
-  'decides'
-]
+import {
+  getAllowedRelationTypes,
+  getN1RelationSuggestion
+} from '@/domain/semantics/semantic-catalog'
 
 interface RelationPanelProps {
+  level: SemanticLevel
   nodes: SemanticNode[]
   onCreateRelation: (sourceNodeId: string, targetNodeId: string, type: RelationType) => void
 }
 
-export function RelationPanel({ nodes, onCreateRelation }: RelationPanelProps): JSX.Element {
+function humanizeRelationType(type: RelationType): string {
+  return type.replaceAll('_', ' ')
+}
+
+export function RelationPanel({ level, nodes, onCreateRelation }: RelationPanelProps): JSX.Element {
   const [sourceNodeId, setSourceNodeId] = useState<string>('')
   const [targetNodeId, setTargetNodeId] = useState<string>('')
-  const [relationType, setRelationType] = useState<RelationType>('depends_on')
+  const relationTypes = useMemo(() => getAllowedRelationTypes(level), [level])
+  const [relationType, setRelationType] = useState<RelationType>(relationTypes[0] ?? 'depends_on')
+
+  useEffect(() => {
+    if (relationTypes.includes(relationType)) return
+    setRelationType(relationTypes[0] ?? 'depends_on')
+  }, [relationType, relationTypes])
+
+  const sourceNode = nodes.find((node) => node.id === sourceNodeId)
+  const targetNode = nodes.find((node) => node.id === targetNodeId)
+
+  const relationSuggestion = useMemo(() => {
+    if (level !== 'N1') return undefined
+
+    return getN1RelationSuggestion(sourceNode?.type, targetNode?.type, relationType)
+  }, [level, relationType, sourceNode?.type, targetNode?.type])
 
   const canSubmit = useMemo(
-    () => sourceNodeId.length > 0 && targetNodeId.length > 0 && sourceNodeId !== targetNodeId,
-    [sourceNodeId, targetNodeId]
+    () =>
+      sourceNodeId.length > 0 &&
+      targetNodeId.length > 0 &&
+      sourceNodeId !== targetNodeId &&
+      relationTypes.includes(relationType),
+    [sourceNodeId, targetNodeId, relationType, relationTypes]
   )
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -76,12 +92,14 @@ export function RelationPanel({ nodes, onCreateRelation }: RelationPanelProps): 
           value={relationType}
           onChange={(event) => setRelationType(event.target.value as RelationType)}
         >
-          {RELATION_TYPES.map((type) => (
+          {relationTypes.map((type) => (
             <option key={type} value={type}>
-              {type}
+              {humanizeRelationType(type)}
             </option>
           ))}
         </select>
+
+        {relationSuggestion ? <p className="relation-panel__hint">{relationSuggestion}</p> : null}
 
         <button type="submit" disabled={!canSubmit}>
           Create relation

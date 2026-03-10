@@ -221,6 +221,68 @@ label {
   gap: 8px;
 }
 
+.semantic-picker {
+  display: grid;
+  gap: 10px;
+}
+
+.semantic-picker__section {
+  display: grid;
+  gap: 8px;
+}
+
+.semantic-picker__section h3 {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.semantic-picker__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.semantic-picker__card {
+  display: grid;
+  gap: 6px;
+  justify-items: start;
+  align-content: start;
+  text-align: left;
+  min-height: 76px;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px solid #bfd0e4;
+  background: linear-gradient(160deg, #ffffff 0%, #f4f9ff 100%);
+}
+
+.semantic-picker__card:hover {
+  border-color: #8eb1d5;
+}
+
+.semantic-picker__marker {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #2f5d87;
+  background: #e9f2fb;
+  border: 1px solid #c5dcf3;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+.semantic-picker__label {
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.semantic-picker__empty {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
 .board-stage {
   position: relative;
   width: 100%;
@@ -285,9 +347,43 @@ label {
   gap: 8px;
 }
 
+.node-inspector__type {
+  margin: 0;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+
+.node-inspector__parent {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #c8d4e3;
+  background: #f6f9fd;
+  font-size: 0.82rem;
+  color: #324a66;
+}
+
+.field-error {
+  margin: -2px 0 0;
+  font-size: 0.78rem;
+  color: var(--danger);
+}
+
 .relation-panel form {
   display: grid;
   gap: 8px;
+}
+
+.relation-panel__hint {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid #e7d8a3;
+  background: #fff8df;
+  color: #5b4b1c;
+  font-size: 0.82rem;
 }
 
 .dialog-backdrop {
@@ -310,6 +406,10 @@ label {
   gap: 12px;
 }
 
+.dialog-card--export {
+  width: min(980px, 100%);
+}
+
 .dialog-card textarea {
   font-family: 'IBM Plex Mono', 'Fira Code', monospace;
 }
@@ -321,6 +421,60 @@ label {
 .dialog-import-form {
   display: grid;
   gap: 12px;
+}
+
+.dialog-tabs {
+  display: flex;
+  gap: 8px;
+}
+
+.dialog-tabs__tab {
+  border-radius: 999px;
+  padding: 6px 12px;
+}
+
+.dialog-tabs__tab.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.dialog-export-panel {
+  display: grid;
+  gap: 10px;
+}
+
+.dialog-export-panel__controls {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 130px 1fr auto auto;
+  align-items: center;
+}
+
+.prompt-preview-list {
+  display: grid;
+  gap: 10px;
+  max-height: 48vh;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.prompt-preview-card {
+  border: 1px solid var(--stroke);
+  border-radius: 10px;
+  padding: 10px;
+  display: grid;
+  gap: 6px;
+  background: #fcfdfd;
+}
+
+.prompt-preview-card h3,
+.prompt-preview-card p {
+  margin: 0;
+}
+
+.prompt-preview-card p {
+  color: var(--muted);
+  font-size: 0.86rem;
 }
 
 .dialog-card__actions {
@@ -350,5 +504,10 @@ label {
 
   .workspace-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .dialog-export-panel__controls {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 }
