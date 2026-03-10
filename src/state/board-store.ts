@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { toSemanticSnapshot } from '@/board/semantic/semantic-shape-mappers'
 import { db } from '@/db/dexie'
 import { boardRepo } from '@/db/repositories/board-repo'
 import { relationRepo } from '@/db/repositories/relation-repo'
@@ -433,7 +432,6 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         ...currentBoard,
         nodeIds: nodes.map((node) => node.id),
         relationIds: relations.map((relation) => relation.id),
-        tlSnapshot: toSemanticSnapshot(nodes),
         updatedAt: nowIso()
       }
 
