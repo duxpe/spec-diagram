@@ -44,11 +44,13 @@ export const semanticNodeSchema = z
     const result = payloadSchema.safeParse(node.data)
 
     if (!result.success) {
-      context.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['data'],
-        message: `Invalid payload for node type ${node.type}`
-      })
+      for (const issue of result.error.issues) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['data', ...issue.path],
+          message: issue.message
+        })
+      }
     }
   })
 

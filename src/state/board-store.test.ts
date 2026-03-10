@@ -6,11 +6,11 @@ import { useBoardStore } from '@/state/board-store'
 
 const now = new Date().toISOString()
 
-function makeBoard(id = 'board_1'): Board {
+function makeBoard(id = 'board_1', level: Board['level'] = 'N1'): Board {
   return {
     id,
     workspaceId: 'ws_1',
-    level: 'N1',
+    level,
     name: 'Board',
     nodeIds: [],
     relationIds: [],
@@ -126,5 +126,59 @@ describe('board-store canvas sync actions', () => {
     expect(useBoardStore.getState().nodes.map((node) => node.id)).toEqual(['node_b'])
     expect(useBoardStore.getState().relations).toEqual([])
     expect(saveSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('blocks relation type that is not allowed in N1', () => {
+    const nodeA = makeNode('node_a')
+    const nodeB = makeNode('node_b')
+
+    useBoardStore.setState({
+      currentBoard: makeBoard(),
+      nodes: [nodeA, nodeB],
+      relations: [],
+      dirty: false,
+      error: undefined
+    })
+
+    useBoardStore.getState().createRelation('node_a', 'node_b', 'implements')
+
+    expect(useBoardStore.getState().relations).toEqual([])
+    expect(useBoardStore.getState().error).toContain('not allowed in N1')
+  })
+
+  it('blocks relation type that is not allowed in N2', () => {
+    const nodeA = makeNode('node_a', { level: 'N2', type: 'class' })
+    const nodeB = makeNode('node_b', { level: 'N2', type: 'interface' })
+
+    useBoardStore.setState({
+      currentBoard: makeBoard('board_2', 'N2'),
+      nodes: [nodeA, nodeB],
+      relations: [],
+      dirty: false,
+      error: undefined
+    })
+
+    useBoardStore.getState().createRelation('node_a', 'node_b', 'reads')
+
+    expect(useBoardStore.getState().relations).toEqual([])
+    expect(useBoardStore.getState().error).toContain('not allowed in N2')
+  })
+
+  it('blocks relation type that is not allowed in N3', () => {
+    const nodeA = makeNode('node_a', { level: 'N3', type: 'method' })
+    const nodeB = makeNode('node_b', { level: 'N3', type: 'attribute' })
+
+    useBoardStore.setState({
+      currentBoard: makeBoard('board_3', 'N3'),
+      nodes: [nodeA, nodeB],
+      relations: [],
+      dirty: false,
+      error: undefined
+    })
+
+    useBoardStore.getState().createRelation('node_a', 'node_b', 'writes')
+
+    expect(useBoardStore.getState().relations).toEqual([])
+    expect(useBoardStore.getState().error).toContain('not allowed in N3')
   })
 })

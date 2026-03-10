@@ -13,10 +13,22 @@ import { relationSchema } from '@/domain/schemas/relation.schema'
 import { semanticNodeSchema } from '@/domain/schemas/semantic-node.schema'
 import { BoardService } from '@/domain/services/board-service'
 import { ValidationService } from '@/domain/services/validation-service'
+import {
+  canOpenDetail,
+  isNodeTypeAllowedForLevel,
+  isRelationTypeAllowedForLevel
+} from '@/domain/semantics/semantic-catalog'
 import { useAppStore } from '@/state/app-store'
 import { nowIso } from '@/utils/dates'
+import { ZodError } from 'zod'
 
 interface ParentContext {
+  immediate: ParentReference
+  ancestor?: ParentReference
+}
+
+interface ParentReference {
+  level: 'N1' | 'N2'
   boardId: string
   boardName: string
   nodeId: string
@@ -118,6 +130,66 @@ function updateBoardTimestamps(board: Board): Board {
   }
 }
 
+function formatValidationError(error: unknown): string {
+  if (error instanceof ZodError) {
+    const firstIssue = error.issues[0]
+    if (!firstIssue) return 'Validation failed'
+
+    const path = firstIssue.path.join('.')
+    if (!path) return firstIssue.message
+    return `${path}: ${firstIssue.message}`
+  }
+
+  if (error instanceof Error) return error.message
+  return 'Validation failed'
+}
+
+function toParentReference(board: Board, node: SemanticNode): ParentReference | undefined {
+  if (board.level !== 'N1' && board.level !== 'N2') return undefined
+
+  return {
+    level: board.level,
+    boardId: board.id,
+    boardName: board.name,
+    nodeId: node.id,
+    nodeTitle: node.title
+  }
+}
+
+async function resolveParentContext(board: Board): Promise<ParentContext | undefined> {
+  if (!board.parentBoardId || !board.parentNodeId) return undefined
+
+  const [immediateBoard, immediateNodes] = await Promise.all([
+    boardRepo.getById(board.parentBoardId),
+    semanticNodeRepo.listByBoard(board.parentBoardId)
+  ])
+  const immediateNode = immediateNodes.find((node) => node.id === board.parentNodeId)
+  if (!immediateBoard || !immediateNode) return undefined
+
+  const immediate = toParentReference(immediateBoard, immediateNode)
+  if (!immediate) return undefined
+
+  if (!immediateBoard.parentBoardId || !immediateBoard.parentNodeId) {
+    return { immediate }
+  }
+
+  const [ancestorBoard, ancestorNodes] = await Promise.all([
+    boardRepo.getById(immediateBoard.parentBoardId),
+    semanticNodeRepo.listByBoard(immediateBoard.parentBoardId)
+  ])
+  const ancestorNode = ancestorNodes.find((node) => node.id === immediateBoard.parentNodeId)
+  if (!ancestorBoard || !ancestorNode) {
+    return { immediate }
+  }
+
+  const ancestor = toParentReference(ancestorBoard, ancestorNode)
+  if (!ancestor) {
+    return { immediate }
+  }
+
+  return { immediate, ancestor }
+}
+
 export const useBoardStore = create<BoardState>((set, get) => ({
   loading: false,
   saving: false,
@@ -149,23 +221,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         return
       }
 
-      let parentContext: ParentContext | undefined
-      if (board.parentBoardId && board.parentNodeId) {
-        const [parentBoard, parentNodes] = await Promise.all([
-          boardRepo.getById(board.parentBoardId),
-          semanticNodeRepo.listByBoard(board.parentBoardId)
-        ])
-        const parentNode = parentNodes.find((node) => node.id === board.parentNodeId)
-
-        if (parentBoard && parentNode) {
-          parentContext = {
-            boardId: parentBoard.id,
-            boardName: parentBoard.name,
-            nodeId: parentNode.id,
-            nodeTitle: parentNode.title
-          }
-        }
-      }
+      const parentContext = await resolveParentContext(board)
 
       if (get().loadRequestKey !== loadRequestKey) {
         return
@@ -201,42 +257,60 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
     if (!currentBoard) return
 
-    const node = BoardService.createNode({
-      workspaceId: currentBoard.workspaceId,
-      boardId: currentBoard.id,
-      level: currentBoard.level,
-      type
-    })
+    const requestedType = type ?? 'system'
+    if (!isNodeTypeAllowedForLevel(currentBoard.level, requestedType)) {
+      set({ error: `Node type "${requestedType}" is not allowed in ${currentBoard.level}` })
+      return
+    }
 
-    set((state) => ({
-      nodes: [...state.nodes, node],
-      currentBoard: state.currentBoard ? updateBoardTimestamps(state.currentBoard) : state.currentBoard,
-      dirty: true
-    }))
+    try {
+      const node = BoardService.createNode({
+        workspaceId: currentBoard.workspaceId,
+        boardId: currentBoard.id,
+        level: currentBoard.level,
+        type
+      })
+
+      ValidationService.parse(semanticNodeSchema, node)
+
+      set((state) => ({
+        nodes: [...state.nodes, node],
+        currentBoard: state.currentBoard ? updateBoardTimestamps(state.currentBoard) : state.currentBoard,
+        dirty: true,
+        error: undefined
+      }))
+    } catch (error) {
+      set({ error: formatValidationError(error) })
+    }
   },
 
   updateNode(id, patch) {
-    set((state) => {
-      let hasChanges = false
-      const nodes = state.nodes.map((node) => {
-        if (node.id !== id) return node
+    const currentNode = get().nodes.find((node) => node.id === id)
+    if (!currentNode) return
 
-        const patchEntries = Object.entries(patch) as Array<[keyof SemanticNode, unknown]>
-        const isChanged = patchEntries.some(([key, value]) => node[key] !== value)
-        if (!isChanged) return node
+    const patchEntries = Object.entries(patch) as Array<[keyof SemanticNode, unknown]>
+    const isChanged = patchEntries.some(([key, value]) => currentNode[key] !== value)
+    if (!isChanged) return
 
-        hasChanges = true
-        return { ...node, ...patch, updatedAt: nowIso() }
-      })
+    const nextNode: SemanticNode = {
+      ...currentNode,
+      ...patch,
+      updatedAt: nowIso()
+    }
 
-      if (!hasChanges) return state
+    try {
+      ValidationService.parse(semanticNodeSchema, nextNode)
+    } catch (error) {
+      set({ error: formatValidationError(error) })
+      return
+    }
 
-      return {
-        nodes,
-        currentBoard: state.currentBoard ? updateBoardTimestamps(state.currentBoard) : state.currentBoard,
-        dirty: true
-      }
-    })
+    set((state) => ({
+      nodes: state.nodes.map((node) => (node.id === id ? nextNode : node)),
+      currentBoard: state.currentBoard ? updateBoardTimestamps(state.currentBoard) : state.currentBoard,
+      dirty: true,
+      error: undefined
+    }))
   },
 
   moveNode(id, x, y) {
@@ -256,15 +330,22 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       return
     }
 
+    const relationType = type ?? 'depends_on'
+    if (!isRelationTypeAllowedForLevel(currentBoard.level, relationType)) {
+      set({ error: `Relation type "${relationType}" is not allowed in ${currentBoard.level}` })
+      return
+    }
+
     try {
       const relation = BoardService.createRelation({
         workspaceId: currentBoard.workspaceId,
         boardId: currentBoard.id,
+        level: currentBoard.level,
         sourceNodeId,
         targetNodeId,
         sourceBoardId: sourceNode.boardId,
         targetBoardId: targetNode.boardId,
-        type,
+        type: relationType,
         label
       })
 
@@ -385,6 +466,10 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
     if (!node) {
       throw new Error('Node not found')
+    }
+
+    if (!canOpenDetail(node)) {
+      throw new Error(`Node type "${node.type}" cannot open detail board from level ${node.level}`)
     }
 
     if (node.childBoardId) {

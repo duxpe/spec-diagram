@@ -6,8 +6,9 @@ import { boardRepo } from '@/db/repositories/board-repo'
 import { relationRepo } from '@/db/repositories/relation-repo'
 import { semanticNodeRepo } from '@/db/repositories/semantic-node-repo'
 import { workspaceRepo } from '@/db/repositories/workspace-repo'
-import { WorkspaceExportFile } from '@/domain/models/export'
+import { ExportPromptType, PromptExportBundle, WorkspaceExportFile } from '@/domain/models/export'
 import { workspaceExportFileSchema } from '@/domain/schemas/export.schema'
+import { buildPromptExportBundle } from '@/domain/services/prompt-export-service'
 import { ValidationService } from '@/domain/services/validation-service'
 import { parseJson, toPrettyJson } from '@/utils/json'
 
@@ -129,5 +130,30 @@ export class ExportService {
     })
 
     return normalizedPayload
+  }
+
+  static async generateWorkspacePromptBundle(
+    workspaceId: string,
+    exportType: ExportPromptType
+  ): Promise<PromptExportBundle> {
+    const workspace = await workspaceRepo.getById(workspaceId)
+
+    if (!workspace) {
+      throw new Error('Workspace not found for prompt export')
+    }
+
+    const [boards, nodes, relations] = await Promise.all([
+      boardRepo.listByWorkspace(workspaceId),
+      semanticNodeRepo.listByWorkspace(workspaceId),
+      relationRepo.listByWorkspace(workspaceId)
+    ])
+
+    return buildPromptExportBundle({
+      workspace,
+      boards,
+      nodes,
+      relations,
+      exportType
+    })
   }
 }

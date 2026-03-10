@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { db } from '@/db/dexie'
 import { boardRepo } from '@/db/repositories/board-repo'
+import { ExportPromptType, PromptExportBundle } from '@/domain/models/export'
 import { workspaceRepo } from '@/db/repositories/workspace-repo'
 import { Board } from '@/domain/models/board'
 import { Workspace } from '@/domain/models/workspace'
@@ -21,6 +22,10 @@ interface WorkspaceState {
   openWorkspace: (workspaceId: string) => Promise<void>
   refreshCurrentWorkspace: () => Promise<void>
   exportWorkspace: (workspaceId: string) => Promise<string>
+  generateWorkspacePromptBundle: (
+    workspaceId: string,
+    exportType: ExportPromptType
+  ) => Promise<PromptExportBundle>
   importWorkspace: (jsonInput: string) => Promise<Workspace>
 }
 
@@ -123,6 +128,10 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
 
   async exportWorkspace(workspaceId) {
     return ExportService.exportWorkspace(workspaceId)
+  },
+
+  async generateWorkspacePromptBundle(workspaceId, exportType) {
+    return ExportService.generateWorkspacePromptBundle(workspaceId, exportType)
   },
 
   async importWorkspace(jsonInput) {
