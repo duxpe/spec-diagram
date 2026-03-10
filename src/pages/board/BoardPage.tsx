@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { TLComponents } from '@/board/tldraw/TLComponents'
-import { SemanticOverlay } from '@/components/board/SemanticOverlay'
 import { ExportDialog } from '@/components/dialogs/ExportDialog'
+import { ImportDialog } from '@/components/dialogs/ImportDialog'
 import { NodeInspector } from '@/components/inspector/NodeInspector'
 import { AppShell } from '@/components/layout/AppShell'
 import { RelationPanel } from '@/components/panels/RelationPanel'
@@ -23,14 +23,16 @@ export function BoardPage(): JSX.Element {
   const openWorkspace = useWorkspaceStore((state) => state.openWorkspace)
   const refreshCurrentWorkspace = useWorkspaceStore((state) => state.refreshCurrentWorkspace)
   const exportWorkspace = useWorkspaceStore((state) => state.exportWorkspace)
+  const importWorkspace = useWorkspaceStore((state) => state.importWorkspace)
 
   const loadBoard = useBoardStore((state) => state.loadBoard)
   const currentBoard = useBoardStore((state) => state.currentBoard)
+  const parentContext = useBoardStore((state) => state.parentContext)
   const nodes = useBoardStore((state) => state.nodes)
   const relations = useBoardStore((state) => state.relations)
   const createNode = useBoardStore((state) => state.createNode)
-  const moveNode = useBoardStore((state) => state.moveNode)
   const updateNode = useBoardStore((state) => state.updateNode)
+  const applyCanvasState = useBoardStore((state) => state.applyCanvasState)
   const createRelation = useBoardStore((state) => state.createRelation)
   const saveCurrentBoard = useBoardStore((state) => state.saveCurrentBoard)
   const openOrCreateChildBoard = useBoardStore((state) => state.openOrCreateChildBoard)
@@ -41,10 +43,22 @@ export function BoardPage(): JSX.Element {
   const setSelectedNodeId = useUiStore((state) => state.setSelectedNodeId)
   const isExportDialogOpen = useUiStore((state) => state.isExportDialogOpen)
   const setExportDialogOpen = useUiStore((state) => state.setExportDialogOpen)
+  const isImportDialogOpen = useUiStore((state) => state.isImportDialogOpen)
+  const setImportDialogOpen = useUiStore((state) => state.setImportDialogOpen)
 
   const [exportPayload, setExportPayload] = useState('')
 
   useBoardAutosave()
+
+  useEffect(() => {
+    setSelectedNodeId(undefined)
+  }, [workspaceId, boardId, setSelectedNodeId])
+
+  useEffect(() => {
+    return () => {
+      void useBoardStore.getState().saveCurrentBoard()
+    }
+  }, [workspaceId, boardId])
 
   useEffect(() => {
     if (!workspaceId || !boardId) return
@@ -83,6 +97,7 @@ export function BoardPage(): JSX.Element {
 
   const handleOpenDetail = async (nodeId: string): Promise<void> => {
     try {
+      await saveCurrentBoard()
       const childBoard = await openOrCreateChildBoard(nodeId)
       await refreshCurrentWorkspace()
       navigate(`/workspace/${workspaceId}/board/${childBoard.id}`)
@@ -110,6 +125,22 @@ export function BoardPage(): JSX.Element {
     window.prompt('Copy the JSON export payload:', exportPayload)
   }
 
+  const handleImportWorkspace = async (jsonInput: string): Promise<void> => {
+    try {
+      const importedWorkspace = await importWorkspace(jsonInput)
+      setImportDialogOpen(false)
+      navigate(`/workspace/${importedWorkspace.id}/board/${importedWorkspace.rootBoardId}`)
+    } catch (error) {
+      window.alert(error instanceof Error ? error.message : 'Failed to import workspace')
+    }
+  }
+
+  const handleBackToParent = async (): Promise<void> => {
+    if (!currentBoard?.parentBoardId) return
+    await saveCurrentBoard()
+    navigate(`/workspace/${workspaceId}/board/${currentBoard.parentBoardId}`)
+  }
+
   return (
     <>
       <AppShell
@@ -120,14 +151,16 @@ export function BoardPage(): JSX.Element {
               <p>
                 Board: {currentBoard?.name ?? 'Loading...'} ({currentBoard?.level ?? '...'})
               </p>
+              {parentContext ? (
+                <p>
+                  Parent: {parentContext.boardName} / {parentContext.nodeTitle}
+                </p>
+              ) : null}
             </div>
             <div className="board-header__actions">
               <Link to="/workspaces">Workspaces</Link>
               {currentBoard?.parentBoardId ? (
-                <button
-                  type="button"
-                  onClick={() => navigate(`/workspace/${workspaceId}/board/${currentBoard.parentBoardId}`)}
-                >
+                <button type="button" onClick={() => void handleBackToParent()}>
                   Back to parent
                 </button>
               ) : null}
@@ -143,6 +176,9 @@ export function BoardPage(): JSX.Element {
               }}
               onOpenExport={() => {
                 void handleOpenExport()
+              }}
+              onOpenImport={() => {
+                setImportDialogOpen(true)
               }}
             />
             <RelationPanel
@@ -166,13 +202,19 @@ export function BoardPage(): JSX.Element {
         {boardLoading ? <p>Loading board...</p> : null}
 
         <div className="board-stage">
-          <TLComponents persistenceKey={`ws-${workspaceId}-board-${boardId}`} />
-          <SemanticOverlay
+          <TLComponents
+            key={`${workspaceId}:${boardId}`}
+            persistenceKey={`ws-${workspaceId}-board-${boardId}`}
+            workspaceId={workspaceId}
+            boardId={boardId}
+            level={currentBoard?.level ?? 'N1'}
             nodes={nodes}
             relations={relations}
             selectedNodeId={selectedNodeId}
             onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
-            onMoveNode={(nodeId, x, y) => moveNode(nodeId, x, y)}
+            onCanvasChange={(sourceBoardId, nextNodes, nextRelations) =>
+              applyCanvasState(sourceBoardId, nextNodes, nextRelations)
+            }
           />
         </div>
 
@@ -186,6 +228,12 @@ export function BoardPage(): JSX.Element {
         onCopy={() => {
           void copyExportPayload()
         }}
+      />
+
+      <ImportDialog
+        open={isImportDialogOpen}
+        onClose={() => setImportDialogOpen(false)}
+        onImport={handleImportWorkspace}
       />
     </>
   )

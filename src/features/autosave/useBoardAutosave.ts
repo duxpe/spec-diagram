@@ -16,7 +16,6 @@ export function useBoardAutosave(): void {
 
     return () => {
       window.clearTimeout(timeoutId)
-      void saveCurrentBoard()
     }
   }, [dirty, saveCurrentBoard])
 }

@@ -318,6 +318,11 @@ label {
   margin: 0;
 }
 
+.dialog-import-form {
+  display: grid;
+  gap: 12px;
+}
+
 .dialog-card__actions {
   display: flex;
   gap: 8px;
