@@ -42,4 +42,32 @@ describe('NodeInspector', () => {
 
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', { title: 'Billing Service' })
   })
+
+  it('renders width/height as integers and normalizes numeric edits', () => {
+    const onUpdateNode = vi.fn()
+
+    render(
+      <NodeInspector
+        node={{ ...baseNode, width: 214.83984375, height: 109.6 }}
+        onUpdateNode={onUpdateNode}
+        onOpenDetail={vi.fn()}
+      />
+    )
+
+    const widthInput = screen.getByLabelText('Width')
+    const heightInput = screen.getByLabelText('Height')
+
+    expect(widthInput).toHaveValue(215)
+    expect(heightInput).toHaveValue(110)
+
+    fireEvent.change(widthInput, { target: { value: '215' } })
+    fireEvent.change(heightInput, { target: { value: '110' } })
+    expect(onUpdateNode).not.toHaveBeenCalled()
+
+    fireEvent.change(widthInput, { target: { value: '216.2' } })
+    fireEvent.change(heightInput, { target: { value: '111.4' } })
+
+    expect(onUpdateNode).toHaveBeenCalledWith('node_1', { width: 216 })
+    expect(onUpdateNode).toHaveBeenCalledWith('node_1', { height: 111 })
+  })
 })

@@ -22,9 +22,15 @@ interface BoardToolbarProps {
   onCreateNode: (type: SemanticNodeType) => void
   onSave: () => void
   onOpenExport: () => void
+  onOpenImport: () => void
 }
 
-export function BoardToolbar({ onCreateNode, onSave, onOpenExport }: BoardToolbarProps): JSX.Element {
+export function BoardToolbar({
+  onCreateNode,
+  onSave,
+  onOpenExport,
+  onOpenImport
+}: BoardToolbarProps): JSX.Element {
   const [nodeType, setNodeType] = useState<SemanticNodeType>('system')
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
@@ -58,6 +64,9 @@ export function BoardToolbar({ onCreateNode, onSave, onOpenExport }: BoardToolba
         </button>
         <button type="button" onClick={onOpenExport}>
           Export JSON
+        </button>
+        <button type="button" onClick={onOpenImport}>
+          Import JSON
         </button>
       </div>
     </div>

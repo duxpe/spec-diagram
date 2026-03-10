@@ -12,6 +12,9 @@ export function NodeInspector({ node, onUpdateNode, onOpenDetail }: NodeInspecto
     return <div className="panel">Select a node to edit properties.</div>
   }
 
+  const roundedWidth = Math.round(node.width)
+  const roundedHeight = Math.round(node.height)
+
   const handleFieldChange = (
     field: 'title' | 'description',
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -47,11 +50,15 @@ export function NodeInspector({ node, onUpdateNode, onOpenDetail }: NodeInspecto
       <input
         id="node-width"
         type="number"
-        value={node.width}
+        value={roundedWidth}
         min={120}
         onChange={(event) => {
-          const width = Number(event.target.value)
-          if (!Number.isFinite(width) || width <= 0) return
+          const rawWidth = Number(event.target.value)
+          if (!Number.isFinite(rawWidth) || rawWidth <= 0) return
+
+          const width = Math.round(rawWidth)
+          if (width === roundedWidth) return
+
           onUpdateNode(node.id, { width })
         }}
       />
@@ -60,11 +67,15 @@ export function NodeInspector({ node, onUpdateNode, onOpenDetail }: NodeInspecto
       <input
         id="node-height"
         type="number"
-        value={node.height}
+        value={roundedHeight}
         min={70}
         onChange={(event) => {
-          const height = Number(event.target.value)
-          if (!Number.isFinite(height) || height <= 0) return
+          const rawHeight = Number(event.target.value)
+          if (!Number.isFinite(rawHeight) || rawHeight <= 0) return
+
+          const height = Math.round(rawHeight)
+          if (height === roundedHeight) return
+
           onUpdateNode(node.id, { height })
         }}
       />
