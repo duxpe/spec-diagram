@@ -78,7 +78,8 @@ function isNodeSemanticallyEqual(a: SemanticNode, b: SemanticNode): boolean {
     nearlyEqual(a.width, b.width) &&
     nearlyEqual(a.height, b.height) &&
     a.childBoardId === b.childBoardId &&
-    JSON.stringify(a.data) === JSON.stringify(b.data)
+    JSON.stringify(a.data) === JSON.stringify(b.data) &&
+    JSON.stringify(a.appearance ?? null) === JSON.stringify(b.appearance ?? null)
   )
 }
 

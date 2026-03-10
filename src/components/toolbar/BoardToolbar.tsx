@@ -1,9 +1,11 @@
 import { FormEvent, useMemo, useState } from 'react'
+import { GenericNodeIcon } from '@/components/icons/semantic-icons'
 import { SemanticLevel } from '@/domain/models/board'
 import { SemanticNodeType } from '@/domain/models/semantic-node'
 import { N1_NODE_PALETTE } from '@/domain/semantics/n1-node-palette'
 import { N2_NODE_PALETTE } from '@/domain/semantics/n2-node-palette'
 import { N3_NODE_PALETTE } from '@/domain/semantics/n3-node-palette'
+import { getDefaultAppearance } from '@/domain/semantics/node-visual-catalog'
 import { getAllowedNodeTypes } from '@/domain/semantics/semantic-catalog'
 
 interface BoardToolbarProps {
@@ -104,7 +106,9 @@ export function BoardToolbar({
                       onClick={() => onCreateNode(item.type)}
                       aria-label={`Add ${item.label}`}
                     >
-                      <span className="semantic-picker__marker">{item.marker}</span>
+                      <span className="semantic-picker__marker" aria-hidden="true">
+                        <GenericNodeIcon iconId={getDefaultAppearance(item.type).icon} size={14} />
+                      </span>
                       <span className="semantic-picker__label">{item.label}</span>
                     </button>
                   ))}

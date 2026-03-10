@@ -53,6 +53,9 @@ export function BoardPage(): JSX.Element {
   const setExportDialogOpen = useUiStore((state) => state.setExportDialogOpen)
   const isImportDialogOpen = useUiStore((state) => state.isImportDialogOpen)
   const setImportDialogOpen = useUiStore((state) => state.setImportDialogOpen)
+  const themeMode = useUiStore((state) => state.themeMode)
+  const setThemeMode = useUiStore((state) => state.setThemeMode)
+  const activeTheme = useUiStore((state) => state.resolveActiveTheme())
 
   const [exportJsonPayload, setExportJsonPayload] = useState('')
   const [isExportJsonLoading, setIsExportJsonLoading] = useState(false)
@@ -211,6 +214,23 @@ export function BoardPage(): JSX.Element {
             </div>
             <div className="board-header__actions">
               <Link to="/workspaces">Workspaces</Link>
+              <label className="theme-toggle" htmlFor="theme-mode">
+                Theme
+              </label>
+              <select
+                id="theme-mode"
+                className="theme-toggle__select"
+                value={themeMode}
+                onChange={(event) =>
+                  setThemeMode(event.target.value as 'system' | 'light' | 'dark')
+                }
+                aria-label="Theme mode"
+              >
+                <option value="system">System</option>
+                <option value="light">Light</option>
+                <option value="dark">Dark</option>
+              </select>
+              <span className="theme-toggle__status">Active: {activeTheme}</span>
               {currentBoard?.parentBoardId ? (
                 <button type="button" onClick={() => void handleBackToParent()}>
                   Back to parent
@@ -270,6 +290,7 @@ export function BoardPage(): JSX.Element {
             onCanvasChange={(sourceBoardId, nextNodes, nextRelations) =>
               applyCanvasState(sourceBoardId, nextNodes, nextRelations)
             }
+            theme={activeTheme}
           />
         </div>
 

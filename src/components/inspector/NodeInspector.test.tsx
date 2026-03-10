@@ -234,4 +234,48 @@ describe('NodeInspector', () => {
     expect(screen.getByText('This field is required')).toBeInTheDocument()
     expect(onUpdateNode).not.toHaveBeenCalledWith('node_1', expect.objectContaining({ data: expect.anything() }))
   })
+
+  it('renders appearance controls and persists valid appearance changes', () => {
+    const onUpdateNode = vi.fn()
+
+    render(<NodeInspector node={baseNode} onUpdateNode={onUpdateNode} onOpenDetail={vi.fn()} />)
+
+    fireEvent.change(screen.getByLabelText('Provider visual'), { target: { value: 'aws' } })
+    expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
+      appearance: {
+        provider: 'aws',
+        providerService: undefined
+      }
+    })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Lambda' }))
+    expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
+      appearance: {
+        provider: 'aws',
+        providerService: 'aws_lambda'
+      }
+    })
+  })
+
+  it('resets node appearance to defaults', () => {
+    const onUpdateNode = vi.fn()
+
+    render(
+      <NodeInspector
+        node={{
+          ...baseNode,
+          appearance: {
+            provider: 'aws',
+            providerService: 'aws_lambda',
+            showProviderBadge: true
+          }
+        }}
+        onUpdateNode={onUpdateNode}
+        onOpenDetail={vi.fn()}
+      />
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset visual' }))
+    expect(onUpdateNode).toHaveBeenCalledWith('node_1', { appearance: undefined })
+  })
 })

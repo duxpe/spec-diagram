@@ -80,6 +80,45 @@ describe('semantic-adapter', () => {
     expect(endpoints.endX).not.toBe(target.x + target.width / 2)
   })
 
+  it('maps visual defaults and appearance overrides into tldraw geo styles', () => {
+    const databaseNode: SemanticNode = {
+      ...buildNode('node_db', 'Database'),
+      type: 'database'
+    }
+    const customNode: SemanticNode = {
+      ...buildNode('node_custom', 'Custom Service', 280, 40),
+      type: 'container_service',
+      childBoardId: 'board_child_1',
+      data: {
+        responsibility: 'Process requests'
+      },
+      appearance: {
+        shapeVariant: 'hexagon',
+        accentColor: 'purple',
+        provider: 'aws'
+      }
+    }
+
+    const records = toTlRecords([databaseNode, customNode], [])
+    const databaseShape = records.find((shape) => shape.id === getNodeShapeId(databaseNode.id))
+    const customShape = records.find((shape) => shape.id === getNodeShapeId(customNode.id))
+
+    expect(databaseShape?.type).toBe('geo')
+    expect(databaseShape?.props).toMatchObject({
+      geo: 'oval',
+      color: 'yellow',
+      fill: 'semi'
+    })
+
+    expect(customShape?.type).toBe('geo')
+    expect(customShape?.props).toMatchObject({
+      geo: 'hexagon',
+      color: 'light-violet',
+      fill: 'solid',
+      dash: 'dashed'
+    })
+  })
+
   it('preserves unchanged semantic objects when mapping from canvas', () => {
     const nodeA = buildNode('node_a', 'Node A', 20, 30)
     const nodeB = buildNode('node_b', 'Node B', 320, 80)

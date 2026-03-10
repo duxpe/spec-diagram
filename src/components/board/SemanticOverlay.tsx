@@ -1,61 +1,112 @@
-import { Relation } from '@/domain/models/relation'
+import { Icon } from '@iconify/react'
+import { useEditor, useValue } from 'tldraw'
+import { GenericNodeIcon } from '@/components/icons/semantic-icons'
+import { getNodeShapeId } from '@/board/tldraw/semantic-adapter'
+import { getPayloadIssuesForNodeType } from '@/domain/schemas/semantic-node-payload.schema'
+import {
+  getCloudServiceById,
+  getProviderLabel,
+  resolveNodeVisual
+} from '@/domain/semantics/node-visual-catalog'
 import { SemanticNode } from '@/domain/models/semantic-node'
-import { SemanticNodeCard } from '@/components/board/SemanticNodeCard'
 
 interface SemanticOverlayProps {
   nodes: SemanticNode[]
-  relations: Relation[]
   selectedNodeId?: string
-  onSelectNode: (id: string) => void
-  onMoveNode: (id: string, x: number, y: number) => void
 }
 
-function nodeCenter(node: SemanticNode): { x: number; y: number } {
-  return { x: node.x + node.width / 2, y: node.y + node.height / 2 }
+interface ScreenNodeBounds {
+  id: string
+  left: number
+  top: number
+  width: number
+  height: number
 }
 
-export function SemanticOverlay({
-  nodes,
-  relations,
-  selectedNodeId,
-  onSelectNode,
-  onMoveNode
-}: SemanticOverlayProps): JSX.Element {
-  const nodeById = new Map(nodes.map((node) => [node.id, node]))
+function useCameraTick(): string {
+  const editor = useEditor()
+
+  return useValue(
+    'semantic-overlay-camera',
+    () => {
+      const camera = editor.getCamera()
+      return `${camera.x}:${camera.y}:${editor.getZoomLevel()}`
+    },
+    [editor]
+  )
+}
+
+function getScreenBounds(
+  editor: ReturnType<typeof useEditor>,
+  node: SemanticNode
+): ScreenNodeBounds | undefined {
+  const shape = editor.getShape(getNodeShapeId(node.id) as Parameters<typeof editor.getShape>[0])
+  if (!shape) return undefined
+
+  const bounds = editor.getShapePageBounds(shape)
+  if (!bounds) return undefined
+
+  const topLeft = editor.pageToScreen({ x: bounds.minX, y: bounds.minY })
+  const bottomRight = editor.pageToScreen({ x: bounds.maxX, y: bounds.maxY })
+
+  return {
+    id: node.id,
+    left: topLeft.x,
+    top: topLeft.y,
+    width: Math.max(bottomRight.x - topLeft.x, 0),
+    height: Math.max(bottomRight.y - topLeft.y, 0)
+  }
+}
+
+export function SemanticOverlay({ nodes, selectedNodeId }: SemanticOverlayProps): JSX.Element {
+  const editor = useEditor()
+  useCameraTick()
 
   return (
-    <div className="semantic-overlay" aria-label="Semantic blocks overlay">
-      <svg className="semantic-overlay__relations" aria-hidden="true">
-        {relations.map((relation) => {
-          const source = nodeById.get(relation.sourceNodeId)
-          const target = nodeById.get(relation.targetNodeId)
-          if (!source || !target) return null
+    <div className="semantic-overlay semantic-overlay--canvas" aria-hidden="true">
+      {nodes.map((node) => {
+        const screenBounds = getScreenBounds(editor, node)
+        if (!screenBounds) return null
 
-          const sourceCenter = nodeCenter(source)
-          const targetCenter = nodeCenter(target)
+        const visual = resolveNodeVisual(node)
+        const providerService = getCloudServiceById(visual.providerService)
+        const hasErrors = getPayloadIssuesForNodeType(node.type, node.data).length > 0
 
-          return (
-            <line
-              key={relation.id}
-              x1={sourceCenter.x}
-              y1={sourceCenter.y}
-              x2={targetCenter.x}
-              y2={targetCenter.y}
-              className="semantic-overlay__relation"
-            />
-          )
-        })}
-      </svg>
+        return (
+          <div
+            key={node.id}
+            className={`semantic-overlay__node ${selectedNodeId === node.id ? 'is-selected' : ''}`}
+            style={{
+              left: `${screenBounds.left}px`,
+              top: `${screenBounds.top}px`,
+              width: `${screenBounds.width}px`,
+              height: `${screenBounds.height}px`
+            }}
+          >
+            <div className="semantic-overlay__chip semantic-overlay__chip--icon">
+              {providerService ? (
+                <Icon icon={providerService.icon} width={16} height={16} />
+              ) : (
+                <GenericNodeIcon iconId={visual.icon} size={16} />
+              )}
+            </div>
 
-      {nodes.map((node) => (
-        <SemanticNodeCard
-          key={node.id}
-          node={node}
-          selected={node.id === selectedNodeId}
-          onSelect={onSelectNode}
-          onMove={onMoveNode}
-        />
-      ))}
+            {visual.showProviderBadge && visual.provider !== 'none' ? (
+              <div className="semantic-overlay__chip semantic-overlay__chip--provider">
+                {getProviderLabel(visual.provider)}
+              </div>
+            ) : null}
+
+            {node.childBoardId ? (
+              <div className="semantic-overlay__chip semantic-overlay__chip--detail">N</div>
+            ) : null}
+
+            {hasErrors ? (
+              <div className="semantic-overlay__chip semantic-overlay__chip--warning">!</div>
+            ) : null}
+          </div>
+        )
+      })}
     </div>
   )
 }

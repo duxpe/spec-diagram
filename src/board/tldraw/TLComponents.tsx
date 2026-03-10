@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { TLShape, TLShapePartial, Tldraw } from 'tldraw'
+import { SemanticOverlay } from '@/components/board/SemanticOverlay'
 import {
   fromTlChanges,
   getSemanticNodeIdFromShape,
@@ -7,6 +8,7 @@ import {
   toTlRecords
 } from '@/board/tldraw/semantic-adapter'
 import { SemanticLevel } from '@/domain/models/board'
+import { ActiveTheme } from '@/domain/models/node-appearance'
 import { Relation } from '@/domain/models/relation'
 import { SemanticNode } from '@/domain/models/semantic-node'
 import 'tldraw/tldraw.css'
@@ -16,6 +18,7 @@ interface TLComponentsProps {
   workspaceId: string
   boardId: string
   level: SemanticLevel
+  theme: ActiveTheme
   nodes: SemanticNode[]
   relations: Relation[]
   selectedNodeId?: string
@@ -31,6 +34,9 @@ interface CanvasEditor {
   deleteShapes: (shapeIds: string[]) => void
   setSelectedShapes: (shapeIds: string[]) => void
   getOnlySelectedShapeId: () => string | null
+  user?: {
+    updateUserPreferences: (preferences: { colorScheme: 'light' | 'dark' }) => void
+  }
   sideEffects: {
     registerBeforeCreateHandler: (
       typeName: 'shape',
@@ -94,6 +100,7 @@ export function TLComponents({
   workspaceId,
   boardId,
   level,
+  theme,
   nodes,
   relations,
   selectedNodeId,
@@ -106,6 +113,7 @@ export function TLComponents({
     workspaceId,
     boardId,
     level,
+    theme,
     nodes,
     relations
   })
@@ -115,10 +123,18 @@ export function TLComponents({
       workspaceId,
       boardId,
       level,
+      theme,
       nodes,
       relations
     }
-  }, [workspaceId, boardId, level, nodes, relations])
+  }, [workspaceId, boardId, level, theme, nodes, relations])
+
+  useEffect(() => {
+    const editor = editorRef.current
+    if (!editor?.user) return
+
+    editor.user.updateUserPreferences({ colorScheme: theme })
+  }, [theme])
 
   useEffect(() => {
     const editor = editorRef.current
@@ -197,6 +213,10 @@ export function TLComponents({
     editorRef.current = canvasEditor
     const mountedBoardIdentity = `${workspaceId}:${boardId}`
 
+    if (canvasEditor.user) {
+      canvasEditor.user.updateUserPreferences({ colorScheme: theme })
+    }
+
     const removeCreateGuard = canvasEditor.sideEffects.registerBeforeCreateHandler(
       'shape',
       (shape, source) => {
@@ -251,7 +271,9 @@ export function TLComponents({
 
   return (
     <div className="tldraw-host" aria-label="Board whiteboard">
-      <Tldraw persistenceKey={persistenceKey} hideUi onMount={handleMount} />
+      <Tldraw persistenceKey={persistenceKey} hideUi onMount={handleMount}>
+        <SemanticOverlay nodes={nodes} selectedNodeId={selectedNodeId} />
+      </Tldraw>
     </div>
   )
 }

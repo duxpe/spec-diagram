@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { semanticLevelSchema } from '@/domain/schemas/board.schema'
 import { getPayloadSchemaForNodeType } from '@/domain/schemas/semantic-node-payload.schema'
+import { nodeAppearanceSchema } from '@/domain/schemas/node-appearance.schema'
 
 export const semanticNodeTypeSchema = z.enum([
   'system',
@@ -35,6 +36,7 @@ export const semanticNodeSchema = z
     height: z.number().positive(),
     childBoardId: z.string().min(1).optional(),
     data: z.record(z.unknown()),
+    appearance: nodeAppearanceSchema.optional(),
     createdAt: z.string().datetime(),
     updatedAt: z.string().datetime()
   })
