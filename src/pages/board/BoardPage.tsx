@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { TLComponents } from '@/board/tldraw/TLComponents'
+import { RFCanvas } from '@/board/reactflow/RFCanvas'
 import { ExportDialog } from '@/components/dialogs/ExportDialog'
 import { ImportDialog } from '@/components/dialogs/ImportDialog'
 import { NodeInspector } from '@/components/inspector/NodeInspector'
@@ -277,7 +277,7 @@ export function BoardPage(): JSX.Element {
         {boardLoading ? <p>Loading board...</p> : null}
 
         <div className="board-stage">
-          <TLComponents
+          <RFCanvas
             key={`${workspaceId}:${boardId}`}
             persistenceKey={`ws-${workspaceId}-board-${boardId}`}
             workspaceId={workspaceId}

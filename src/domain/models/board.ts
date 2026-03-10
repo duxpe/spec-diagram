@@ -1,5 +1,11 @@
 export type SemanticLevel = 'N1' | 'N2' | 'N3'
 
+export interface ViewportState {
+  x: number
+  y: number
+  zoom: number
+}
+
 export interface Board {
   id: string
   workspaceId: string
@@ -10,7 +16,7 @@ export interface Board {
   description?: string
   nodeIds: string[]
   relationIds: string[]
-  tlSnapshot?: unknown
+  viewportState?: ViewportState
   createdAt: string
   updatedAt: string
 }
