@@ -8,6 +8,7 @@ import { getPayloadIssuesForNodeType } from '@/domain/schemas/semantic-node-payl
 import { semanticNodeTypeSchema } from '@/domain/schemas/semantic-node.schema'
 import { resolveNodeVisual } from '@/domain/semantics/node-visual-catalog'
 import { nowIso } from '@/utils/dates'
+import type { SemanticNodeShape } from './SemanticNodeShapeUtil'
 
 const NODE_META_KIND = 'node'
 const RELATION_META_KIND = 'relation'
@@ -245,12 +246,18 @@ export function getRelationShapeId(relationId: string): string {
 }
 
 export function isSemanticShape(shape: TLShape): boolean {
-  return isSemanticNodeMeta(shape.meta) || isSemanticRelationMeta(shape.meta)
+  return shape.type === 'semantic-node' || isSemanticRelationMeta(shape.meta)
 }
 
 export function getSemanticNodeIdFromShape(shape: TLShape | undefined): string | undefined {
   if (!shape) return undefined
-  return isSemanticNodeMeta(shape.meta) ? shape.meta.semanticId : undefined
+
+  if (shape.type === 'semantic-node') {
+    const props = isObjectRecord(shape.props) ? shape.props : {}
+    return typeof props.semanticId === 'string' ? props.semanticId : undefined
+  }
+
+  return undefined
 }
 
 export function toTlRecords(nodes: SemanticNode[], relations: Relation[]): TLShapePartial[] {
@@ -263,26 +270,26 @@ export function toTlRecords(nodes: SemanticNode[], relations: Relation[]): TLSha
 
       return {
         id: getNodeShapeId(node.id),
-        type: 'geo',
+        type: 'semantic-node',
         x: normalizeNumber(node.x),
         y: normalizeNumber(node.y),
-        meta: buildNodeMeta(node) as unknown as Record<string, unknown>,
         props: {
-          geo: visual.shapeVariant,
-          text: node.title,
           w: normalizeNumber(node.width),
           h: normalizeNumber(node.height),
+          text: node.title,
           color: TL_COLOR_BY_ACCENT[visual.accentColor],
-          labelColor: 'black',
-          fill: visual.provider === 'none' ? 'semi' : 'solid',
-          dash: hasValidationIssues ? 'dotted' : node.childBoardId ? 'dashed' : 'solid',
-          size: 'm',
-          font: 'sans',
-          align: 'middle',
-          verticalAlign: 'middle',
-          url: '',
-          growY: 0,
-          scale: 1
+          // Semantic metadata
+          semanticId: node.id,
+          semanticType: node.type,
+          // Visual properties
+          shapeVariant: visual.shapeVariant,
+          icon: visual.icon,
+          accentColor: visual.accentColor,
+          provider: visual.provider,
+          providerService: visual.providerService,
+          showProviderBadge: visual.showProviderBadge,
+          hasChildBoard: !!node.childBoardId,
+          hasValidationErrors: hasValidationIssues
         }
       } as TLShapePartial
     }
@@ -342,19 +349,24 @@ export function fromTlChanges(shapes: TLShape[], context: CanvasMappingContext):
   const nodes: SemanticNode[] = []
 
   for (const shape of shapes) {
-    if (shape.type !== 'geo') continue
-    if (!isSemanticNodeMeta(shape.meta)) continue
+    if (shape.type !== 'semantic-node') continue
 
-    const existingNode = existingNodeById.get(shape.meta.semanticId)
+    // For semantic-node shapes, properties are directly in props
     const props = isObjectRecord(shape.props) ? shape.props : {}
+    const semanticId = typeof props.semanticId === 'string' ? props.semanticId : ''
+    const semanticType = asSemanticNodeType(props.semanticType, 'system')
+
+    if (!semanticId) continue
+
+    const existingNode = existingNodeById.get(semanticId)
 
     const nextNode: SemanticNode = {
-      id: shape.meta.semanticId,
+      id: semanticId,
       workspaceId: context.workspaceId,
       boardId: context.boardId,
       parentNodeId: existingNode?.parentNodeId,
       level: existingNode?.level ?? context.level,
-      type: asSemanticNodeType(shape.meta.semanticType, existingNode?.type ?? 'system'),
+      type: semanticType,
       title:
         typeof props.text === 'string' && props.text.trim().length > 0
           ? props.text

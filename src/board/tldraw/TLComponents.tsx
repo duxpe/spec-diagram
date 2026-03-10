@@ -1,12 +1,12 @@
 import { useEffect, useRef } from 'react'
 import { TLShape, TLShapePartial, Tldraw } from 'tldraw'
-import { SemanticOverlay } from '@/components/board/SemanticOverlay'
 import {
   fromTlChanges,
   getSemanticNodeIdFromShape,
   isSemanticShape,
   toTlRecords
 } from '@/board/tldraw/semantic-adapter'
+import { SemanticNodeShapeUtil } from '@/board/tldraw/SemanticNodeShapeUtil'
 import { SemanticLevel } from '@/domain/models/board'
 import { ActiveTheme } from '@/domain/models/node-appearance'
 import { Relation } from '@/domain/models/relation'
@@ -271,9 +271,12 @@ export function TLComponents({
 
   return (
     <div className="tldraw-host" aria-label="Board whiteboard">
-      <Tldraw persistenceKey={persistenceKey} hideUi onMount={handleMount}>
-        <SemanticOverlay nodes={nodes} selectedNodeId={selectedNodeId} />
-      </Tldraw>
+      <Tldraw
+        persistenceKey={persistenceKey}
+        hideUi
+        onMount={handleMount}
+        shapeUtils={[SemanticNodeShapeUtil]}
+      />
     </div>
   )
 }

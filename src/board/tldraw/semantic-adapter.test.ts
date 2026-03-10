@@ -80,7 +80,7 @@ describe('semantic-adapter', () => {
     expect(endpoints.endX).not.toBe(target.x + target.width / 2)
   })
 
-  it('maps visual defaults and appearance overrides into tldraw geo styles', () => {
+  it('maps visual defaults and appearance overrides into tldraw semantic-node shapes', () => {
     const databaseNode: SemanticNode = {
       ...buildNode('node_db', 'Database'),
       type: 'database'
@@ -103,19 +103,22 @@ describe('semantic-adapter', () => {
     const databaseShape = records.find((shape) => shape.id === getNodeShapeId(databaseNode.id))
     const customShape = records.find((shape) => shape.id === getNodeShapeId(customNode.id))
 
-    expect(databaseShape?.type).toBe('geo')
+    expect(databaseShape?.type).toBe('semantic-node')
     expect(databaseShape?.props).toMatchObject({
-      geo: 'oval',
+      shapeVariant: 'oval',
       color: 'yellow',
-      fill: 'semi'
+      provider: 'none',
+      icon: 'database',
+      accentColor: 'amber'
     })
 
-    expect(customShape?.type).toBe('geo')
+    expect(customShape?.type).toBe('semantic-node')
     expect(customShape?.props).toMatchObject({
-      geo: 'hexagon',
+      shapeVariant: 'hexagon',
       color: 'light-violet',
-      fill: 'solid',
-      dash: 'dashed'
+      provider: 'aws',
+      accentColor: 'purple',
+      hasChildBoard: true
     })
   })
 
@@ -138,41 +141,51 @@ describe('semantic-adapter', () => {
     expect(mapped.relations.find((item) => item.id === relation.id)).toBe(relation)
   })
 
-  it('maps tldraw semantic shapes back to semantic domain state', () => {
+  it('maps toldraw semantic shapes back to semantic domain state', () => {
     const existingNode = buildNode('node_a', 'Old title')
     const existingRelation = buildRelation('rel_ab', 'node_a', 'node_b')
 
     const tlShapes = [
       {
         id: getNodeShapeId('node_a'),
-        type: 'geo',
+        type: 'semantic-node',
         x: 140,
         y: 90,
         props: {
           text: 'Updated title',
           w: 260,
-          h: 140
-        },
-        meta: {
-          semanticKind: 'node',
+          h: 140,
           semanticId: 'node_a',
-          semanticType: 'container_service'
+          semanticType: 'container_service',
+          shapeVariant: 'rectangle',
+          icon: 'cube',
+          color: 'light-blue',
+          accentColor: 'teal',
+          provider: 'none',
+          showProviderBadge: false,
+          hasChildBoard: false,
+          hasValidationErrors: false
         }
       },
       {
         id: getNodeShapeId('node_b'),
-        type: 'geo',
+        type: 'semantic-node',
         x: 420,
         y: 110,
         props: {
           text: 'Node B',
           w: 220,
-          h: 120
-        },
-        meta: {
-          semanticKind: 'node',
+          h: 120,
           semanticId: 'node_b',
-          semanticType: 'database'
+          semanticType: 'database',
+          shapeVariant: 'oval',
+          icon: 'database',
+          color: 'yellow',
+          accentColor: 'amber',
+          provider: 'none',
+          showProviderBadge: false,
+          hasChildBoard: false,
+          hasValidationErrors: false
         }
       },
       {
