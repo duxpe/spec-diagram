@@ -41,7 +41,15 @@ function RelationEdgeComponent({
     targetPosition
   })
 
-  const label = data?.label
+  // Show relation type (humanized) and optional custom label
+  const relTypeLabel = data?.relationType
+    ? data.relationType.replaceAll('_', ' ')
+    : undefined
+  const displayLabel = data?.label
+    ? relTypeLabel
+      ? `${relTypeLabel}: ${data.label}`
+      : data.label
+    : relTypeLabel
 
   return (
     <>
@@ -55,26 +63,27 @@ function RelationEdgeComponent({
         }}
       />
 
-      {label && (
+      {displayLabel && (
         <EdgeLabelRenderer>
           <div
             style={{
               position: 'absolute',
               transform: `translate(-50%, -50%) translate(${labelX}px, ${labelY}px)`,
-              background: 'rgba(6, 14, 31, 0.88)',
-              border: '1px solid rgba(255, 255, 255, 0.24)',
+              background: 'rgba(255, 255, 255, 0.92)',
+              border: '1px solid rgba(148, 163, 184, 0.35)',
               borderRadius: '4px',
-              padding: '2px 6px',
+              padding: '2px 7px',
               fontSize: '10px',
               fontWeight: 500,
-              color: '#e2e8f0',
-              backdropFilter: 'blur(10px)',
+              color: '#334155',
+              backdropFilter: 'blur(8px)',
               pointerEvents: 'all',
-              cursor: 'pointer'
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
             }}
             className="nodrag nopan"
           >
-            {label}
+            {displayLabel}
           </div>
         </EdgeLabelRenderer>
       )}

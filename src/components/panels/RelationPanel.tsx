@@ -10,6 +10,8 @@ import {
 interface RelationPanelProps {
   level: SemanticLevel
   nodes: SemanticNode[]
+  preselectedSourceId?: string
+  preselectedTargetId?: string
   onCreateRelation: (sourceNodeId: string, targetNodeId: string, type: RelationType) => void
 }
 
@@ -17,9 +19,15 @@ function humanizeRelationType(type: RelationType): string {
   return type.replaceAll('_', ' ')
 }
 
-export function RelationPanel({ level, nodes, onCreateRelation }: RelationPanelProps): JSX.Element {
-  const [sourceNodeId, setSourceNodeId] = useState<string>('')
-  const [targetNodeId, setTargetNodeId] = useState<string>('')
+export function RelationPanel({
+  level,
+  nodes,
+  preselectedSourceId,
+  preselectedTargetId,
+  onCreateRelation
+}: RelationPanelProps): JSX.Element {
+  const [sourceNodeId, setSourceNodeId] = useState<string>(preselectedSourceId ?? '')
+  const [targetNodeId, setTargetNodeId] = useState<string>(preselectedTargetId ?? '')
   const relationTypes = useMemo(() => getAllowedRelationTypes(level), [level])
   const [relationType, setRelationType] = useState<RelationType>(relationTypes[0] ?? 'depends_on')
 

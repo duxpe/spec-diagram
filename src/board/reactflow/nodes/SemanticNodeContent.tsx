@@ -1,10 +1,12 @@
 import { Icon } from '@iconify/react'
 import { GenericNodeIcon } from '@/components/icons/semantic-icons'
 import type { GenericIconId, ProviderServiceId, VisualProvider } from '@/domain/models/node-appearance'
+import type { SemanticNodeType } from '@/domain/models/semantic-node'
 import { getCloudServiceById, getProviderLabel } from '@/domain/semantics/node-visual-catalog'
 
 interface SemanticNodeContentProps {
   title: string
+  semanticType: SemanticNodeType
   icon: GenericIconId
   provider: VisualProvider
   providerService?: ProviderServiceId
@@ -13,11 +15,15 @@ interface SemanticNodeContentProps {
   hasValidationErrors: boolean
 }
 
-const chipBaseStyle: React.CSSProperties = {
-  background: 'rgba(6, 14, 31, 0.88)',
-  border: '1px solid rgba(255, 255, 255, 0.24)',
-  backdropFilter: 'blur(10px)',
-  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.24)',
+// Header height must match ShapeBackground
+const HEADER_HEIGHT = 10
+
+// Chip styling for light theme
+const chipStyle: React.CSSProperties = {
+  background: 'rgba(255, 255, 255, 0.95)',
+  border: '1px solid rgba(148, 163, 184, 0.3)',
+  borderRadius: '6px',
+  boxShadow: '0 2px 6px rgba(15, 23, 42, 0.08)',
   pointerEvents: 'none'
 }
 
@@ -34,68 +40,68 @@ export function SemanticNodeContent({
 
   return (
     <>
-      {/* Text content */}
+      {/* Title content area */}
       <div
         style={{
           position: 'absolute',
-          top: 0,
+          top: HEADER_HEIGHT,
           left: 0,
-          width: '100%',
-          height: '100%',
+          right: 0,
+          bottom: 0,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          padding: '12px',
+          padding: '16px 12px 12px',
           textAlign: 'center',
-          fontSize: '14px',
-          fontFamily: 'var(--font-sans, system-ui, sans-serif)',
-          color: 'var(--color-text, #e2e8f0)',
+          fontSize: '13px',
+          fontWeight: 500,
+          fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+          color: '#1e293b',
           wordWrap: 'break-word',
           overflow: 'hidden',
           pointerEvents: 'none',
-          userSelect: 'none'
+          userSelect: 'none',
+          lineHeight: 1.35
         }}
       >
         {title}
       </div>
 
-      {/* Icon chip (top-left) */}
+      {/* Icon chip (top-left, below header) */}
       <div
         style={{
-          ...chipBaseStyle,
+          ...chipStyle,
           position: 'absolute',
-          top: '10px',
-          left: '10px',
-          width: '30px',
-          height: '30px',
+          top: HEADER_HEIGHT + 8,
+          left: '8px',
+          width: '28px',
+          height: '28px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '6px'
+          justifyContent: 'center'
         }}
       >
         {providerServiceData ? (
-          <Icon icon={providerServiceData.icon} width={16} height={16} style={{ color: '#fff' }} />
+          <Icon icon={providerServiceData.icon} width={14} height={14} style={{ color: '#64748b' }} />
         ) : (
-          <GenericNodeIcon iconId={icon} size={16} color="#fff" />
+          <GenericNodeIcon iconId={icon} size={14} color="#64748b" />
         )}
       </div>
 
-      {/* Provider badge (top-right) */}
+      {/* Provider badge (top-right, below header) */}
       {showProviderBadge && provider !== 'none' && (
         <div
           style={{
-            ...chipBaseStyle,
+            ...chipStyle,
             position: 'absolute',
-            top: '10px',
-            right: '10px',
+            top: HEADER_HEIGHT + 8,
+            right: '8px',
             padding: '4px 8px',
-            fontSize: '10px',
+            fontSize: '9px',
             fontWeight: 600,
             textTransform: 'uppercase',
             letterSpacing: '0.5px',
-            borderRadius: '4px',
-            color: '#fff'
+            color: '#64748b'
           }}
         >
           {getProviderLabel(provider)}
@@ -106,21 +112,21 @@ export function SemanticNodeContent({
       {hasChildBoard && (
         <div
           style={{
-            ...chipBaseStyle,
             position: 'absolute',
-            bottom: '10px',
-            right: '10px',
-            width: '22px',
-            height: '22px',
+            bottom: '8px',
+            right: '8px',
+            width: '20px',
+            height: '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '11px',
+            fontSize: '10px',
             fontWeight: 600,
-            border: '1px solid rgba(99, 179, 237, 0.4)',
             borderRadius: '4px',
-            boxShadow: '0 0 12px rgba(99, 179, 237, 0.3)',
-            color: '#63b3ed'
+            background: 'rgba(59, 130, 246, 0.1)',
+            border: '1px solid rgba(59, 130, 246, 0.3)',
+            color: '#3b82f6',
+            pointerEvents: 'none'
           }}
         >
           N
@@ -131,21 +137,21 @@ export function SemanticNodeContent({
       {hasValidationErrors && (
         <div
           style={{
-            ...chipBaseStyle,
             position: 'absolute',
-            bottom: '10px',
-            left: '10px',
-            width: '22px',
-            height: '22px',
+            bottom: '8px',
+            left: '8px',
+            width: '20px',
+            height: '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '13px',
+            fontSize: '12px',
             fontWeight: 700,
-            border: '1px solid rgba(245, 101, 101, 0.4)',
             borderRadius: '4px',
-            boxShadow: '0 0 12px rgba(245, 101, 101, 0.3)',
-            color: '#f56565'
+            background: 'rgba(220, 38, 38, 0.1)',
+            border: '1px solid rgba(220, 38, 38, 0.3)',
+            color: '#dc2626',
+            pointerEvents: 'none'
           }}
         >
           !

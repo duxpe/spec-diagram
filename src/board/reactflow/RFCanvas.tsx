@@ -2,10 +2,11 @@ import { useCallback, useEffect, useMemo, useRef } from 'react'
 import {
   ReactFlow,
   Background,
-  Controls,
   MiniMap,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  ConnectionMode,
   type OnSelectionChangeParams,
   type NodeChange,
   type EdgeChange,
@@ -37,6 +38,12 @@ import './styles/reactflow.css'
 // Props Interface
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface ZoomControls {
+  zoomIn: () => void
+  zoomOut: () => void
+  fitView: () => void
+}
+
 interface RFCanvasProps {
   persistenceKey: string
   workspaceId: string
@@ -48,6 +55,9 @@ interface RFCanvasProps {
   selectedNodeId?: string
   onSelectNode: (nodeId?: string) => void
   onCanvasChange: (boardId: string, nodes: SemanticNode[], relations: Relation[]) => void
+  onCanvasReady?: (controls: ZoomControls) => void
+  onNodeClick?: (nodeId: string, screenX: number, screenY: number) => void
+  onPendingConnect?: (sourceNodeId: string, targetNodeId: string) => void
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,6 +81,22 @@ const defaultEdgeOptions = {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Internal helper: exposes zoom controls to parent via callback
+// ─────────────────────────────────────────────────────────────────────────────
+
+function CanvasControls({ onReady }: { onReady?: (ctrl: ZoomControls) => void }): null {
+  const { zoomIn, zoomOut, fitView } = useReactFlow()
+
+  useEffect(() => {
+    if (!onReady) return
+    onReady({ zoomIn, zoomOut, fitView })
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  return null
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Component
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -83,7 +109,10 @@ export function RFCanvas({
   relations,
   selectedNodeId,
   onSelectNode,
-  onCanvasChange
+  onCanvasChange,
+  onCanvasReady,
+  onNodeClick: onNodeClickProp,
+  onPendingConnect
 }: RFCanvasProps): JSX.Element {
   // Refs for feedback loop prevention and board identity guard
   const isApplyingDomainRef = useRef(false)
@@ -126,7 +155,12 @@ export function RFCanvas({
     const rfNodes = toRFNodes(semanticNodes) as Node[]
     const rfEdges = toRFEdges(relations, nodeById) as Edge[]
 
-    setNodes(rfNodes)
+    // Preserve React Flow's internal selection state so that selecting a node
+    // and then editing it (which updates domain state) doesn't close the inspector.
+    setNodes((currentNodes) => {
+      const selectedIds = new Set(currentNodes.filter((n) => n.selected).map((n) => n.id))
+      return rfNodes.map((n) => ({ ...n, selected: selectedIds.has(n.id) }))
+    })
     setEdges(rfEdges)
   }, [semanticNodes, relations, setNodes, setEdges])
 
@@ -232,13 +266,26 @@ export function RFCanvas({
     [onEdgesChange, setNodes, setEdges, onCanvasChange]
   )
 
-  // Handle new connections (edge creation)
+  // Handle new connections (edge creation) → open relation type dialog in parent
   const handleConnect = useCallback(
-    (_connection: Connection) => {
-      // Note: Edge creation is handled by the RelationPanel, not here
-      // This is a no-op to prevent default behavior
+    (connection: Connection) => {
+      if (!connection.source || !connection.target || !onPendingConnect) return
+      // RF node IDs are the semantic node IDs (see reactflow-adapter)
+      onPendingConnect(connection.source, connection.target)
     },
-    []
+    [onPendingConnect]
+  )
+
+  // Handle node click → expose screen position to parent for NodeActionMenu
+  const handleNodeClick = useCallback(
+    (event: React.MouseEvent, node: Node) => {
+      if (!onNodeClickProp) return
+      const semanticId = getSemanticNodeIdFromRFNode(node)
+      if (semanticId) {
+        onNodeClickProp(semanticId, event.clientX, event.clientY)
+      }
+    },
+    [onNodeClickProp]
   )
 
   // Handle selection changes
@@ -286,8 +333,10 @@ export function RFCanvas({
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
+        onNodeClick={handleNodeClick}
         onSelectionChange={handleSelectionChange}
         defaultEdgeOptions={defaultEdgeOptions}
+        connectionMode={ConnectionMode.Loose}
         fitView
         fitViewOptions={{ padding: 0.2 }}
         minZoom={0.1}
@@ -301,12 +350,11 @@ export function RFCanvas({
         panOnDrag={[1, 2]}
         selectNodesOnDrag={false}
       >
-        <Background color={theme === 'dark' ? '#334155' : '#cbd5e1'} gap={20} />
-        <Controls
-          showZoom
-          showFitView
-          showInteractive={false}
-          position="bottom-left"
+        <CanvasControls onReady={onCanvasReady} />
+        <Background
+          color={theme === 'dark' ? '#334155' : '#d1d5db'}
+          gap={24}
+          size={1.5}
         />
         <MiniMap
           nodeColor={(node) => {

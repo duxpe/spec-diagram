@@ -1,86 +1,157 @@
-Spec — Refatoração de Layout e Interface Flutuante
-1. Objetivo
-Refatorar a interface do projeto para eliminar painéis estáticos e barras de rolagem, adotando um layout de HUD (Heads-Up Display) totalmente flutuante sobre o whiteboard. A nova interface deve priorizar menus contextuais e sub-menus que surgem conforme a interação com os nodes.
+# Spec — Redesign de Interface: HUD e Estética Sketch-Semântica
 
-2. Arquitetura de Layout (Viewport Fixa)
-Controle de Viewport: Configurar width: 100dvw e height: 100dvh com overflow: hidden no container raiz.
+## 1. Objetivo
+Refatorar a identidade visual do app para abandonar o layout de painéis laterais fixos e pesados (estado atual) em favor de uma interface HUD (Heads-Up Display). A nova estética deve seguir o estilo **"sketch" (traço manual)** para os elementos do board, mantendo uma organização limpa, moderna e focada em **menus flutuantes que não obstruem o whiteboard**.
 
-Camadas (Z-Index):
+---
 
-Canvas (Base): React Flow ocupando todo o fundo.
+## 2. Identidade Visual Base (The "Goal" Aesthetic)
 
-HUD Layer: Toolbar lateral, Topbar e Minimap flutuantes.
+A nova interface deve ser baseada nos seguintes pilares visuais:
 
-Context Layer: Menus de ação (Popups) que acompanham os nodes selecionados.
+### Fundo do Board
+Transição de **azul escuro profundo** para um tom **off-white ou creme claro**, simulando um **papel técnico ou whiteboard físico de alta qualidade**.
 
-Overlay Layer: Modais de exportação e diálogos de relação.
+### Estilo Sketch-Semântico
+Os **nodes (cards)** não devem ter traços perfeitamente retos; as bordas devem ter um **leve aspecto de desenho manual (sketch)**, mas com **preenchimento sólido** e **cores pastéis/suaves** para indicar categorias.
 
-3. Componentes da Interface Flutuante
-3.1 Topbar Minimalista
-Posicionamento: Flutuante no topo, centralizada ou com margens de 20px.
+### Sombreado
+Uso de **drop shadows suaves** para dar profundidade aos cards sobre o fundo claro.
 
-Conteúdo: Nome do Projeto, botão "Share" e avatar do usuário.
+### Typography
+Fontes **sans-serif modernas e limpas**, com **hierarquia clara entre o título do card e as informações internas**.
 
-Estética: Glassmorphism sutil (blur e transparência).
+---
 
-3.2 Toolbar Lateral (Floating Toolbar)
-Posicionamento: Vertical, fixa à esquerda.
+## 3. Layout de HUD e Componentes Flutuantes
 
-Ações: Ferramentas de seleção, criação de nodes (drag-and-drop), inserção de texto e zoom.
+### 3.1 Workspace / Projeto (Entry Page)
 
-Design: Ícones monocromáticos em container com bordas arredondadas e efeito neon na seleção.
+**Visual:**  
+A tela de criação de Projetos deve abandonar os **cards escuros** e adotar uma **interface de vidro (glassmorphism)** sobre o fundo do board.
 
-3.3 Barra de Ações do Node (Contextual)
-Gatilho: Aparece imediatamente abaixo do node ao ser selecionado.
+**Inputs:**  
+Campos de **nome e descrição** devem ser **minimalistas**, com **bordas finas** e foco em **tipografia**.
 
-Botões: Edit, Duplicate, Comment, Resize e Delete.
+---
 
-4. Fluxo de Interação Semântica
-4.1 Edição de Ícone (Sub-menu)
-Interação: Clique no ícone dentro do card.
+### 3.2 Toolbar Lateral Flutuante
 
-Comportamento: Abre um sub-menu flutuante adjacente ao node.
+**Posicionamento:**  
+Flutuando à **esquerda da tela**, sem encostar nas bordas da viewport.
 
-Filtro: Exibe apenas ícones compatíveis com o SemanticNodeType atual (ex: bancos de dados para database).
+**Estilo:**  
+Barra vertical com **efeito glassmorphism** (desfoque de fundo e borda sutil).
 
-4.2 Painel Inspetor (Floating Inspector)
-Interação: Clique no título ou centro do card.
+**Ícones:**  
+Representações minimalistas das ferramentas:
 
-Comportamento: Abre um card flutuante à direita da tela, exibindo as propriedades semânticas.
+- Seta de seleção
+- Formas geométricas
+- Texto
+- Zoom
 
-Campos Dinâmicos:
+---
 
-N1: Responsabilidade, Goal, Contexto de Negócio.
+### 3.3 Topbar e Navegação
 
-N2/N3: Métodos, Atributos, Assinaturas e Erros.
+**Header:**  
+Um **cabeçalho flutuante discreto** no topo indicando:
 
-Ações de Export: Botões "Generate Spec", "Export LLM Prompt" e "Create Tasks" fixos na base deste painel.
+- Nome do **Projeto**
+- **Nível atual** (N1, N2 ou N3)
 
-4.3 Diálogo de Relação (Edge Dialog)
-Interação: Após conectar dois nodes.
+**Controles:**  
+Botões de navegação para **retornar à lista de Projetos**.
 
-Comportamento: Popup centralizado ou próximo à conexão para selecionar o RelationType (ex: writes, calls, depends_on).
+---
 
-5. Estética e Visual
-Estilo dos Cards: Borda com aspecto "sketch" (traço manual), fundo branco/off-white e cabeçalhos coloridos por categoria.
+## 4. Componentes Semânticos no Canvas (React Flow)
 
-Cores de Acento:
+### 4.1 Design dos Nodes (Cards)
 
-Azul: Frontend / Mobile.
+Cada tipo de bloco semântico deve seguir o padrão visual observado no screenshot de referência.
 
-Amarelo/Bege: API Gateway / Auth.
+**Cabeçalho Colorido:**  
+Uma faixa colorida no topo indicando a categoria.
 
-Verde: Billing / Pagamentos.
+Exemplos:
 
-Vermelho: 3rd Party / Externo.
+- Azul → Serviços  
+- Verde → Bancos de Dados  
+- Vermelho → Sistemas Externos
 
-Efeitos: Sombras suaves (drop shadow) para profundidade e glassmorphism nos menus de HUD.
+**Área de Ícone:**  
+Espaço dedicado no **lado esquerdo do card** para o **ícone semântico**.
 
-6. Critérios de Aceite
-Ausência total de barras de rolagem na janela principal.
+**Corpo:**  
+Conteúdo em texto com **fundo branco/claro**.
 
-Menus contextuais seguindo a posição dos nodes no canvas.
+---
 
-Edição de campos semânticos via painel flutuante sem recarregar o board.
+### 4.2 Arestas (Relações)
 
-Persistência automática das edições via Dexie.
+**Visual:**  
+As linhas de conexão devem ser **nítidas** e terminar em **setas indicativas de direção**.
+
+**Labels:**  
+Espaço para **labels de texto sobre as linhas**, por exemplo:
+
+- `REST API`
+- `Writes/Reads`
+
+Essas labels devem **descrever a relação semântica** entre os nodes.
+
+---
+
+## 5. Interação e Menus de Contexto
+
+### 5.1 Menu de Ação Flutuante
+
+**Comportamento:**  
+Ao selecionar um **node**, uma **pequena barra de ferramentas flutuante** aparece imediatamente **abaixo ou acima dele**, contendo ações rápidas:
+
+- Editar
+- Deletar
+- Redimensionar
+
+---
+
+### 5.2 Painel Inspetor Flutuante (Floating Inspector)
+
+**Posicionamento:**  
+Uma **janela lateral flutuante** (não fixa à borda) que aparece **à direita** ao clicar no conteúdo do card.
+
+**Estilo:**  
+Glassmorphism com:
+
+- bordas arredondadas
+- cabeçalho identificando o tipo do bloco
+
+**Ações na Base:**  
+Botões de exportação agrupados na parte inferior:
+
+- Geração de **Spec**
+- **Export de Prompt**
+- **Criação de Tasks**
+
+---
+
+## 6. Critérios de Sucesso do Redesign
+
+### Eliminação de Scroll
+A viewport deve ser **100dvw e 100dvh fixos**.  
+Apenas o **canvas do board** e os **scrolls internos dos menus** devem existir.
+
+### Aparência Sketch
+Nodes e conexões devem transmitir:
+
+- clareza de um **diagrama técnico**
+- leveza de um **esboço manual**
+
+### Navegação HUD
+Todos os **controles e campos de edição** devem ser:
+
+- **flutuantes**
+- **contextuais**
+- **não intrusivos ao canvas**

@@ -1,4 +1,4 @@
-import type { Node, Edge } from '@xyflow/react'
+import { MarkerType, type Node, type Edge } from '@xyflow/react'
 import { SemanticLevel } from '@/domain/models/board'
 import type {
   AccentColorToken,
@@ -199,12 +199,13 @@ export function toRFEdges(relations: Relation[], nodeById?: Map<string, Semantic
       target: relation.targetNodeId,
       sourceHandle: 'right',
       targetHandle: 'left',
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
+      label: relation.label,
       data: {
         semanticId: relation.id,
         relationType: relation.type,
         label: relation.label
-      },
-      label: relation.label
+      }
     }))
 }
 

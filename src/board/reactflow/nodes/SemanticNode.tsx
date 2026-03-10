@@ -22,14 +22,14 @@ function SemanticNodeComponent({ data, selected }: SemanticNodeProps): JSX.Eleme
         minHeight={60}
         isVisible={selected}
         lineStyle={{
-          borderColor: 'rgba(99, 179, 237, 0.6)',
+          borderColor: 'var(--accent, rgba(59, 130, 246, 0.6))',
           borderWidth: 1
         }}
         handleStyle={{
           width: 8,
           height: 8,
-          background: 'rgba(6, 14, 31, 0.88)',
-          border: '2px solid rgba(99, 179, 237, 0.6)',
+          background: 'var(--surface-strong, #fff)',
+          border: '2px solid var(--accent, rgba(59, 130, 246, 0.6))',
           borderRadius: 2
         }}
       />
@@ -50,12 +50,14 @@ function SemanticNodeComponent({ data, selected }: SemanticNodeProps): JSX.Eleme
           variant={data.shapeVariant}
           accentColor={data.accentColor}
           provider={data.provider}
+          semanticType={data.semanticType}
           hasChildBoard={data.hasChildBoard}
           hasValidationErrors={data.hasValidationErrors}
         />
 
         <SemanticNodeContent
           title={data.title}
+          semanticType={data.semanticType}
           icon={data.icon}
           provider={data.provider}
           providerService={data.providerService}
