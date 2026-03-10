@@ -17,7 +17,7 @@ import {
 } from 'lucide-react'
 import { GenericIconId } from '@/domain/models/node-appearance'
 
-type IconProps = { size?: number | string }
+type IconProps = { size?: number | string; color?: string }
 
 const GENERIC_ICON_COMPONENTS: Record<GenericIconId, ComponentType<IconProps>> = {
   grid: Grid3X3,
@@ -36,12 +36,12 @@ const GENERIC_ICON_COMPONENTS: Record<GenericIconId, ComponentType<IconProps>> =
   'arrow-up': ArrowUp
 }
 
-export function GenericNodeIcon({ iconId, size = 16 }: { iconId: GenericIconId; size?: number }): JSX.Element {
+export function GenericNodeIcon({ iconId, size = 16, color }: { iconId: GenericIconId; size?: number; color?: string }): JSX.Element {
   const IconComponent = GENERIC_ICON_COMPONENTS[iconId]
 
   if (!IconComponent) {
     return <span aria-hidden="true">•</span>
   }
 
-  return <IconComponent size={size} />
+  return <IconComponent size={size} color={color} />
 }
