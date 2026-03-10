@@ -1,4 +1,4 @@
-import { BaseBoxShapeUtil, HTMLContainer, Rectangle2d, T, TLBaseShape, TLDefaultColorStyle } from 'tldraw'
+import { BaseBoxShapeUtil, HTMLContainer, Rectangle2d, T, TLBaseShape, TLDefaultColorStyle, TLShapePartial } from 'tldraw'
 import { Icon } from '@iconify/react'
 import { GenericNodeIcon } from '@/components/icons/semantic-icons'
 import { getCloudServiceById, getProviderLabel } from '@/domain/semantics/node-visual-catalog'
@@ -170,6 +170,25 @@ export class SemanticNodeShapeUtil extends BaseBoxShapeUtil<SemanticNodeShape> {
       isFilled: true
     })
   }
+
+  // Explicitly disable native text editing - text is managed through NodeInspector
+  override canEdit = () => false
+
+  // Explicitly prevent double-click fallthrough behavior
+  // By returning a shape partial, tldraw applies a no-op update and returns early,
+  // preventing the fallthrough to handleDoubleClickOnCanvas which would try to create a TEXT shape
+  override onDoubleClick = (shape: SemanticNodeShape): TLShapePartial<SemanticNodeShape> => {
+    return { id: shape.id, type: 'semantic-node' }
+  }
+
+  // Allow semantic nodes to be resized by users
+  override canResize = () => true
+
+  // Allow free aspect ratio changes during resize
+  override isAspectRatioLocked = () => false
+
+  // Allow arrows to bind to semantic nodes
+  override canBind = () => true
 
   // Render the shape component
   override component(shape: SemanticNodeShape) {
