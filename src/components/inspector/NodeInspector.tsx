@@ -1,7 +1,22 @@
 import { ChangeEvent, useEffect, useMemo, useState } from 'react'
+import { Icon } from '@iconify/react'
+import { GenericNodeIcon } from '@/components/icons/semantic-icons'
+import { NodeAppearance, VisualProvider } from '@/domain/models/node-appearance'
 import { SemanticNode } from '@/domain/models/semantic-node'
+import { nodeAppearanceSchema } from '@/domain/schemas/node-appearance.schema'
 import { getPayloadIssuesForNodeType } from '@/domain/schemas/semantic-node-payload.schema'
 import { canOpenDetail } from '@/domain/semantics/semantic-catalog'
+import {
+  createResetAppearance,
+  getAccentOptions,
+  getCloudServiceById,
+  getCloudServiceOptions,
+  getGenericIconOptions,
+  getProviderLabel,
+  getProviderOptions,
+  getShapeOptions,
+  resolveNodeVisual
+} from '@/domain/semantics/node-visual-catalog'
 
 interface NodeInspectorProps {
   node?: SemanticNode
@@ -57,25 +72,36 @@ export function NodeInspector({
   const [draftTitle, setDraftTitle] = useState('')
   const [draftDescription, setDraftDescription] = useState('')
   const [draftData, setDraftData] = useState<Record<string, unknown>>({})
+  const [draftAppearance, setDraftAppearance] = useState<NodeAppearance>({})
+  const [iconSearch, setIconSearch] = useState('')
+  const [iconProviderTab, setIconProviderTab] = useState<VisualProvider>('none')
   const [titleError, setTitleError] = useState<string>()
   const [payloadErrors, setPayloadErrors] = useState<Array<{ field: string; message: string }>>([])
+  const [appearanceError, setAppearanceError] = useState<string>()
 
   useEffect(() => {
     if (!node) {
       setDraftTitle('')
       setDraftDescription('')
       setDraftData({})
+      setDraftAppearance({})
+      setIconSearch('')
+      setIconProviderTab('none')
       setTitleError(undefined)
       setPayloadErrors([])
+      setAppearanceError(undefined)
       return
     }
 
     setDraftTitle(node.title)
     setDraftDescription(node.description ?? '')
     setDraftData(node.data)
+    setDraftAppearance(node.appearance ?? {})
+    setIconProviderTab(node.appearance?.provider ?? 'none')
     setTitleError(undefined)
     const validatesTypedPayload = node.level === 'N1' || node.level === 'N2' || node.level === 'N3'
     setPayloadErrors(validatesTypedPayload ? getPayloadIssuesForNodeType(node.type, node.data) : [])
+    setAppearanceError(undefined)
   }, [node])
 
   const fieldErrorByName = useMemo(() => {
@@ -97,6 +123,17 @@ export function NodeInspector({
 
   const roundedWidth = Math.round(node.width)
   const roundedHeight = Math.round(node.height)
+  const resolvedVisual = resolveNodeVisual({ type: node.type, appearance: draftAppearance })
+  const providerServiceOptions = getCloudServiceOptions(resolvedVisual.provider)
+  const genericIconOptions = getGenericIconOptions()
+  const cloudIconOptions = iconProviderTab === 'none' ? [] : getCloudServiceOptions(iconProviderTab)
+
+  const filteredGenericIcons = genericIconOptions.filter((item) =>
+    item.label.toLowerCase().includes(iconSearch.trim().toLowerCase())
+  )
+  const filteredCloudIcons = cloudIconOptions.filter((item) =>
+    item.label.toLowerCase().includes(iconSearch.trim().toLowerCase())
+  )
 
   const syncNodeData = (patch: Record<string, unknown>): void => {
     const nextData = { ...draftData, ...patch }
@@ -107,6 +144,41 @@ export function NodeInspector({
     if (issues.length > 0) return
 
     onUpdateNode(node.id, { data: nextData })
+  }
+
+  const syncNodeAppearance = (patch: NodeAppearance): void => {
+    const nextAppearance: NodeAppearance = {
+      ...draftAppearance,
+      ...patch
+    }
+
+    if (nextAppearance.provider !== 'aws' && nextAppearance.provider !== 'azure' && nextAppearance.provider !== 'gcp') {
+      nextAppearance.providerService = undefined
+    } else if (
+      nextAppearance.providerService &&
+      !getCloudServiceOptions(nextAppearance.provider).some(
+        (service) => service.id === nextAppearance.providerService
+      )
+    ) {
+      nextAppearance.providerService = undefined
+    }
+
+    const parsed = nodeAppearanceSchema.safeParse(nextAppearance)
+    setDraftAppearance(nextAppearance)
+    if (!parsed.success) {
+      setAppearanceError(parsed.error.issues[0]?.message ?? 'Invalid appearance')
+      return
+    }
+
+    setAppearanceError(undefined)
+    onUpdateNode(node.id, { appearance: parsed.data })
+  }
+
+  const handleResetAppearance = (): void => {
+    const resetValue = createResetAppearance()
+    setDraftAppearance(resetValue)
+    setAppearanceError(undefined)
+    onUpdateNode(node.id, { appearance: undefined })
   }
 
   const handleFieldChange = (
@@ -770,6 +842,177 @@ export function NodeInspector({
       />
 
       {renderTypedDataForm()}
+
+      <div className="node-appearance">
+        <div className="node-appearance__header">
+          <h3>Aparência</h3>
+          <button type="button" onClick={handleResetAppearance}>
+            Reset visual
+          </button>
+        </div>
+        <p className="node-appearance__preview">
+          <span className="node-appearance__preview-icon" aria-hidden="true">
+            <GenericNodeIcon iconId={resolvedVisual.icon} size={18} />
+          </span>
+          <span>
+            {getProviderLabel(resolvedVisual.provider)}
+            {resolvedVisual.providerService
+              ? ` / ${getCloudServiceById(resolvedVisual.providerService)?.label ?? 'Custom'}`
+              : ' / Generic'}
+          </span>
+        </p>
+
+        <label htmlFor="node-shape-variant">Shape</label>
+        <select
+          id="node-shape-variant"
+          value={resolvedVisual.shapeVariant}
+          onChange={(event) => syncNodeAppearance({ shapeVariant: event.target.value as NodeAppearance['shapeVariant'] })}
+        >
+          {getShapeOptions().map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        <label htmlFor="node-accent-color">Accent</label>
+        <select
+          id="node-accent-color"
+          value={resolvedVisual.accentColor}
+          onChange={(event) =>
+            syncNodeAppearance({ accentColor: event.target.value as NodeAppearance['accentColor'] })
+          }
+        >
+          {getAccentOptions().map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        <label htmlFor="node-provider-visual">Provider visual</label>
+        <select
+          id="node-provider-visual"
+          value={resolvedVisual.provider}
+          onChange={(event) => {
+            const provider = event.target.value as VisualProvider
+            setIconProviderTab(provider)
+            syncNodeAppearance({ provider, providerService: undefined })
+          }}
+        >
+          {getProviderOptions().map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        <label htmlFor="node-provider-service">Cloud service</label>
+        <select
+          id="node-provider-service"
+          value={resolvedVisual.providerService ?? ''}
+          onChange={(event) =>
+            syncNodeAppearance({
+              providerService: event.target.value ? (event.target.value as NodeAppearance['providerService']) : undefined
+            })
+          }
+          disabled={resolvedVisual.provider === 'none'}
+        >
+          <option value="">Generic icon</option>
+          {providerServiceOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.label}
+            </option>
+          ))}
+        </select>
+
+        <label htmlFor="node-show-provider-badge">
+          <input
+            id="node-show-provider-badge"
+            type="checkbox"
+            checked={resolvedVisual.showProviderBadge}
+            onChange={(event) => syncNodeAppearance({ showProviderBadge: event.target.checked })}
+          />
+          {' '}Show provider badge
+        </label>
+
+        <label htmlFor="node-icon-search">Icon search</label>
+        <input
+          id="node-icon-search"
+          type="search"
+          value={iconSearch}
+          placeholder="Search icons"
+          onChange={(event) => setIconSearch(event.target.value)}
+        />
+
+        <div className="icon-picker-tabs" role="tablist" aria-label="Icon providers">
+          <button
+            type="button"
+            className={iconProviderTab === 'none' ? 'active' : undefined}
+            onClick={() => setIconProviderTab('none')}
+          >
+            Generic
+          </button>
+          <button
+            type="button"
+            className={iconProviderTab === 'aws' ? 'active' : undefined}
+            onClick={() => setIconProviderTab('aws')}
+          >
+            AWS
+          </button>
+          <button
+            type="button"
+            className={iconProviderTab === 'azure' ? 'active' : undefined}
+            onClick={() => setIconProviderTab('azure')}
+          >
+            Azure
+          </button>
+          <button
+            type="button"
+            className={iconProviderTab === 'gcp' ? 'active' : undefined}
+            onClick={() => setIconProviderTab('gcp')}
+          >
+            GCP
+          </button>
+        </div>
+
+        {iconProviderTab === 'none' ? (
+          <div className="icon-picker-grid">
+            {filteredGenericIcons.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`icon-picker-card ${resolvedVisual.icon === option.id ? 'selected' : ''}`}
+                onClick={() => syncNodeAppearance({ icon: option.id })}
+              >
+                <GenericNodeIcon iconId={option.id} size={16} />
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="icon-picker-grid">
+            {filteredCloudIcons.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={`icon-picker-card ${resolvedVisual.providerService === option.id ? 'selected' : ''}`}
+                onClick={() =>
+                  syncNodeAppearance({
+                    provider: option.provider,
+                    providerService: option.id
+                  })
+                }
+              >
+                <Icon icon={option.icon} width={16} height={16} />
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+
+        <FieldError message={appearanceError} />
+      </div>
 
       <label htmlFor="node-width">Width</label>
       <input

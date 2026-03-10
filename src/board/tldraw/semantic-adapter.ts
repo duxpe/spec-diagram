@@ -1,9 +1,12 @@
 import { TLShape, TLShapePartial } from 'tldraw'
 import { SemanticLevel } from '@/domain/models/board'
+import { AccentColorToken } from '@/domain/models/node-appearance'
 import { Relation, RelationType } from '@/domain/models/relation'
 import { SemanticNode, SemanticNodeType } from '@/domain/models/semantic-node'
 import { relationTypeSchema } from '@/domain/schemas/relation.schema'
+import { getPayloadIssuesForNodeType } from '@/domain/schemas/semantic-node-payload.schema'
 import { semanticNodeTypeSchema } from '@/domain/schemas/semantic-node.schema'
+import { resolveNodeVisual } from '@/domain/semantics/node-visual-catalog'
 import { nowIso } from '@/utils/dates'
 
 const NODE_META_KIND = 'node'
@@ -13,6 +16,18 @@ const NODE_WIDTH_FALLBACK = 220
 const NODE_HEIGHT_FALLBACK = 110
 const EDGE_PADDING = 8
 const FLOAT_TOLERANCE = 0.05
+const TL_COLOR_BY_ACCENT: Record<AccentColorToken, string> = {
+  cyan: 'light-blue',
+  teal: 'green',
+  amber: 'yellow',
+  gray: 'grey',
+  indigo: 'violet',
+  orange: 'orange',
+  blue: 'blue',
+  purple: 'light-violet',
+  green: 'green',
+  neutral: 'grey'
+}
 
 interface SemanticNodeShapeMeta {
   semanticKind: typeof NODE_META_KIND
@@ -204,7 +219,8 @@ function isNodeEquivalent(current: SemanticNode, next: SemanticNode): boolean {
     almostEqual(current.width, next.width) &&
     almostEqual(current.height, next.height) &&
     current.childBoardId === next.childBoardId &&
-    JSON.stringify(current.data) === JSON.stringify(next.data)
+    JSON.stringify(current.data) === JSON.stringify(next.data) &&
+    JSON.stringify(current.appearance ?? null) === JSON.stringify(next.appearance ?? null)
   )
 }
 
@@ -241,22 +257,25 @@ export function toTlRecords(nodes: SemanticNode[], relations: Relation[]): TLSha
   const nodeById = new Map(nodes.map((node) => [node.id, node]))
 
   const nodeShapes: TLShapePartial[] = nodes.map(
-    (node) =>
-      ({
+    (node) => {
+      const visual = resolveNodeVisual(node)
+      const hasValidationIssues = getPayloadIssuesForNodeType(node.type, node.data).length > 0
+
+      return {
         id: getNodeShapeId(node.id),
         type: 'geo',
         x: normalizeNumber(node.x),
         y: normalizeNumber(node.y),
         meta: buildNodeMeta(node) as unknown as Record<string, unknown>,
         props: {
-          geo: 'rectangle',
+          geo: visual.shapeVariant,
           text: node.title,
           w: normalizeNumber(node.width),
           h: normalizeNumber(node.height),
-          color: 'blue',
+          color: TL_COLOR_BY_ACCENT[visual.accentColor],
           labelColor: 'black',
-          fill: 'semi',
-          dash: 'solid',
+          fill: visual.provider === 'none' ? 'semi' : 'solid',
+          dash: hasValidationIssues ? 'dotted' : node.childBoardId ? 'dashed' : 'solid',
           size: 'm',
           font: 'sans',
           align: 'middle',
@@ -265,7 +284,8 @@ export function toTlRecords(nodes: SemanticNode[], relations: Relation[]): TLSha
           growY: 0,
           scale: 1
         }
-      }) as TLShapePartial
+      } as TLShapePartial
+    }
   )
 
   const relationShapes: TLShapePartial[] = []
@@ -346,6 +366,7 @@ export function fromTlChanges(shapes: TLShape[], context: CanvasMappingContext):
       height: asPositiveNumber(props.h, existingNode?.height ?? NODE_HEIGHT_FALLBACK),
       childBoardId: existingNode?.childBoardId,
       data: existingNode?.data ?? {},
+      appearance: existingNode?.appearance,
       createdAt: existingNode?.createdAt ?? now,
       updatedAt: now
     }

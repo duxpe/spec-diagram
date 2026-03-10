@@ -1,4 +1,5 @@
 import { SemanticLevel } from '@/domain/models/board'
+import type { NodeAppearance } from '@/domain/models/node-appearance'
 
 export type SemanticNodeType =
   | 'system'
@@ -31,6 +32,7 @@ export interface SemanticNode {
   height: number
   childBoardId?: string
   data: Record<string, unknown>
+  appearance?: NodeAppearance
   createdAt: string
   updatedAt: string
 }
