@@ -6,18 +6,34 @@
   position: relative;
 }
 
+/* Light theme (default) */
+.rf-canvas--light {
+  --rf-background: #faf9f7;
+  --rf-text: #1e293b;
+  --rf-border: rgba(148, 163, 184, 0.2);
+  --rf-control-bg: rgba(255, 255, 255, 0.85);
+  --rf-control-border: rgba(148, 163, 184, 0.25);
+  --rf-control-text: #64748b;
+  --rf-control-hover: rgba(59, 130, 246, 0.1);
+  --rf-control-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --rf-selection: rgba(59, 130, 246, 0.1);
+  --rf-selection-border: rgba(59, 130, 246, 0.4);
+  --rf-edge-selected: rgba(59, 130, 246, 0.8);
+}
+
 /* Dark theme */
 .rf-canvas--dark {
   --rf-background: #0f172a;
   --rf-text: #e2e8f0;
-  --rf-border: rgba(255, 255, 255, 0.1);
-}
-
-/* Light theme */
-.rf-canvas--light {
-  --rf-background: #f8fafc;
-  --rf-text: #1e293b;
-  --rf-border: rgba(0, 0, 0, 0.1);
+  --rf-border: rgba(148, 163, 184, 0.15);
+  --rf-control-bg: rgba(30, 41, 59, 0.9);
+  --rf-control-border: rgba(148, 163, 184, 0.2);
+  --rf-control-text: #94a3b8;
+  --rf-control-hover: rgba(96, 165, 250, 0.15);
+  --rf-control-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --rf-selection: rgba(96, 165, 250, 0.15);
+  --rf-selection-border: rgba(96, 165, 250, 0.5);
+  --rf-edge-selected: rgba(96, 165, 250, 0.8);
 }
 
 .rf-canvas .react-flow {
@@ -35,13 +51,22 @@
 
 /* Handle styles */
 .rf-canvas .react-flow__handle {
+  width: 10px;
+  height: 10px;
+  background: var(--rf-control-bg);
+  border: 2px solid var(--accent, #3b82f6);
+  border-radius: 50%;
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
 .rf-canvas .react-flow__node:hover .react-flow__handle,
 .rf-canvas .react-flow__node.selected .react-flow__handle {
   opacity: 1;
+}
+
+.rf-canvas .react-flow__handle:hover {
+  transform: scale(1.2);
 }
 
 .rf-canvas .react-flow__handle.connectionindicator {
@@ -55,67 +80,67 @@
 
 .rf-canvas .react-flow__edge-path {
   stroke-linecap: round;
+  stroke: #94a3b8;
+  stroke-width: 1.5;
 }
 
 .rf-canvas .react-flow__edge.selected .react-flow__edge-path {
-  stroke: rgba(99, 179, 237, 0.8);
+  stroke: var(--rf-edge-selected);
   stroke-width: 2;
 }
 
-/* Controls */
+.rf-canvas .react-flow__edge:hover .react-flow__edge-path {
+  stroke: var(--rf-edge-selected);
+}
+
+/* Edge labels */
+.rf-canvas .react-flow__edge-textbg {
+  fill: var(--rf-control-bg);
+}
+
+.rf-canvas .react-flow__edge-text {
+  fill: var(--rf-control-text);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Controls - Now hidden since we have FloatingToolbar */
 .rf-canvas .react-flow__controls {
-  background: rgba(6, 14, 31, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
-}
-
-.rf-canvas .react-flow__controls-button {
-  background: transparent;
-  border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  color: #e2e8f0;
-  width: 28px;
-  height: 28px;
-}
-
-.rf-canvas .react-flow__controls-button:last-child {
-  border-bottom: none;
-}
-
-.rf-canvas .react-flow__controls-button:hover {
-  background: rgba(99, 179, 237, 0.2);
-}
-
-.rf-canvas .react-flow__controls-button svg {
-  fill: currentColor;
+  display: none;
 }
 
 /* MiniMap */
 .rf-canvas .react-flow__minimap {
-  background: rgba(6, 14, 31, 0.88);
-  border: 1px solid rgba(255, 255, 255, 0.24);
-  border-radius: 8px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
+  background: var(--rf-control-bg);
+  border: 1px solid var(--rf-control-border);
+  border-radius: 12px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: var(--rf-control-shadow);
+  overflow: hidden;
+}
+
+.rf-canvas .react-flow__minimap-mask {
+  fill: var(--rf-background);
+  fill-opacity: 0.9;
 }
 
 /* Background */
 .rf-canvas .react-flow__background {
-  opacity: 0.5;
+  opacity: 0.4;
 }
 
 /* Selection box */
 .rf-canvas .react-flow__selection {
-  background: rgba(99, 179, 237, 0.1);
-  border: 1px solid rgba(99, 179, 237, 0.4);
+  background: var(--rf-selection);
+  border: 1px solid var(--rf-selection-border);
+  border-radius: 4px;
 }
 
 /* Node resizer */
 .rf-canvas .react-flow__resize-control {
   opacity: 0;
-  transition: opacity 0.2s ease;
+  transition: opacity 0.15s ease;
 }
 
 .rf-canvas .react-flow__node.selected .react-flow__resize-control {
@@ -134,4 +159,20 @@
   --accent-purple: rgba(168, 85, 247, 0.8);
   --accent-green: rgba(34, 197, 94, 0.8);
   --accent-neutral: rgba(163, 163, 163, 0.8);
+
+  /* Node semantic colors for consistency */
+  --node-service: #3b82f6;
+  --node-database: #22c55e;
+  --node-external: #e11d48;
+  --node-interface: #a855f7;
+  --node-decision: #f97316;
+  --node-class: #6366f1;
+  --node-port: #14b8a6;
+  --node-method: #8b5cf6;
+  --node-attribute: #06b6d4;
+}
+
+/* Attribution - hide if pro */
+.rf-canvas .react-flow__attribution {
+  display: none;
 }

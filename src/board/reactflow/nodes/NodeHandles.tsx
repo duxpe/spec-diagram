@@ -37,7 +37,7 @@ export function NodeHandles({ isConnectable = true }: NodeHandlesProps): JSX.Ele
         isConnectable={isConnectable}
       />
       <Handle
-        type="source"
+        type="target"
         position={Position.Left}
         id="left"
         style={{ ...handleStyle, left: -5 }}

@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { RFCanvas } from '@/board/reactflow/RFCanvas'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
+import { RFCanvas, type ZoomControls } from '@/board/reactflow/RFCanvas'
 import { ExportDialog } from '@/components/dialogs/ExportDialog'
 import { ImportDialog } from '@/components/dialogs/ImportDialog'
+import { FloatingHeader, FloatingToolbar, FloatingInspector } from '@/components/hud'
+import { NodeActionMenu } from '@/components/hud/NodeActionMenu'
 import { NodeInspector } from '@/components/inspector/NodeInspector'
-import { AppShell } from '@/components/layout/AppShell'
+import { BoardLayout } from '@/components/layout/BoardLayout'
 import { RelationPanel } from '@/components/panels/RelationPanel'
-import { BoardToolbar } from '@/components/toolbar/BoardToolbar'
 import { useBoardAutosave } from '@/features/autosave/useBoardAutosave'
 import { ExportPromptType, PromptExportBundle } from '@/domain/models/export'
 import { SemanticNodeType } from '@/domain/models/semantic-node'
@@ -40,6 +41,7 @@ export function BoardPage(): JSX.Element {
   const relations = useBoardStore((state) => state.relations)
   const createNode = useBoardStore((state) => state.createNode)
   const updateNode = useBoardStore((state) => state.updateNode)
+  const deleteNode = useBoardStore((state) => state.deleteNode)
   const applyCanvasState = useBoardStore((state) => state.applyCanvasState)
   const createRelation = useBoardStore((state) => state.createRelation)
   const saveCurrentBoard = useBoardStore((state) => state.saveCurrentBoard)
@@ -61,11 +63,18 @@ export function BoardPage(): JSX.Element {
   const [isExportJsonLoading, setIsExportJsonLoading] = useState(false)
   const [promptBundle, setPromptBundle] = useState<PromptExportBundle>()
   const [isPromptExportLoading, setIsPromptExportLoading] = useState(false)
+  const [nodeMenuPos, setNodeMenuPos] = useState<{ x: number; y: number } | null>(null)
+  const [pendingRelation, setPendingRelation] = useState<{
+    sourceNodeId: string
+    targetNodeId: string
+  } | null>(null)
+  const zoomControlsRef = useRef<ZoomControls | null>(null)
 
   useBoardAutosave()
 
   useEffect(() => {
     setSelectedNodeId(undefined)
+    setNodeMenuPos(null)
   }, [workspaceId, boardId, setSelectedNodeId])
 
   useEffect(() => {
@@ -187,131 +196,175 @@ export function BoardPage(): JSX.Element {
     navigate(`/workspace/${workspaceId}/board/${currentBoard.parentBoardId}`)
   }
 
+  const handleDeleteSelectedNode = (): void => {
+    if (selectedNodeId) {
+      deleteNode(selectedNodeId)
+      setSelectedNodeId(undefined)
+      setNodeMenuPos(null)
+    }
+  }
+
+  const handleNodeClick = (nodeId: string, screenX: number, screenY: number): void => {
+    setSelectedNodeId(nodeId)
+    setNodeMenuPos({ x: screenX, y: screenY })
+  }
+
+  const handleCloseNodeMenu = (): void => {
+    setNodeMenuPos(null)
+  }
+
   return (
     <>
-      <AppShell
-        header={
-          <div className="board-header">
-            <div>
-              <h1>{currentWorkspace?.name ?? 'Workspace'}</h1>
-              <p>
-                Board: {currentBoard?.name ?? 'Loading...'} ({currentBoard?.level ?? '...'})
-              </p>
-              {parentContext ? (
-                <>
-                  <p>
-                    Parent ({parentContext.immediate.level}): {parentContext.immediate.boardName} /{' '}
-                    {parentContext.immediate.nodeTitle}
-                  </p>
-                  {parentContext.ancestor ? (
-                    <p>
-                      Ancestor ({parentContext.ancestor.level}): {parentContext.ancestor.boardName} /{' '}
-                      {parentContext.ancestor.nodeTitle}
-                    </p>
-                  ) : null}
-                </>
-              ) : null}
-            </div>
-            <div className="board-header__actions">
-              <Link to="/workspaces">Workspaces</Link>
-              <label className="theme-toggle" htmlFor="theme-mode">
-                Theme
-              </label>
-              <select
-                id="theme-mode"
-                className="theme-toggle__select"
-                value={themeMode}
-                onChange={(event) =>
-                  setThemeMode(event.target.value as 'system' | 'light' | 'dark')
-                }
-                aria-label="Theme mode"
-              >
-                <option value="system">System</option>
-                <option value="light">Light</option>
-                <option value="dark">Dark</option>
-              </select>
-              <span className="theme-toggle__status">Active: {activeTheme}</span>
-              {currentBoard?.parentBoardId ? (
-                <button type="button" onClick={() => void handleBackToParent()}>
-                  Back to parent
-                </button>
-              ) : null}
-            </div>
+      <BoardLayout>
+        {boardLoading ? (
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--surface-glass)',
+            zIndex: 50
+          }}>
+            <p style={{ color: 'var(--muted)' }}>Loading board...</p>
           </div>
-        }
-        sidebar={
-          <div className="stack">
-            <BoardToolbar
-              level={currentBoard?.level ?? 'N1'}
-              onCreateNode={handleCreateNode}
-              onSave={() => {
-                void saveCurrentBoard()
-              }}
-              onOpenExport={() => {
-                handleOpenExport()
-              }}
-              onOpenImport={() => {
-                setImportDialogOpen(true)
-              }}
-            />
-            <RelationPanel
-              level={currentBoard?.level ?? 'N1'}
-              nodes={nodes}
-              onCreateRelation={(sourceNodeId, targetNodeId, type) => {
-                createRelation(sourceNodeId, targetNodeId, type)
-              }}
-            />
-          </div>
-        }
-        inspector={
+        ) : null}
+
+        <RFCanvas
+          key={`${workspaceId}:${boardId}`}
+          persistenceKey={`ws-${workspaceId}-board-${boardId}`}
+          workspaceId={workspaceId}
+          boardId={boardId}
+          level={currentBoard?.level ?? 'N1'}
+          nodes={nodes}
+          relations={relations}
+          selectedNodeId={selectedNodeId}
+          onSelectNode={(nodeId) => {
+            setSelectedNodeId(nodeId)
+            if (!nodeId) setNodeMenuPos(null)
+          }}
+          onCanvasChange={(sourceBoardId, nextNodes, nextRelations) =>
+            applyCanvasState(sourceBoardId, nextNodes, nextRelations)
+          }
+          theme={activeTheme}
+          onCanvasReady={(ctrl) => { zoomControlsRef.current = ctrl }}
+          onNodeClick={handleNodeClick}
+          onPendingConnect={(sourceNodeId, targetNodeId) =>
+            setPendingRelation({ sourceNodeId, targetNodeId })
+          }
+        />
+
+        {boardError ? (
+          <p className="error-text" style={{
+            position: 'absolute',
+            bottom: 16,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '8px 16px',
+            background: 'var(--surface-strong)',
+            borderRadius: 8,
+            zIndex: 100
+          }}>
+            {boardError}
+          </p>
+        ) : null}
+      </BoardLayout>
+
+      {/* Floating HUD Components */}
+      <FloatingHeader
+        workspaceName={currentWorkspace?.name ?? 'Workspace'}
+        boardName={currentBoard?.name ?? 'Loading...'}
+        level={currentBoard?.level ?? 'N1'}
+        parentBoardId={currentBoard?.parentBoardId}
+        themeMode={themeMode}
+        activeTheme={activeTheme}
+        onBackToParent={() => void handleBackToParent()}
+        onThemeModeChange={setThemeMode}
+      />
+
+      <FloatingToolbar
+        level={currentBoard?.level ?? 'N1'}
+        onCreateNode={handleCreateNode}
+        onSave={() => void saveCurrentBoard()}
+        onOpenExport={handleOpenExport}
+        onOpenImport={() => setImportDialogOpen(true)}
+        onZoomIn={() => zoomControlsRef.current?.zoomIn()}
+        onZoomOut={() => zoomControlsRef.current?.zoomOut()}
+        onFitView={() => zoomControlsRef.current?.fitView()}
+      />
+
+      {selectedNode ? (
+        <FloatingInspector
+          node={selectedNode}
+          onClose={() => {
+            setSelectedNodeId(undefined)
+            setNodeMenuPos(null)
+          }}
+        >
           <NodeInspector
             node={selectedNode}
             parentContext={parentContext}
             onUpdateNode={updateNode}
-            onOpenDetail={(nodeId) => {
-              void handleOpenDetail(nodeId)
-            }}
+            onOpenDetail={(nodeId) => void handleOpenDetail(nodeId)}
           />
-        }
-      >
-        {boardLoading ? <p>Loading board...</p> : null}
+        </FloatingInspector>
+      ) : null}
 
-        <div className="board-stage">
-          <RFCanvas
-            key={`${workspaceId}:${boardId}`}
-            persistenceKey={`ws-${workspaceId}-board-${boardId}`}
-            workspaceId={workspaceId}
-            boardId={boardId}
-            level={currentBoard?.level ?? 'N1'}
-            nodes={nodes}
-            relations={relations}
-            selectedNodeId={selectedNodeId}
-            onSelectNode={(nodeId) => setSelectedNodeId(nodeId)}
-            onCanvasChange={(sourceBoardId, nextNodes, nextRelations) =>
-              applyCanvasState(sourceBoardId, nextNodes, nextRelations)
-            }
-            theme={activeTheme}
-          />
+      {/* Contextual Node Action Menu */}
+      {selectedNodeId && nodeMenuPos ? (
+        <NodeActionMenu
+          position={nodeMenuPos}
+          canOpenDetail={currentBoard?.level !== 'N3'}
+          onEdit={handleCloseNodeMenu}
+          onDuplicate={handleCloseNodeMenu}
+          onOpenDetail={() => {
+            handleCloseNodeMenu()
+            void handleOpenDetail(selectedNodeId)
+          }}
+          onDelete={handleDeleteSelectedNode}
+        />
+      ) : null}
+
+      {/* Relation type picker — opened when user drags edge between nodes */}
+      {pendingRelation ? (
+        <div className="dialog-backdrop" onClick={() => setPendingRelation(null)}>
+          <div
+            className="dialog-card"
+            style={{ maxWidth: 400 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="dialog-card__header">
+              <h2>Create Relation</h2>
+            </div>
+            <RelationPanel
+              level={currentBoard?.level ?? 'N1'}
+              nodes={nodes}
+              preselectedSourceId={pendingRelation.sourceNodeId}
+              preselectedTargetId={pendingRelation.targetNodeId}
+              onCreateRelation={(sourceNodeId, targetNodeId, type) => {
+                createRelation(sourceNodeId, targetNodeId, type)
+                setPendingRelation(null)
+              }}
+            />
+            <div className="dialog-card__actions">
+              <button type="button" onClick={() => setPendingRelation(null)}>
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
+      ) : null}
 
-        {boardError ? <p className="error-text">{boardError}</p> : null}
-      </AppShell>
-
+      {/* Dialogs */}
       <ExportDialog
         open={isExportDialogOpen}
         jsonPayload={exportJsonPayload}
         jsonLoading={isExportJsonLoading}
         promptBundle={promptBundle}
         promptLoading={isPromptExportLoading}
-        onRequestJson={() => {
-          void handleRequestJsonExport()
-        }}
-        onGeneratePrompts={(type) => {
-          void handleGeneratePromptBundle(type)
-        }}
-        onDownloadPromptZip={() => {
-          void handleDownloadPromptZip()
-        }}
+        onRequestJson={() => void handleRequestJsonExport()}
+        onGeneratePrompts={(type) => void handleGeneratePromptBundle(type)}
+        onDownloadPromptZip={() => void handleDownloadPromptZip()}
         onClose={() => setExportDialogOpen(false)}
       />
 

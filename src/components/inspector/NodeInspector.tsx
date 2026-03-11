@@ -118,7 +118,7 @@ export function NodeInspector({
   }, [payloadErrors])
 
   if (!node) {
-    return <div className="panel">Select a node to edit properties.</div>
+    return <div className="node-inspector">Select a node to edit properties.</div>
   }
 
   const roundedWidth = Math.round(node.width)
@@ -807,8 +807,7 @@ export function NodeInspector({
   }
 
   return (
-    <div className="panel node-inspector">
-      <h2>Inspector</h2>
+    <div className="node-inspector">
       <p className="node-inspector__type">Type: {node.type}</p>
       {parentContext ? (
         <>
