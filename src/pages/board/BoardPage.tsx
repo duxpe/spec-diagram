@@ -4,17 +4,25 @@ import { RFCanvas, type ZoomControls } from '@/board/reactflow/RFCanvas'
 import { ExportDialog } from '@/components/dialogs/ExportDialog'
 import { ImportDialog } from '@/components/dialogs/ImportDialog'
 import { FloatingHeader, FloatingToolbar, FloatingInspector } from '@/components/hud'
+import type { CreateNodeRequest } from '@/components/hud/FloatingToolbar'
 import { NodeActionMenu } from '@/components/hud/NodeActionMenu'
 import { NodeInspector } from '@/components/inspector/NodeInspector'
 import { BoardLayout } from '@/components/layout/BoardLayout'
+import { ConnectionSuggestionPopup } from '@/components/hud/ConnectionSuggestionPopup'
+import { EdgeActionMenu } from '@/components/hud/EdgeActionMenu'
+import { EditRelationDialog } from '@/components/dialogs/EditRelationDialog'
 import { RelationPanel } from '@/components/panels/RelationPanel'
 import { useBoardAutosave } from '@/features/autosave/useBoardAutosave'
 import { ExportPromptType, PromptExportBundle } from '@/domain/models/export'
-import { SemanticNodeType } from '@/domain/models/semantic-node'
 import {
   buildPromptZipFileName,
   createPromptZipBlob
 } from '@/domain/services/prompt-export-service'
+import {
+  getConnectionSuggestions,
+  type ConnectionSuggestion
+} from '@/domain/semantics/connection-suggestion-engine'
+import { PATTERN_CATALOG } from '@/domain/semantics/pattern-catalog'
 import { useBoardStore } from '@/state/board-store'
 import { useUiStore } from '@/state/ui-store'
 import { useWorkspaceStore } from '@/state/workspace-store'
@@ -44,6 +52,9 @@ export function BoardPage(): JSX.Element {
   const deleteNode = useBoardStore((state) => state.deleteNode)
   const applyCanvasState = useBoardStore((state) => state.applyCanvasState)
   const createRelation = useBoardStore((state) => state.createRelation)
+  const updateRelation = useBoardStore((state) => state.updateRelation)
+  const reverseRelation = useBoardStore((state) => state.reverseRelation)
+  const deleteRelation = useBoardStore((state) => state.deleteRelation)
   const saveCurrentBoard = useBoardStore((state) => state.saveCurrentBoard)
   const openOrCreateChildBoard = useBoardStore((state) => state.openOrCreateChildBoard)
   const boardError = useBoardStore((state) => state.error)
@@ -67,6 +78,21 @@ export function BoardPage(): JSX.Element {
   const [pendingRelation, setPendingRelation] = useState<{
     sourceNodeId: string
     targetNodeId: string
+    sourceHandleId?: string
+    targetHandleId?: string
+  } | null>(null)
+  const [edgeMenuState, setEdgeMenuState] = useState<{
+    edgeId: string
+    x: number
+    y: number
+  } | null>(null)
+  const [editingRelationId, setEditingRelationId] = useState<string | null>(null)
+  const [connectionSuggestionState, setConnectionSuggestionState] = useState<{
+    sourceNodeId: string
+    screenX: number
+    screenY: number
+    canvasX: number
+    canvasY: number
   } | null>(null)
   const zoomControlsRef = useRef<ZoomControls | null>(null)
 
@@ -114,8 +140,8 @@ export function BoardPage(): JSX.Element {
     return <p className="error-text">Missing project or board in route.</p>
   }
 
-  const handleCreateNode = (type: SemanticNodeType): void => {
-    createNode(type)
+  const handleCreateNode = (request: CreateNodeRequest): void => {
+    createNode(request.type, request.patternRole, request.defaultAppearance)
   }
 
   const handleOpenDetail = async (nodeId: string): Promise<void> => {
@@ -213,6 +239,32 @@ export function BoardPage(): JSX.Element {
     setNodeMenuPos(null)
   }
 
+  const handleEdgeContextMenu = (edgeId: string, screenX: number, screenY: number): void => {
+    setEdgeMenuState({ edgeId, x: screenX, y: screenY })
+  }
+
+  const handleCloseEdgeMenu = (): void => {
+    setEdgeMenuState(null)
+  }
+
+  const handleEdgeEdit = (): void => {
+    if (!edgeMenuState) return
+    setEditingRelationId(edgeMenuState.edgeId)
+    setEdgeMenuState(null)
+  }
+
+  const handleEdgeReverse = (): void => {
+    if (!edgeMenuState) return
+    reverseRelation(edgeMenuState.edgeId)
+    setEdgeMenuState(null)
+  }
+
+  const handleEdgeDelete = (): void => {
+    if (!edgeMenuState) return
+    deleteRelation(edgeMenuState.edgeId)
+    setEdgeMenuState(null)
+  }
+
   return (
     <>
       <BoardLayout>
@@ -249,8 +301,12 @@ export function BoardPage(): JSX.Element {
           theme={activeTheme}
           onCanvasReady={(ctrl) => { zoomControlsRef.current = ctrl }}
           onNodeClick={handleNodeClick}
-          onPendingConnect={(sourceNodeId, targetNodeId) =>
-            setPendingRelation({ sourceNodeId, targetNodeId })
+          onPendingConnect={(sourceNodeId, targetNodeId, sourceHandleId, targetHandleId) =>
+            setPendingRelation({ sourceNodeId, targetNodeId, sourceHandleId, targetHandleId })
+          }
+          onEdgeContextMenu={handleEdgeContextMenu}
+          onConnectionToEmpty={(sourceNodeId, screenX, screenY, canvasX, canvasY) =>
+            setConnectionSuggestionState({ sourceNodeId, screenX, screenY, canvasX, canvasY })
           }
         />
 
@@ -276,6 +332,11 @@ export function BoardPage(): JSX.Element {
         boardName={currentBoard?.name ?? 'Loading...'}
         level={currentBoard?.level ?? 'N1'}
         parentBoardId={currentBoard?.parentBoardId}
+        patternLabel={
+          currentWorkspace?.architecturePattern
+            ? PATTERN_CATALOG[currentWorkspace.architecturePattern]?.name
+            : undefined
+        }
         themeMode={themeMode}
         activeTheme={activeTheme}
         onBackToParent={() => void handleBackToParent()}
@@ -284,6 +345,7 @@ export function BoardPage(): JSX.Element {
 
       <FloatingToolbar
         level={currentBoard?.level ?? 'N1'}
+        architecturePattern={currentWorkspace?.architecturePattern}
         onCreateNode={handleCreateNode}
         onSave={() => void saveCurrentBoard()}
         onOpenExport={handleOpenExport}
@@ -325,6 +387,79 @@ export function BoardPage(): JSX.Element {
         />
       ) : null}
 
+      {/* Edge context menu */}
+      {edgeMenuState ? (
+        <EdgeActionMenu
+          position={{ x: edgeMenuState.x, y: edgeMenuState.y }}
+          onEdit={handleEdgeEdit}
+          onReverse={handleEdgeReverse}
+          onDelete={handleEdgeDelete}
+          onClose={handleCloseEdgeMenu}
+        />
+      ) : null}
+
+      {/* Edit relation dialog */}
+      {editingRelationId ? (() => {
+        const editingRelation = relations.find((r) => r.id === editingRelationId)
+        if (!editingRelation) return null
+        return (
+          <EditRelationDialog
+            relation={editingRelation}
+            nodes={nodes}
+            level={currentBoard?.level ?? 'N1'}
+            architecturePattern={currentWorkspace?.architecturePattern}
+            onSave={(patch, reverse) => {
+              if (Object.keys(patch).length > 0) {
+                updateRelation(editingRelationId, patch)
+              }
+              if (reverse) {
+                reverseRelation(editingRelationId)
+              }
+              setEditingRelationId(null)
+            }}
+            onClose={() => setEditingRelationId(null)}
+          />
+        )
+      })() : null}
+
+      {/* Connection-to-empty-space suggestion popup */}
+      {connectionSuggestionState ? (() => {
+        const sourceNode = nodes.find((n) => n.id === connectionSuggestionState.sourceNodeId)
+        const suggestions = getConnectionSuggestions({
+          pattern: currentWorkspace?.architecturePattern,
+          level: currentBoard?.level ?? 'N1',
+          sourceNodeType: sourceNode?.type ?? 'system',
+          sourcePatternRole: sourceNode?.patternRole
+        })
+        if (suggestions.length === 0) {
+          return null
+        }
+        return (
+          <ConnectionSuggestionPopup
+            position={{ x: connectionSuggestionState.screenX, y: connectionSuggestionState.screenY }}
+            suggestions={suggestions}
+            onSelect={(suggestion: ConnectionSuggestion) => {
+              createNode(suggestion.nodeType, suggestion.patternRole, suggestion.defaultAppearance)
+              const newNode = useBoardStore.getState().nodes.at(-1)
+              if (newNode) {
+                useBoardStore.getState().moveNode(
+                  newNode.id,
+                  connectionSuggestionState.canvasX,
+                  connectionSuggestionState.canvasY
+                )
+                createRelation(
+                  connectionSuggestionState.sourceNodeId,
+                  newNode.id,
+                  suggestion.suggestedRelationType
+                )
+              }
+              setConnectionSuggestionState(null)
+            }}
+            onClose={() => setConnectionSuggestionState(null)}
+          />
+        )
+      })() : null}
+
       {/* Relation type picker — opened when user drags edge between nodes */}
       {pendingRelation ? (
         <div className="dialog-backdrop" onClick={() => setPendingRelation(null)}>
@@ -341,8 +476,27 @@ export function BoardPage(): JSX.Element {
               nodes={nodes}
               preselectedSourceId={pendingRelation.sourceNodeId}
               preselectedTargetId={pendingRelation.targetNodeId}
+              architecturePattern={currentWorkspace?.architecturePattern}
               onCreateRelation={(sourceNodeId, targetNodeId, type) => {
-                createRelation(sourceNodeId, targetNodeId, type)
+                const sameDirection =
+                  sourceNodeId === pendingRelation.sourceNodeId &&
+                  targetNodeId === pendingRelation.targetNodeId
+                const reversedDirection =
+                  sourceNodeId === pendingRelation.targetNodeId &&
+                  targetNodeId === pendingRelation.sourceNodeId
+
+                const sourceHandleId = sameDirection
+                  ? pendingRelation.sourceHandleId
+                  : reversedDirection
+                    ? pendingRelation.targetHandleId
+                    : undefined
+                const targetHandleId = sameDirection
+                  ? pendingRelation.targetHandleId
+                  : reversedDirection
+                    ? pendingRelation.sourceHandleId
+                    : undefined
+
+                createRelation(sourceNodeId, targetNodeId, type, undefined, sourceHandleId, targetHandleId)
                 setPendingRelation(null)
               }}
             />

@@ -8,6 +8,7 @@ interface FloatingHeaderProps {
   boardName: string
   level: SemanticLevel
   parentBoardId?: string
+  patternLabel?: string
   themeMode: 'system' | 'light' | 'dark'
   activeTheme: ActiveTheme
   onBackToParent: () => void
@@ -19,6 +20,7 @@ export function FloatingHeader({
   boardName,
   level,
   parentBoardId,
+  patternLabel,
   themeMode,
   activeTheme,
   onBackToParent,
@@ -28,7 +30,7 @@ export function FloatingHeader({
     const modes: Array<'system' | 'light' | 'dark'> = ['system', 'light', 'dark']
     const currentIndex = modes.indexOf(themeMode)
     const nextIndex = (currentIndex + 1) % modes.length
-    onThemeModeChange(modes[nextIndex])
+    onThemeModeChange(modes[nextIndex] ?? 'system')
   }
 
   const ThemeIcon = activeTheme === 'dark' ? Moon : themeMode === 'system' ? Monitor : Sun
@@ -49,6 +51,9 @@ export function FloatingHeader({
         <span>/</span>
         <span>{boardName}</span>
         <span className="floating-header__level">{level}</span>
+        {patternLabel ? (
+          <span className="floating-header__pattern-badge">{patternLabel}</span>
+        ) : null}
       </div>
 
       <div className="floating-header__divider" />

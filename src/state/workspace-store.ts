@@ -4,7 +4,7 @@ import { boardRepo } from '@/db/repositories/board-repo'
 import { ExportPromptType, PromptExportBundle } from '@/domain/models/export'
 import { workspaceRepo } from '@/db/repositories/workspace-repo'
 import { Board } from '@/domain/models/board'
-import { Workspace } from '@/domain/models/workspace'
+import { ArchitecturePattern, Workspace } from '@/domain/models/workspace'
 import { BoardService } from '@/domain/services/board-service'
 import { ExportService } from '@/domain/services/export-service'
 import { useAppStore } from '@/state/app-store'
@@ -18,7 +18,7 @@ interface WorkspaceState {
   boards: Board[]
   currentWorkspace?: Workspace
   bootstrap: () => Promise<void>
-  createWorkspace: (name: string, description?: string) => Promise<Workspace>
+  createWorkspace: (name: string, description?: string, pattern?: ArchitecturePattern) => Promise<Workspace>
   openWorkspace: (workspaceId: string) => Promise<void>
   refreshCurrentWorkspace: () => Promise<void>
   exportWorkspace: (workspaceId: string) => Promise<string>
@@ -65,7 +65,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }
   },
 
-  async createWorkspace(name, description) {
+  async createWorkspace(name, description, pattern) {
     const now = nowIso()
     const workspaceId = createId('ws')
     const rootBoard = BoardService.createRootBoard(workspaceId)
@@ -76,6 +76,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       description,
       rootBoardId: rootBoard.id,
       boardIds: [rootBoard.id],
+      architecturePattern: pattern,
       createdAt: now,
       updatedAt: now
     }

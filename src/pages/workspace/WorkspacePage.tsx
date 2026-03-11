@@ -1,8 +1,9 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { PatternSelectionDialog } from '@/components/dialogs/PatternSelectionDialog'
 import { WorkspaceListPanel } from '@/components/panels/WorkspaceListPanel'
 import { WorkspaceImportPanel } from '@/components/panels/WorkspaceImportPanel'
-import { WorkspaceToolbar } from '@/components/toolbar/WorkspaceToolbar'
+import { ArchitecturePattern } from '@/domain/models/workspace'
 import { useWorkspaceStore } from '@/state/workspace-store'
 
 export function WorkspacePage(): JSX.Element {
@@ -15,6 +16,8 @@ export function WorkspacePage(): JSX.Element {
   const openWorkspace = useWorkspaceStore((state) => state.openWorkspace)
   const importWorkspace = useWorkspaceStore((state) => state.importWorkspace)
   const error = useWorkspaceStore((state) => state.error)
+
+  const [isPatternDialogOpen, setPatternDialogOpen] = useState(false)
 
   useEffect(() => {
     if (!workspaceId) return
@@ -32,8 +35,13 @@ export function WorkspacePage(): JSX.Element {
     navigate(`/project/${nextWorkspaceId}/board/${rootBoardId}`)
   }
 
-  const handleCreateWorkspace = async (name: string, description?: string): Promise<void> => {
-    const workspace = await createWorkspace(name, description)
+  const handleCreateWorkspace = async (
+    name: string,
+    description: string | undefined,
+    pattern: ArchitecturePattern
+  ): Promise<void> => {
+    const workspace = await createWorkspace(name, description, pattern)
+    setPatternDialogOpen(false)
     goToWorkspaceRoot(workspace.id, workspace.rootBoardId)
   }
 
@@ -64,7 +72,15 @@ export function WorkspacePage(): JSX.Element {
         <p>Project setup, local persistence and board navigation</p>
       </header>
 
-      <WorkspaceToolbar onCreateWorkspace={handleCreateWorkspace} />
+      <div className="workspace-toolbar">
+        <button
+          type="button"
+          className="btn--primary"
+          onClick={() => setPatternDialogOpen(true)}
+        >
+          New project
+        </button>
+      </div>
 
       <section className="workspace-page__content">
         <WorkspaceListPanel
@@ -82,6 +98,14 @@ export function WorkspacePage(): JSX.Element {
       </section>
 
       {error ? <p className="error-text">{error}</p> : null}
+
+      <PatternSelectionDialog
+        open={isPatternDialogOpen}
+        onClose={() => setPatternDialogOpen(false)}
+        onCreate={(name, description, pattern) => {
+          void handleCreateWorkspace(name, description, pattern)
+        }}
+      />
     </div>
   )
 }

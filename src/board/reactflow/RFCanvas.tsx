@@ -13,6 +13,7 @@ import {
   type Connection,
   type Node,
   type Edge,
+  type ReactFlowInstance,
   MarkerType
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
@@ -57,7 +58,14 @@ interface RFCanvasProps {
   onCanvasChange: (boardId: string, nodes: SemanticNode[], relations: Relation[]) => void
   onCanvasReady?: (controls: ZoomControls) => void
   onNodeClick?: (nodeId: string, screenX: number, screenY: number) => void
-  onPendingConnect?: (sourceNodeId: string, targetNodeId: string) => void
+  onPendingConnect?: (
+    sourceNodeId: string,
+    targetNodeId: string,
+    sourceHandleId?: string,
+    targetHandleId?: string
+  ) => void
+  onEdgeContextMenu?: (edgeId: string, screenX: number, screenY: number) => void
+  onConnectionToEmpty?: (sourceNodeId: string, screenX: number, screenY: number, canvasX: number, canvasY: number) => void
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -112,7 +120,9 @@ export function RFCanvas({
   onCanvasChange,
   onCanvasReady,
   onNodeClick: onNodeClickProp,
-  onPendingConnect
+  onPendingConnect,
+  onEdgeContextMenu: onEdgeContextMenuProp,
+  onConnectionToEmpty
 }: RFCanvasProps): JSX.Element {
   // Refs for feedback loop prevention and board identity guard
   const isApplyingDomainRef = useRef(false)
@@ -145,6 +155,14 @@ export function RFCanvas({
 
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes)
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges)
+  const latestCanvasStateRef = useRef<{ nodes: Node[]; edges: Edge[] }>({
+    nodes: initialNodes,
+    edges: initialEdges
+  })
+
+  useEffect(() => {
+    latestCanvasStateRef.current = { nodes, edges }
+  }, [nodes, edges])
 
   // Sync domain state changes to React Flow (domain -> RF)
   useEffect(() => {
@@ -163,6 +181,30 @@ export function RFCanvas({
     })
     setEdges(rfEdges)
   }, [semanticNodes, relations, setNodes, setEdges])
+
+  const emitCanvasChange = useCallback(() => {
+    if (isApplyingDomainRef.current) return
+
+    const latest = latestPropsRef.current
+    const latestBoardIdentity = `${latest.workspaceId}:${latest.boardId}`
+    if (latestBoardIdentity !== mountedBoardIdentity.current) return
+
+    isApplyingDomainRef.current = true
+    try {
+      const { nodes: currentNodes, edges: currentEdges } = latestCanvasStateRef.current
+      const mapped = fromRFChanges(currentNodes, currentEdges, {
+        workspaceId: latest.workspaceId,
+        boardId: latest.boardId,
+        level: latest.level,
+        existingNodes: latest.nodes,
+        existingRelations: latest.relations
+      })
+
+      onCanvasChange(latest.boardId, mapped.nodes, mapped.relations)
+    } finally {
+      isApplyingDomainRef.current = false
+    }
+  }, [onCanvasChange])
 
   // Handle node changes from React Flow
   const handleNodesChange = useCallback(
@@ -190,34 +232,10 @@ export function RFCanvas({
 
       // Debounce the mapping back to domain - use requestAnimationFrame
       requestAnimationFrame(() => {
-        // Re-check refs after RAF
-        if (isApplyingDomainRef.current) return
-        const latestCheck = latestPropsRef.current
-        if (`${latestCheck.workspaceId}:${latestCheck.boardId}` !== mountedBoardIdentity.current) return
-
-        // Get current RF state and map back to domain
-        setNodes((currentNodes) => {
-          setEdges((currentEdges) => {
-            isApplyingDomainRef.current = true
-
-            const mapped = fromRFChanges(currentNodes, currentEdges, {
-              workspaceId: latestCheck.workspaceId,
-              boardId: latestCheck.boardId,
-              level: latestCheck.level,
-              existingNodes: latestCheck.nodes,
-              existingRelations: latestCheck.relations
-            })
-
-            onCanvasChange(latestCheck.boardId, mapped.nodes, mapped.relations)
-
-            isApplyingDomainRef.current = false
-            return currentEdges
-          })
-          return currentNodes
-        })
+        emitCanvasChange()
       })
     },
-    [onNodesChange, setNodes, setEdges, onCanvasChange]
+    [onNodesChange, emitCanvasChange]
   )
 
   // Handle edge changes from React Flow
@@ -238,32 +256,10 @@ export function RFCanvas({
       if (!hasRelevantChanges) return
 
       requestAnimationFrame(() => {
-        if (isApplyingDomainRef.current) return
-        const latestCheck = latestPropsRef.current
-        if (`${latestCheck.workspaceId}:${latestCheck.boardId}` !== mountedBoardIdentity.current) return
-
-        setNodes((currentNodes) => {
-          setEdges((currentEdges) => {
-            isApplyingDomainRef.current = true
-
-            const mapped = fromRFChanges(currentNodes, currentEdges, {
-              workspaceId: latestCheck.workspaceId,
-              boardId: latestCheck.boardId,
-              level: latestCheck.level,
-              existingNodes: latestCheck.nodes,
-              existingRelations: latestCheck.relations
-            })
-
-            onCanvasChange(latestCheck.boardId, mapped.nodes, mapped.relations)
-
-            isApplyingDomainRef.current = false
-            return currentEdges
-          })
-          return currentNodes
-        })
+        emitCanvasChange()
       })
     },
-    [onEdgesChange, setNodes, setEdges, onCanvasChange]
+    [onEdgesChange, emitCanvasChange]
   )
 
   // Handle new connections (edge creation) → open relation type dialog in parent
@@ -271,7 +267,12 @@ export function RFCanvas({
     (connection: Connection) => {
       if (!connection.source || !connection.target || !onPendingConnect) return
       // RF node IDs are the semantic node IDs (see reactflow-adapter)
-      onPendingConnect(connection.source, connection.target)
+      onPendingConnect(
+        connection.source,
+        connection.target,
+        connection.sourceHandle ?? undefined,
+        connection.targetHandle ?? undefined
+      )
     },
     [onPendingConnect]
   )
@@ -294,27 +295,68 @@ export function RFCanvas({
       if (selectedNodes.length === 1) {
         const semanticId = getSemanticNodeIdFromRFNode(selectedNodes[0])
         onSelectNode(semanticId)
-      } else if (selectedNodes.length === 0) {
-        onSelectNode(undefined)
       }
-      // Multi-selection: keep current selection
+      // Multi-selection or transient empty selections keep current selection.
     },
     [onSelectNode]
   )
 
+  const handlePaneClick = useCallback(() => {
+    onSelectNode(undefined)
+  }, [onSelectNode])
+
+  // Handle edge right-click → context menu
+  const handleEdgeContextMenu = useCallback(
+    (event: React.MouseEvent, edge: Edge) => {
+      event.preventDefault()
+      if (!onEdgeContextMenuProp) return
+      const data = edge.data as RFEdgeData | undefined
+      const edgeId = data?.semanticId ?? edge.id
+      onEdgeContextMenuProp(edgeId, event.clientX, event.clientY)
+    },
+    [onEdgeContextMenuProp]
+  )
+
+  // Track connection start for empty-space detection
+  const connectStartRef = useRef<string | null>(null)
+  const reactFlowInstanceRef = useRef<ReactFlowInstance<Node, Edge> | null>(null)
+
+  const handleConnectStart = useCallback(
+    (_event: MouseEvent | TouchEvent, params: { nodeId: string | null }) => {
+      connectStartRef.current = params.nodeId
+    },
+    []
+  )
+
+  const handleConnectEnd = useCallback(
+    (event: MouseEvent | TouchEvent) => {
+      const sourceNodeId = connectStartRef.current
+      connectStartRef.current = null
+
+      if (!sourceNodeId || !onConnectionToEmpty) return
+
+      // Check if we dropped on a node handle (React Flow would have called onConnect)
+      const target = event.target as HTMLElement
+      if (target.closest('.react-flow__handle')) return
+
+      const clientX = 'clientX' in event ? event.clientX : event.touches?.[0]?.clientX ?? 0
+      const clientY = 'clientY' in event ? event.clientY : event.touches?.[0]?.clientY ?? 0
+
+      const canvasPos = reactFlowInstanceRef.current?.screenToFlowPosition({ x: clientX, y: clientY }) ?? {
+        x: clientX,
+        y: clientY
+      }
+      onConnectionToEmpty(sourceNodeId, clientX, clientY, canvasPos.x, canvasPos.y)
+    },
+    [onConnectionToEmpty]
+  )
+
   // Sync selectedNodeId prop to React Flow selection
   useEffect(() => {
-    if (!selectedNodeId) {
-      // Clear selection in RF - handled by React Flow internally
-      return
-    }
-
-    // React Flow handles selection state internally via the `selected` prop on nodes
-    // We update the nodes to reflect the selection
     setNodes((currentNodes) =>
       currentNodes.map((node) => ({
         ...node,
-        selected: node.id === selectedNodeId
+        selected: selectedNodeId ? node.id === selectedNodeId : false
       }))
     )
   }, [selectedNodeId, setNodes])
@@ -333,8 +375,15 @@ export function RFCanvas({
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
         onConnect={handleConnect}
+        onConnectStart={handleConnectStart}
+        onConnectEnd={handleConnectEnd}
         onNodeClick={handleNodeClick}
+        onPaneClick={handlePaneClick}
+        onEdgeContextMenu={handleEdgeContextMenu}
         onSelectionChange={handleSelectionChange}
+        onInit={(instance) => {
+          reactFlowInstanceRef.current = instance
+        }}
         defaultEdgeOptions={defaultEdgeOptions}
         connectionMode={ConnectionMode.Loose}
         fitView

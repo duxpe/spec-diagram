@@ -3,6 +3,7 @@ import { Board } from '@/domain/models/board'
 import { Relation } from '@/domain/models/relation'
 import { SemanticNode } from '@/domain/models/semantic-node'
 import { useBoardStore } from '@/state/board-store'
+import { useWorkspaceStore } from '@/state/workspace-store'
 
 const now = new Date().toISOString()
 
@@ -146,6 +147,40 @@ describe('board-store canvas sync actions', () => {
     expect(useBoardStore.getState().error).toContain('not allowed in N1')
   })
 
+  it('allows pattern-specific N1 relation type', () => {
+    const nodeA = makeNode('node_a')
+    const nodeB = makeNode('node_b')
+    useWorkspaceStore.setState({
+      currentWorkspace: {
+        id: 'ws_1',
+        name: 'Workspace',
+        rootBoardId: 'board_1',
+        boardIds: ['board_1'],
+        architecturePattern: 'hexagonal',
+        createdAt: now,
+        updatedAt: now
+      }
+    })
+
+    useBoardStore.setState({
+      currentBoard: makeBoard(),
+      nodes: [
+        { ...nodeA, type: 'system', patternRole: 'application_core' },
+        { ...nodeB, type: 'port', patternRole: 'inbound_port' }
+      ],
+      relations: [],
+      dirty: false,
+      error: undefined
+    })
+
+    useBoardStore.getState().createRelation('node_a', 'node_b', 'exposes_port')
+
+    expect(useBoardStore.getState().relations).toHaveLength(1)
+    expect(useBoardStore.getState().relations[0]?.type).toBe('exposes_port')
+    expect(useBoardStore.getState().error).toBeUndefined()
+    useWorkspaceStore.setState({ currentWorkspace: undefined })
+  })
+
   it('blocks relation type that is not allowed in N2', () => {
     const nodeA = makeNode('node_a', { level: 'N2', type: 'class' })
     const nodeB = makeNode('node_b', { level: 'N2', type: 'interface' })
@@ -180,5 +215,31 @@ describe('board-store canvas sync actions', () => {
 
     expect(useBoardStore.getState().relations).toEqual([])
     expect(useBoardStore.getState().error).toContain('not allowed in N3')
+  })
+
+  it('reverseRelation keeps physical handles by swapping handle ids', () => {
+    const saveSpy = vi.fn(async () => undefined)
+    const relation = {
+      ...makeRelation('rel_ab', 'node_a', 'node_b'),
+      sourceHandleId: 'right',
+      targetHandleId: 'left'
+    }
+
+    useBoardStore.setState({
+      currentBoard: makeBoard(),
+      nodes: [makeNode('node_a'), makeNode('node_b')],
+      relations: [relation],
+      dirty: false,
+      saveCurrentBoard: saveSpy
+    })
+
+    useBoardStore.getState().reverseRelation('rel_ab')
+
+    const reversed = useBoardStore.getState().relations[0]
+    expect(reversed?.sourceNodeId).toBe('node_b')
+    expect(reversed?.targetNodeId).toBe('node_a')
+    expect(reversed?.sourceHandleId).toBe('left')
+    expect(reversed?.targetHandleId).toBe('right')
+    expect(saveSpy).toHaveBeenCalledTimes(1)
   })
 })

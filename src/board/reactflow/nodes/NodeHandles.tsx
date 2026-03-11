@@ -13,34 +13,72 @@ export function NodeHandles({ isConnectable = true }: NodeHandlesProps): JSX.Ele
     borderRadius: '50%'
   }
 
+  const positionStyles = {
+    top: { top: -5 },
+    right: { right: -5 },
+    bottom: { bottom: -5 },
+    left: { left: -5 }
+  } as const
+
   return (
     <>
+      {/* Target handles (for incoming edges) */}
       <Handle
         type="target"
         position={Position.Top}
         id="top"
-        style={{ ...handleStyle, top: -5 }}
+        style={{ ...handleStyle, ...positionStyles.top }}
         isConnectable={isConnectable}
       />
       <Handle
-        type="source"
+        type="target"
         position={Position.Right}
         id="right"
-        style={{ ...handleStyle, right: -5 }}
+        style={{ ...handleStyle, ...positionStyles.right }}
         isConnectable={isConnectable}
       />
       <Handle
         type="target"
         position={Position.Bottom}
         id="bottom"
-        style={{ ...handleStyle, bottom: -5 }}
+        style={{ ...handleStyle, ...positionStyles.bottom }}
         isConnectable={isConnectable}
       />
       <Handle
         type="target"
         position={Position.Left}
         id="left"
-        style={{ ...handleStyle, left: -5 }}
+        style={{ ...handleStyle, ...positionStyles.left }}
+        isConnectable={isConnectable}
+      />
+
+      {/* Source handles (for outgoing edges) */}
+      <Handle
+        type="source"
+        position={Position.Top}
+        id="top"
+        style={{ ...handleStyle, ...positionStyles.top }}
+        isConnectable={isConnectable}
+      />
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        style={{ ...handleStyle, ...positionStyles.right }}
+        isConnectable={isConnectable}
+      />
+      <Handle
+        type="source"
+        position={Position.Bottom}
+        id="bottom"
+        style={{ ...handleStyle, ...positionStyles.bottom }}
+        isConnectable={isConnectable}
+      />
+      <Handle
+        type="source"
+        position={Position.Left}
+        id="left"
+        style={{ ...handleStyle, ...positionStyles.left }}
         isConnectable={isConnectable}
       />
     </>

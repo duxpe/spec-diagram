@@ -5,6 +5,7 @@ import { relationRepo } from '@/db/repositories/relation-repo'
 import { semanticNodeRepo } from '@/db/repositories/semantic-node-repo'
 import { workspaceRepo } from '@/db/repositories/workspace-repo'
 import { Board } from '@/domain/models/board'
+import type { NodeAppearance } from '@/domain/models/node-appearance'
 import { Relation, RelationType } from '@/domain/models/relation'
 import { SemanticNode, SemanticNodeType } from '@/domain/models/semantic-node'
 import { boardSchema } from '@/domain/schemas/board.schema'
@@ -15,9 +16,11 @@ import { ValidationService } from '@/domain/services/validation-service'
 import {
   canOpenDetail,
   isNodeTypeAllowedForLevel,
+  isPatternRelationTypeAllowed,
   isRelationTypeAllowedForLevel
 } from '@/domain/semantics/semantic-catalog'
 import { useAppStore } from '@/state/app-store'
+import { useWorkspaceStore } from '@/state/workspace-store'
 import { nowIso } from '@/utils/dates'
 import { ZodError } from 'zod'
 
@@ -45,10 +48,19 @@ interface BoardState {
   nodes: SemanticNode[]
   relations: Relation[]
   loadBoard: (workspaceId: string, boardId: string) => Promise<void>
-  createNode: (type?: SemanticNodeType) => void
+  createNode: (type?: SemanticNodeType, patternRole?: string, defaultAppearance?: Partial<NodeAppearance>) => void
   updateNode: (id: string, patch: Partial<Omit<SemanticNode, 'id' | 'workspaceId' | 'boardId'>>) => void
   moveNode: (id: string, x: number, y: number) => void
-  createRelation: (sourceNodeId: string, targetNodeId: string, type?: RelationType, label?: string) => void
+  createRelation: (
+    sourceNodeId: string,
+    targetNodeId: string,
+    type?: RelationType,
+    label?: string,
+    sourceHandleId?: string,
+    targetHandleId?: string
+  ) => void
+  updateRelation: (id: string, patch: { type?: RelationType; label?: string }) => void
+  reverseRelation: (id: string) => void
   deleteNode: (nodeId: string) => void
   deleteRelation: (relationId: string) => void
   applyCanvasState: (sourceBoardId: string, nodes: SemanticNode[], relations: Relation[]) => void
@@ -89,6 +101,8 @@ function isRelationSemanticallyEqual(a: Relation, b: Relation): boolean {
     a.boardId === b.boardId &&
     a.sourceNodeId === b.sourceNodeId &&
     a.targetNodeId === b.targetNodeId &&
+    a.sourceHandleId === b.sourceHandleId &&
+    a.targetHandleId === b.targetHandleId &&
     a.label === b.label &&
     a.type === b.type
   )
@@ -252,7 +266,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     }
   },
 
-  createNode(type) {
+  createNode(type, patternRole, defaultAppearance) {
     const currentBoard = get().currentBoard
 
     if (!currentBoard) return
@@ -268,7 +282,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         workspaceId: currentBoard.workspaceId,
         boardId: currentBoard.id,
         level: currentBoard.level,
-        type
+        type,
+        patternRole,
+        defaultAppearance
       })
 
       ValidationService.parse(semanticNodeSchema, node)
@@ -317,7 +333,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     get().updateNode(id, { x, y })
   },
 
-  createRelation(sourceNodeId, targetNodeId, type, label) {
+  createRelation(sourceNodeId, targetNodeId, type, label, sourceHandleId, targetHandleId) {
     const { currentBoard, nodes } = get()
 
     if (!currentBoard) return
@@ -331,7 +347,18 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     }
 
     const relationType = type ?? 'depends_on'
-    if (!isRelationTypeAllowedForLevel(currentBoard.level, relationType)) {
+    const workspacePattern = useWorkspaceStore.getState().currentWorkspace?.architecturePattern
+    const isAllowedByPattern =
+      currentBoard.level === 'N1' &&
+      !!workspacePattern &&
+      isPatternRelationTypeAllowed(
+        workspacePattern,
+        relationType,
+        sourceNode.patternRole,
+        targetNode.patternRole
+      )
+
+    if (!isRelationTypeAllowedForLevel(currentBoard.level, relationType) && !isAllowedByPattern) {
       set({ error: `Relation type "${relationType}" is not allowed in ${currentBoard.level}` })
       return
     }
@@ -343,6 +370,9 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         level: currentBoard.level,
         sourceNodeId,
         targetNodeId,
+        sourceHandleId,
+        targetHandleId,
+        bypassLevelRelationTypeCheck: isAllowedByPattern,
         sourceBoardId: sourceNode.boardId,
         targetBoardId: targetNode.boardId,
         type: relationType,
@@ -360,6 +390,50 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     } catch (error) {
       set({ error: error instanceof Error ? error.message : 'Failed to create relation' })
     }
+  },
+
+  updateRelation(id, patch) {
+    const currentRelation = get().relations.find((r) => r.id === id)
+    if (!currentRelation) return
+
+    const nextRelation: Relation = {
+      ...currentRelation,
+      ...(patch.type !== undefined ? { type: patch.type } : {}),
+      ...(patch.label !== undefined ? { label: patch.label || undefined } : {}),
+      updatedAt: nowIso()
+    }
+
+    set((state) => ({
+      relations: state.relations.map((r) => (r.id === id ? nextRelation : r)),
+      currentBoard: state.currentBoard ? updateBoardTimestamps(state.currentBoard) : state.currentBoard,
+      dirty: true,
+      error: undefined
+    }))
+
+    void get().saveCurrentBoard()
+  },
+
+  reverseRelation(id) {
+    const currentRelation = get().relations.find((r) => r.id === id)
+    if (!currentRelation) return
+
+    const nextRelation: Relation = {
+      ...currentRelation,
+      sourceNodeId: currentRelation.targetNodeId,
+      targetNodeId: currentRelation.sourceNodeId,
+      sourceHandleId: currentRelation.targetHandleId,
+      targetHandleId: currentRelation.sourceHandleId,
+      updatedAt: nowIso()
+    }
+
+    set((state) => ({
+      relations: state.relations.map((r) => (r.id === id ? nextRelation : r)),
+      currentBoard: state.currentBoard ? updateBoardTimestamps(state.currentBoard) : state.currentBoard,
+      dirty: true,
+      error: undefined
+    }))
+
+    void get().saveCurrentBoard()
   },
 
   deleteNode(nodeId) {

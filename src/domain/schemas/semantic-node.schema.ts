@@ -28,6 +28,7 @@ export const semanticNodeSchema = z
     parentNodeId: z.string().min(1).optional(),
     level: semanticLevelSchema,
     type: semanticNodeTypeSchema,
+    patternRole: z.string().min(1).optional(),
     title: z.string().min(1),
     description: z.string().optional(),
     x: z.number(),

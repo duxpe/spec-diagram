@@ -5,7 +5,7 @@ describe('node-visual-catalog', () => {
   it('resolves semantic defaults by node type', () => {
     const visual = resolveNodeVisual({ type: 'database', appearance: undefined })
 
-    expect(visual.shapeVariant).toBe('oval')
+    expect(visual.shapeVariant).toBe('cylinder')
     expect(visual.icon).toBe('database')
     expect(visual.accentColor).toBe('amber')
     expect(visual.provider).toBe('none')

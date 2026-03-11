@@ -131,6 +131,8 @@ export function isRelationEquivalent(current: Relation, next: Relation): boolean
     current.boardId === next.boardId &&
     current.sourceNodeId === next.sourceNodeId &&
     current.targetNodeId === next.targetNodeId &&
+    current.sourceHandleId === next.sourceHandleId &&
+    current.targetHandleId === next.targetHandleId &&
     current.label === next.label &&
     current.type === next.type
   )
@@ -197,8 +199,8 @@ export function toRFEdges(relations: Relation[], nodeById?: Map<string, Semantic
       type: 'relation',
       source: relation.sourceNodeId,
       target: relation.targetNodeId,
-      sourceHandle: 'right',
-      targetHandle: 'left',
+      sourceHandle: relation.sourceHandleId ?? 'right',
+      targetHandle: relation.targetHandleId ?? 'left',
       markerEnd: { type: MarkerType.ArrowClosed, color: '#94a3b8' },
       label: relation.label,
       data: {
@@ -296,6 +298,18 @@ export function fromRFChanges(
       boardId: context.boardId,
       sourceNodeId: rfEdge.source,
       targetNodeId: rfEdge.target,
+      sourceHandleId:
+        typeof rfEdge.sourceHandle === 'string' && rfEdge.sourceHandle.trim().length > 0
+          ? (existingRelation?.sourceHandleId || rfEdge.sourceHandle !== 'right'
+              ? rfEdge.sourceHandle
+              : undefined)
+          : existingRelation?.sourceHandleId,
+      targetHandleId:
+        typeof rfEdge.targetHandle === 'string' && rfEdge.targetHandle.trim().length > 0
+          ? (existingRelation?.targetHandleId || rfEdge.targetHandle !== 'left'
+              ? rfEdge.targetHandle
+              : undefined)
+          : existingRelation?.targetHandleId,
       label:
         typeof edgeData.label === 'string' && edgeData.label.trim().length > 0
           ? edgeData.label

@@ -1,5 +1,6 @@
 import { ComponentType } from 'react'
 import {
+  AppWindow,
   ArrowDown,
   ArrowUp,
   Box,
@@ -7,13 +8,20 @@ import {
   Cable,
   Cuboid,
   Database,
+  Filter,
   FunctionSquare,
   GitBranch,
   Globe,
   Grid3X3,
   KeyRound,
   Layers,
-  Plug
+  MessageSquare,
+  Plug,
+  Puzzle,
+  Server,
+  Settings,
+  Shield,
+  User
 } from 'lucide-react'
 import { GenericIconId } from '@/domain/models/node-appearance'
 
@@ -33,7 +41,15 @@ const GENERIC_ICON_COMPONENTS: Record<GenericIconId, ComponentType<IconProps>> =
   'function-square': FunctionSquare,
   'key-round': KeyRound,
   'arrow-down': ArrowDown,
-  'arrow-up': ArrowUp
+  'arrow-up': ArrowUp,
+  user: User,
+  shield: Shield,
+  gear: Settings,
+  'message-queue': MessageSquare,
+  puzzle: Puzzle,
+  server: Server,
+  funnel: Filter,
+  window: AppWindow
 }
 
 export function GenericNodeIcon({ iconId, size = 16, color }: { iconId: GenericIconId; size?: number; color?: string }): JSX.Element {

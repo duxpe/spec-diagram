@@ -73,7 +73,7 @@ describe('reactflow-adapter', () => {
 
       expect(databaseRfNode?.type).toBe('semantic-node')
       expect(databaseRfNode?.data).toMatchObject({
-        shapeVariant: 'oval',
+        shapeVariant: 'cylinder',
         provider: 'none',
         icon: 'database',
         accentColor: 'amber'
@@ -204,7 +204,7 @@ describe('reactflow-adapter', () => {
             semanticId: 'node_b',
             semanticType: 'database',
             title: 'Node B',
-            shapeVariant: 'oval',
+            shapeVariant: 'cylinder',
             icon: 'database',
             accentColor: 'amber',
             provider: 'none',

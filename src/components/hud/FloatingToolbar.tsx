@@ -12,15 +12,24 @@ import {
 } from 'lucide-react'
 import { GenericNodeIcon } from '@/components/icons/semantic-icons'
 import { SemanticLevel } from '@/domain/models/board'
-import { SemanticNodeType } from '@/domain/models/semantic-node'
-import { N1_NODE_PALETTE } from '@/domain/semantics/n1-node-palette'
+import type { NodeAppearance } from '@/domain/models/node-appearance'
+import type { SemanticNodeType } from '@/domain/models/semantic-node'
+import type { ArchitecturePattern } from '@/domain/models/workspace'
 import { N2_NODE_PALETTE } from '@/domain/semantics/n2-node-palette'
 import { N3_NODE_PALETTE } from '@/domain/semantics/n3-node-palette'
 import { getDefaultAppearance } from '@/domain/semantics/node-visual-catalog'
+import { getPatternN1Palette } from '@/domain/semantics/pattern-n1-palette'
+
+export interface CreateNodeRequest {
+  type: SemanticNodeType
+  patternRole?: string
+  defaultAppearance?: Partial<NodeAppearance>
+}
 
 interface FloatingToolbarProps {
   level: SemanticLevel
-  onCreateNode: (type: SemanticNodeType) => void
+  architecturePattern?: ArchitecturePattern
+  onCreateNode: (request: CreateNodeRequest) => void
   onSave: () => void
   onOpenExport: () => void
   onOpenImport: () => void
@@ -29,20 +38,28 @@ interface FloatingToolbarProps {
   onFitView?: () => void
 }
 
-function getPaletteByLevel(level: SemanticLevel): Array<{
+type ToolbarPaletteItem = {
   type: SemanticNodeType
   label: string
   marker: string
   group: string
-}> {
-  if (level === 'N1') return N1_NODE_PALETTE
-  if (level === 'N2') return N2_NODE_PALETTE
-  if (level === 'N3') return N3_NODE_PALETTE
+  patternRole?: string
+  defaultAppearance?: Partial<NodeAppearance>
+}
+
+function getPaletteByLevel(
+  level: SemanticLevel,
+  pattern?: ArchitecturePattern
+): ToolbarPaletteItem[] {
+  if (level === 'N1') return getPatternN1Palette(pattern)
+  if (level === 'N2') return N2_NODE_PALETTE.map((item) => ({ ...item }))
+  if (level === 'N3') return N3_NODE_PALETTE.map((item) => ({ ...item }))
   return []
 }
 
 export function FloatingToolbar({
   level,
+  architecturePattern,
   onCreateNode,
   onSave,
   onOpenExport,
@@ -56,7 +73,10 @@ export function FloatingToolbar({
   const submenuRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
-  const palette = useMemo(() => getPaletteByLevel(level), [level])
+  const palette = useMemo(
+    () => getPaletteByLevel(level, architecturePattern),
+    [level, architecturePattern]
+  )
 
   const filteredPalette = useMemo(() => {
     const lowerTerm = searchTerm.trim().toLowerCase()
@@ -103,8 +123,12 @@ export function FloatingToolbar({
     }
   }, [isShapesOpen])
 
-  const handleCreateNode = (type: SemanticNodeType): void => {
-    onCreateNode(type)
+  const handleCreateNode = (item: ToolbarPaletteItem): void => {
+    onCreateNode({
+      type: item.type,
+      patternRole: item.patternRole,
+      defaultAppearance: item.defaultAppearance
+    })
     setIsShapesOpen(false)
     setSearchTerm('')
   }
@@ -159,12 +183,15 @@ export function FloatingToolbar({
                     <h4 className="floating-toolbar__submenu-title">{group}</h4>
                     {items.map((item) => (
                       <button
-                        key={item.type}
+                        key={item.patternRole ?? item.type}
                         type="button"
                         className="floating-toolbar__submenu-item"
-                        onClick={() => handleCreateNode(item.type)}
+                        onClick={() => handleCreateNode(item)}
                       >
-                        <GenericNodeIcon iconId={getDefaultAppearance(item.type).icon} size={16} />
+                        <GenericNodeIcon
+                          iconId={item.defaultAppearance?.icon ?? getDefaultAppearance(item.type).icon}
+                          size={16}
+                        />
                         <span>{item.label}</span>
                       </button>
                     ))}

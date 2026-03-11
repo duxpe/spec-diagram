@@ -1,10 +1,14 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { ArrowLeftRight } from 'lucide-react'
 import { SemanticLevel } from '@/domain/models/board'
 import { RelationType } from '@/domain/models/relation'
 import { SemanticNode } from '@/domain/models/semantic-node'
+import type { ArchitecturePattern } from '@/domain/models/workspace'
 import {
   getAllowedRelationTypes,
-  getN1RelationSuggestion
+  getN1RelationSuggestion,
+  getPatternAllowedRelationTypes,
+  isPatternRelationTypeAllowed
 } from '@/domain/semantics/semantic-catalog'
 
 interface RelationPanelProps {
@@ -12,6 +16,7 @@ interface RelationPanelProps {
   nodes: SemanticNode[]
   preselectedSourceId?: string
   preselectedTargetId?: string
+  architecturePattern?: ArchitecturePattern
   onCreateRelation: (sourceNodeId: string, targetNodeId: string, type: RelationType) => void
 }
 
@@ -24,20 +29,32 @@ export function RelationPanel({
   nodes,
   preselectedSourceId,
   preselectedTargetId,
+  architecturePattern,
   onCreateRelation
 }: RelationPanelProps): JSX.Element {
   const [sourceNodeId, setSourceNodeId] = useState<string>(preselectedSourceId ?? '')
   const [targetNodeId, setTargetNodeId] = useState<string>(preselectedTargetId ?? '')
-  const relationTypes = useMemo(() => getAllowedRelationTypes(level), [level])
+
+  const sourceNode = nodes.find((node) => node.id === sourceNodeId)
+  const targetNode = nodes.find((node) => node.id === targetNodeId)
+
+  const relationTypes = useMemo(() => {
+    if (architecturePattern && level === 'N1') {
+      const sourceRole = sourceNode?.patternRole
+      const targetRole = targetNode?.patternRole
+      return getPatternAllowedRelationTypes(architecturePattern, sourceRole, targetRole).filter((type) =>
+        isPatternRelationTypeAllowed(architecturePattern, type, sourceRole, targetRole)
+      )
+    }
+    return getAllowedRelationTypes(level)
+  }, [level, architecturePattern, sourceNode?.patternRole, targetNode?.patternRole])
+
   const [relationType, setRelationType] = useState<RelationType>(relationTypes[0] ?? 'depends_on')
 
   useEffect(() => {
     if (relationTypes.includes(relationType)) return
     setRelationType(relationTypes[0] ?? 'depends_on')
   }, [relationType, relationTypes])
-
-  const sourceNode = nodes.find((node) => node.id === sourceNodeId)
-  const targetNode = nodes.find((node) => node.id === targetNodeId)
 
   const relationSuggestion = useMemo(() => {
     if (level !== 'N1') return undefined
@@ -53,6 +70,12 @@ export function RelationPanel({
       relationTypes.includes(relationType),
     [sourceNodeId, targetNodeId, relationType, relationTypes]
   )
+
+  const handleSwapDirection = (): void => {
+    const prevSource = sourceNodeId
+    setSourceNodeId(targetNodeId)
+    setTargetNodeId(prevSource)
+  }
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
@@ -79,6 +102,28 @@ export function RelationPanel({
             </option>
           ))}
         </select>
+
+        <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
+          <button
+            type="button"
+            onClick={handleSwapDirection}
+            title="Swap direction"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              padding: '4px 8px',
+              border: '1px solid var(--stroke-light)',
+              borderRadius: 6,
+              background: 'transparent',
+              cursor: 'pointer',
+              fontSize: '0.78rem',
+              gap: 4
+            }}
+          >
+            <ArrowLeftRight size={14} />
+            Swap
+          </button>
+        </div>
 
         <label htmlFor="relation-target">Target</label>
         <select

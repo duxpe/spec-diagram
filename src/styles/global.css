@@ -1083,3 +1083,213 @@ label {
     max-height: 50dvh;
   }
 }
+
+/* ─── Pattern Selection Dialog ────────────────────────────────────────────── */
+
+.pattern-dialog {
+  max-width: 680px;
+  width: 90vw;
+}
+
+.pattern-dialog__subtitle {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-top: 4px;
+}
+
+.pattern-dialog__form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pattern-dialog__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-bottom: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.pattern-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 12px;
+  border: 1.5px solid var(--stroke-light);
+  border-radius: 8px;
+  background: var(--surface);
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.pattern-card:hover {
+  border-color: var(--accent);
+}
+
+.pattern-card--selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--accent-soft);
+}
+
+.pattern-card__name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+.pattern-card__desc {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+/* ─── Pattern Badge (Floating Header) ────────────────────────────────────── */
+
+.floating-header__pattern-badge {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+/* ─── Edge Action Menu ───────────────────────────────────────────────────── */
+
+.edge-action-menu {
+  position: fixed;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px;
+  border-radius: 8px;
+  background: var(--surface);
+  border: 1px solid var(--stroke-light);
+  box-shadow: var(--panel-shadow);
+  min-width: 140px;
+}
+
+.edge-action-menu__btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.edge-action-menu__btn:hover {
+  background: var(--accent-soft);
+}
+
+.edge-action-menu__btn--danger {
+  color: var(--danger);
+}
+
+.edge-action-menu__btn--danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+}
+
+/* ─── Connection Suggestion Popup ─────────────────────────────────────────── */
+
+.connection-suggestion-popup {
+  position: fixed;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--stroke-light);
+  box-shadow: var(--panel-shadow);
+  min-width: 200px;
+  max-width: 280px;
+}
+
+.connection-suggestion-popup__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 4px 8px 2px;
+}
+
+.connection-suggestion-popup__search {
+  margin: 2px 4px 4px;
+  padding: 4px 8px;
+  font-size: 0.82rem;
+  border: 1px solid var(--stroke-light);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.connection-suggestion-popup__item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.connection-suggestion-popup__item:hover {
+  background: var(--accent-soft);
+}
+
+.connection-suggestion-popup__item-label {
+  font-weight: 500;
+}
+
+.connection-suggestion-popup__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.connection-suggestion-popup__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  padding: 2px 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.connection-suggestion-popup__label {
+  font-weight: 500;
+}
+
+.connection-suggestion-popup__empty {
+  padding: 8px 10px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  text-align: center;
+}

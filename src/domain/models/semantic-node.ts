@@ -24,6 +24,7 @@ export interface SemanticNode {
   parentNodeId?: string
   level: SemanticLevel
   type: SemanticNodeType
+  patternRole?: string
   title: string
   description?: string
   x: number

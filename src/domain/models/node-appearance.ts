@@ -13,6 +13,9 @@ export type NodeShapeVariant =
   | 'trapezoid'
   | 'hexagon'
   | 'cloud'
+  | 'cylinder'
+  | 'stick_figure'
+  | 'layer_rectangle'
 
 export type AccentColorToken =
   | 'cyan'
@@ -41,6 +44,14 @@ export type GenericIconId =
   | 'key-round'
   | 'arrow-down'
   | 'arrow-up'
+  | 'user'
+  | 'shield'
+  | 'gear'
+  | 'message-queue'
+  | 'puzzle'
+  | 'server'
+  | 'funnel'
+  | 'window'
 
 export type ProviderServiceId =
   | 'aws_ec2'

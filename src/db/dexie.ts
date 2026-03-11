@@ -22,6 +22,16 @@ export class DesignerDatabase extends Dexie {
       relations: '&id, workspaceId, boardId, updatedAt',
       exports: '&id, workspaceId, createdAt'
     })
+
+    // v2: adds architecturePattern to workspaces, patternRole to nodes,
+    // and expanded relation types. No index changes needed.
+    this.version(2).stores({
+      workspaces: '&id, updatedAt',
+      boards: '&id, workspaceId, parentBoardId, level, updatedAt',
+      nodes: '&id, workspaceId, boardId, level, type, updatedAt',
+      relations: '&id, workspaceId, boardId, updatedAt',
+      exports: '&id, workspaceId, createdAt'
+    })
   }
 }
 
