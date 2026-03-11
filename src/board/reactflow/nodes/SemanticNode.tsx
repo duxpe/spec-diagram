@@ -59,6 +59,7 @@ function SemanticNodeComponent({ data, selected }: SemanticNodeProps): JSX.Eleme
           title={data.title}
           semanticType={data.semanticType}
           icon={data.icon}
+          data={data}
           provider={data.provider}
           providerService={data.providerService}
           showProviderBadge={data.showProviderBadge}

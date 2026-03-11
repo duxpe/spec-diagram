@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog'
 import { PatternSelectionDialog } from '@/components/dialogs/PatternSelectionDialog'
 import { WorkspaceListPanel } from '@/components/panels/WorkspaceListPanel'
 import { WorkspaceImportPanel } from '@/components/panels/WorkspaceImportPanel'
@@ -15,9 +16,15 @@ export function WorkspacePage(): JSX.Element {
   const createWorkspace = useWorkspaceStore((state) => state.createWorkspace)
   const openWorkspace = useWorkspaceStore((state) => state.openWorkspace)
   const importWorkspace = useWorkspaceStore((state) => state.importWorkspace)
+  const deleteWorkspace = useWorkspaceStore((state) => state.deleteWorkspace)
   const error = useWorkspaceStore((state) => state.error)
 
   const [isPatternDialogOpen, setPatternDialogOpen] = useState(false)
+  const [workspacePendingDeletion, setWorkspacePendingDeletion] = useState<{
+    id: string
+    name: string
+  } | null>(null)
+  const [isDeletingWorkspace, setIsDeletingWorkspace] = useState(false)
 
   useEffect(() => {
     if (!workspaceId) return
@@ -65,45 +72,110 @@ export function WorkspacePage(): JSX.Element {
     }
   }
 
+  const requestWorkspaceDeletion = (workspaceIdToRemove: string, workspaceName: string): void => {
+    setWorkspacePendingDeletion({ id: workspaceIdToRemove, name: workspaceName })
+  }
+
+  const cancelWorkspaceDeletion = (): void => {
+    if (isDeletingWorkspace) return
+    setWorkspacePendingDeletion(null)
+  }
+
+  const confirmWorkspaceDeletion = async (): Promise<void> => {
+    if (!workspacePendingDeletion) return
+
+    setIsDeletingWorkspace(true)
+    try {
+      await deleteWorkspace(workspacePendingDeletion.id)
+    } finally {
+      setIsDeletingWorkspace(false)
+      setWorkspacePendingDeletion(null)
+    }
+  }
+
   return (
-    <div className="workspace-page">
-      <header className="workspace-page__header">
-        <h1>SysDs-SG</h1>
-        <p>Project setup, local persistence and board navigation</p>
-      </header>
+    <div className="projects-screen">
+      <div className="projects-screen__background" aria-hidden="true" />
+      <div className="projects-screen__world" aria-hidden="true" />
+      <div className="projects-screen__content">
+        <header className="projects-hero">
+          <div className="projects-hero__copy">
+            <p className="projects-hero__eyebrow">System Design S.Architecture Planning</p>
+            <h1>SysDs-SG</h1>
+            <p>
+              Design systems visually, break them into technical layers, and export structured
+              prompts for specs and implementation tasks.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="btn--primary projects-hero__action"
+            onClick={() => setPatternDialogOpen(true)}
+          >
+            <span aria-hidden="true">+</span>
+            New project
+          </button>
+        </header>
 
-      <div className="workspace-toolbar">
-        <button
-          type="button"
-          className="btn--primary"
-          onClick={() => setPatternDialogOpen(true)}
-        >
-          New project
-        </button>
-      </div>
+        <section className="projects-panel">
+          <div className="projects-panel__header">
+            <div>
+              <h2>Projects</h2>
+              <p>Select or manage projects</p>
+            </div>
+            <div className="projects-panel__search">
+              <span className="projects-panel__search-icon" aria-hidden="true">
+                ⌕
+              </span>
+              <input type="text" placeholder="Search projects" aria-label="Search projects" />
+            </div>
+          </div>
 
-      <section className="workspace-page__content">
         <WorkspaceListPanel
           workspaces={workspaces}
           currentWorkspaceId={currentWorkspace?.id}
           onOpenWorkspace={(workspaceIdToOpen) => {
             void handleOpenWorkspace(workspaceIdToOpen)
           }}
-        />
-        <WorkspaceImportPanel
-          onImport={async (jsonInput) => {
-            await handleImportWorkspace(jsonInput)
+          onRemoveWorkspace={(workspaceIdToRemove, workspaceName) => {
+            requestWorkspaceDeletion(workspaceIdToRemove, workspaceName)
           }}
         />
-      </section>
 
-      {error ? <p className="error-text">{error}</p> : null}
+          <div className="projects-panel__footer">
+            <WorkspaceImportPanel
+              onImport={async (jsonInput) => {
+                await handleImportWorkspace(jsonInput)
+              }}
+            />
+            <p>Import from file (JSON)</p>
+          </div>
+        </section>
+
+        {error ? <div className="projects-error">{error}</div> : null}
+      </div>
 
       <PatternSelectionDialog
         open={isPatternDialogOpen}
         onClose={() => setPatternDialogOpen(false)}
         onCreate={(name, description, pattern) => {
           void handleCreateWorkspace(name, description, pattern)
+        }}
+      />
+      <ConfirmationDialog
+        open={Boolean(workspacePendingDeletion)}
+        title={
+          workspacePendingDeletion
+            ? `Delete project "${workspacePendingDeletion.name}"`
+            : 'Delete project'
+        }
+        description="Deleting this workspace will remove all its boards and cannot be undone."
+        confirmLabel="Delete project"
+        cancelLabel="Cancel"
+        isConfirming={isDeletingWorkspace}
+        onClose={cancelWorkspaceDeletion}
+        onConfirm={() => {
+          void confirmWorkspaceDeletion()
         }}
       />
     </div>

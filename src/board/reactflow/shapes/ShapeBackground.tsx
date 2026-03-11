@@ -47,7 +47,6 @@ export function ShapeBackground({
     stroke: colors.stroke,
     strokeWidth: 2.25,
     strokeDasharray,
-    filter: 'url(#cardShadow)'
   }
 
   const renderShape = () => {
@@ -213,12 +212,6 @@ export function ShapeBackground({
         pointerEvents: 'none'
       }}
     >
-      <defs>
-        <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="140%">
-          <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor="#0f172a" floodOpacity="0.08" />
-          <feDropShadow dx="0" dy="1" stdDeviation="2" floodColor="#0f172a" floodOpacity="0.04" />
-        </filter>
-      </defs>
       {renderShape()}
     </svg>
   )

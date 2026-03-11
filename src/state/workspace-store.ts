@@ -27,6 +27,7 @@ interface WorkspaceState {
     exportType: ExportPromptType
   ) => Promise<PromptExportBundle>
   importWorkspace: (jsonInput: string) => Promise<Workspace>
+  deleteWorkspace: (workspaceId: string) => Promise<void>
 }
 
 export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
@@ -150,5 +151,27 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     useAppStore.getState().setLastContext(payload.workspace.id, payload.workspace.rootBoardId)
 
     return payload.workspace
+  },
+  async deleteWorkspace(workspaceId) {
+    const workspace = await workspaceRepo.getById(workspaceId)
+    if (!workspace) return
+
+    await db.transaction('rw', db.workspaces, db.boards, async () => {
+      await db.workspaces.delete(workspaceId)
+      await db.boards.where('workspaceId').equals(workspaceId).delete()
+    })
+
+    const workspaces = await workspaceRepo.list()
+    const nextWorkspace = workspaces[0]
+    const boards = nextWorkspace ? await boardRepo.listByWorkspace(nextWorkspace.id) : []
+
+    set({
+      workspaces,
+      currentWorkspace: nextWorkspace,
+      boards,
+      error: undefined
+    })
+
+    useAppStore.getState().setLastContext(nextWorkspace?.id, nextWorkspace?.rootBoardId)
   }
 }))
