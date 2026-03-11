@@ -1,10 +1,13 @@
 import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from '@/app/App'
+import { registerOfflineIcons } from '@/utils/icons-offline'
 import '@fontsource/plus-jakarta-sans/400.css'
 import '@fontsource/plus-jakarta-sans/500.css'
 import '@fontsource/plus-jakarta-sans/600.css'
 import '@/styles/global.css'
+
+registerOfflineIcons()
 
 const container = document.getElementById('root')
 

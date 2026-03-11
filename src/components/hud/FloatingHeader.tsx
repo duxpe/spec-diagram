@@ -39,7 +39,7 @@ export function FloatingHeader({
         <div className="floating-header__brand-icon">
           <LayoutGrid size={16} />
         </div>
-        <span>Archboard</span>
+        <span>SysDs-SG</span>
       </div>
 
       <div className="floating-header__divider" />
@@ -67,11 +67,11 @@ export function FloatingHeader({
         ) : null}
 
         <Link
-          to="/workspaces"
+          to="/projects"
           className="floating-header__btn floating-header__btn--text"
-          title="Go to workspaces"
+          title="Go to projects"
         >
-          Workspaces
+          Projects
         </Link>
 
         <button

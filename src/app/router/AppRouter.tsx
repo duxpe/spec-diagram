@@ -15,24 +15,24 @@ function LandingRoute(): JSX.Element {
   }
 
   if (!currentWorkspace) {
-    return <Navigate to="/workspaces" replace />
+    return <Navigate to="/projects" replace />
   }
 
   const boardIds = boards.map((board) => board.id)
   const targetBoardId =
     lastBoardId && boardIds.includes(lastBoardId) ? lastBoardId : currentWorkspace.rootBoardId
 
-  return <Navigate to={`/workspace/${currentWorkspace.id}/board/${targetBoardId}`} replace />
+  return <Navigate to={`/project/${currentWorkspace.id}/board/${targetBoardId}`} replace />
 }
 
 export function AppRouter(): JSX.Element {
   return (
     <Routes>
       <Route path="/" element={<LandingRoute />} />
-      <Route path="/workspaces" element={<WorkspacePage />} />
-      <Route path="/workspace/:workspaceId" element={<WorkspacePage />} />
-      <Route path="/workspace/:workspaceId/board/:boardId" element={<BoardPage />} />
-      <Route path="*" element={<Navigate to="/workspaces" replace />} />
+      <Route path="/projects" element={<WorkspacePage />} />
+      <Route path="/project/:projectId" element={<WorkspacePage />} />
+      <Route path="/project/:projectId/board/:boardId" element={<BoardPage />} />
+      <Route path="*" element={<Navigate to="/projects" replace />} />
     </Routes>
   )
 }

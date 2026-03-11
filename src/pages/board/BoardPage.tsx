@@ -21,8 +21,8 @@ import { useWorkspaceStore } from '@/state/workspace-store'
 
 export function BoardPage(): JSX.Element {
   const navigate = useNavigate()
-  const params = useParams<{ workspaceId: string; boardId: string }>()
-  const workspaceId = params.workspaceId
+  const params = useParams<{ projectId: string; boardId: string }>()
+  const workspaceId = params.projectId
   const boardId = params.boardId
 
   const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace)
@@ -111,7 +111,7 @@ export function BoardPage(): JSX.Element {
   )
 
   if (!workspaceId || !boardId) {
-    return <p className="error-text">Missing workspace or board in route.</p>
+    return <p className="error-text">Missing project or board in route.</p>
   }
 
   const handleCreateNode = (type: SemanticNodeType): void => {
@@ -123,7 +123,7 @@ export function BoardPage(): JSX.Element {
       await saveCurrentBoard()
       const childBoard = await openOrCreateChildBoard(nodeId)
       await refreshCurrentWorkspace()
-      navigate(`/workspace/${workspaceId}/board/${childBoard.id}`)
+      navigate(`/project/${workspaceId}/board/${childBoard.id}`)
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Failed to open detail board')
     }
@@ -184,7 +184,7 @@ export function BoardPage(): JSX.Element {
     try {
       const importedWorkspace = await importWorkspace(jsonInput)
       setImportDialogOpen(false)
-      navigate(`/workspace/${importedWorkspace.id}/board/${importedWorkspace.rootBoardId}`)
+      navigate(`/project/${importedWorkspace.id}/board/${importedWorkspace.rootBoardId}`)
     } catch (error) {
       window.alert(error instanceof Error ? error.message : 'Failed to import workspace')
     }
@@ -193,7 +193,7 @@ export function BoardPage(): JSX.Element {
   const handleBackToParent = async (): Promise<void> => {
     if (!currentBoard?.parentBoardId) return
     await saveCurrentBoard()
-    navigate(`/workspace/${workspaceId}/board/${currentBoard.parentBoardId}`)
+    navigate(`/project/${workspaceId}/board/${currentBoard.parentBoardId}`)
   }
 
   const handleDeleteSelectedNode = (): void => {
@@ -272,7 +272,7 @@ export function BoardPage(): JSX.Element {
 
       {/* Floating HUD Components */}
       <FloatingHeader
-        workspaceName={currentWorkspace?.name ?? 'Workspace'}
+        workspaceName={currentWorkspace?.name ?? 'Project'}
         boardName={currentBoard?.name ?? 'Loading...'}
         level={currentBoard?.level ?? 'N1'}
         parentBoardId={currentBoard?.parentBoardId}

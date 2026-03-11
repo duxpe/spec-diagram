@@ -7,7 +7,7 @@ import { useWorkspaceStore } from '@/state/workspace-store'
 
 export function WorkspacePage(): JSX.Element {
   const navigate = useNavigate()
-  const { workspaceId } = useParams<{ workspaceId: string }>()
+  const { projectId: workspaceId } = useParams<{ projectId: string }>()
 
   const workspaces = useWorkspaceStore((state) => state.workspaces)
   const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace)
@@ -23,13 +23,13 @@ export function WorkspacePage(): JSX.Element {
 
   useEffect(() => {
     if (!workspaceId || !currentWorkspace || currentWorkspace.id !== workspaceId) return
-    navigate(`/workspace/${currentWorkspace.id}/board/${currentWorkspace.rootBoardId}`, {
+    navigate(`/project/${currentWorkspace.id}/board/${currentWorkspace.rootBoardId}`, {
       replace: true
     })
   }, [workspaceId, currentWorkspace, navigate])
 
   const goToWorkspaceRoot = (nextWorkspaceId: string, rootBoardId: string): void => {
-    navigate(`/workspace/${nextWorkspaceId}/board/${rootBoardId}`)
+    navigate(`/project/${nextWorkspaceId}/board/${rootBoardId}`)
   }
 
   const handleCreateWorkspace = async (name: string, description?: string): Promise<void> => {
@@ -60,8 +60,8 @@ export function WorkspacePage(): JSX.Element {
   return (
     <div className="workspace-page">
       <header className="workspace-page__header">
-        <h1>System Designer Specs Generator</h1>
-        <p>Workspace setup, local persistence and board navigation</p>
+        <h1>SysDs-SG</h1>
+        <p>Project setup, local persistence and board navigation</p>
       </header>
 
       <WorkspaceToolbar onCreateWorkspace={handleCreateWorkspace} />

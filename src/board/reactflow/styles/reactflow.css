@@ -8,14 +8,14 @@
 
 /* Light theme (default) */
 .rf-canvas--light {
-  --rf-background: #faf9f7;
+  --rf-background: #f1f3f5;
   --rf-text: #1e293b;
-  --rf-border: rgba(148, 163, 184, 0.2);
-  --rf-control-bg: rgba(255, 255, 255, 0.85);
-  --rf-control-border: rgba(148, 163, 184, 0.25);
+  --rf-border: rgba(148, 163, 184, 0.3);
+  --rf-control-bg: #ffffff;
+  --rf-control-border: rgba(148, 163, 184, 0.4);
   --rf-control-text: #64748b;
   --rf-control-hover: rgba(59, 130, 246, 0.1);
-  --rf-control-shadow: 0 4px 16px rgba(15, 23, 42, 0.08);
+  --rf-control-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
   --rf-selection: rgba(59, 130, 246, 0.1);
   --rf-selection-border: rgba(59, 130, 246, 0.4);
   --rf-edge-selected: rgba(59, 130, 246, 0.8);
@@ -23,14 +23,14 @@
 
 /* Dark theme */
 .rf-canvas--dark {
-  --rf-background: #0f172a;
-  --rf-text: #e2e8f0;
-  --rf-border: rgba(148, 163, 184, 0.15);
-  --rf-control-bg: rgba(30, 41, 59, 0.9);
-  --rf-control-border: rgba(148, 163, 184, 0.2);
+  --rf-background: #111827;
+  --rf-text: #e9edf4;
+  --rf-border: rgba(148, 163, 184, 0.18);
+  --rf-control-bg: #1e2535;
+  --rf-control-border: rgba(148, 163, 184, 0.22);
   --rf-control-text: #94a3b8;
   --rf-control-hover: rgba(96, 165, 250, 0.15);
-  --rf-control-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  --rf-control-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
   --rf-selection: rgba(96, 165, 250, 0.15);
   --rf-selection-border: rgba(96, 165, 250, 0.5);
   --rf-edge-selected: rgba(96, 165, 250, 0.8);
@@ -114,8 +114,6 @@
   background: var(--rf-control-bg);
   border: 1px solid var(--rf-control-border);
   border-radius: 12px;
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
   box-shadow: var(--rf-control-shadow);
   overflow: hidden;
 }
@@ -127,7 +125,7 @@
 
 /* Background */
 .rf-canvas .react-flow__background {
-  opacity: 0.4;
+  opacity: 0.5;
 }
 
 /* Selection box */
@@ -162,14 +160,14 @@
 
   /* Node semantic colors for consistency */
   --node-service: #3b82f6;
-  --node-database: #22c55e;
-  --node-external: #e11d48;
-  --node-interface: #a855f7;
-  --node-decision: #f97316;
-  --node-class: #6366f1;
-  --node-port: #14b8a6;
-  --node-method: #8b5cf6;
-  --node-attribute: #06b6d4;
+  --node-database: #16a34a;
+  --node-external: #dc2626;
+  --node-interface: #7c3aed;
+  --node-decision: #d97706;
+  --node-class: #4f46e5;
+  --node-port: #0d9488;
+  --node-method: #7c3aed;
+  --node-attribute: #0891b2;
 }
 
 /* Attribution - hide if pro */

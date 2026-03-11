@@ -22,7 +22,7 @@ export function WorkspaceToolbar({ onCreateWorkspace }: WorkspaceToolbarProps): 
     <form className="workspace-toolbar" onSubmit={handleSubmit}>
       <input
         type="text"
-        placeholder="Workspace name"
+        placeholder="Project name"
         value={name}
         onChange={(event) => setName(event.target.value)}
         required
@@ -33,7 +33,7 @@ export function WorkspaceToolbar({ onCreateWorkspace }: WorkspaceToolbarProps): 
         value={description}
         onChange={(event) => setDescription(event.target.value)}
       />
-      <button type="submit">Create workspace</button>
+      <button type="submit">Create project</button>
     </form>
   )
 }

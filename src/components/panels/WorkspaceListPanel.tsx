@@ -13,7 +13,7 @@ export function WorkspaceListPanel({
 }: WorkspaceListPanelProps): JSX.Element {
   return (
     <div className="panel workspace-list">
-      <h2>Workspaces</h2>
+      <h2>Projects</h2>
       <ul>
         {workspaces.map((workspace) => (
           <li key={workspace.id}>
