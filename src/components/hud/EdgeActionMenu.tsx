@@ -43,15 +43,20 @@ export function EdgeActionMenu({
       className="edge-action-menu"
       style={{ left: position.x, top: position.y }}
     >
-      <button type="button" className="edge-action-menu__btn" onClick={onEdit}>
+      <button type="button" className="edge-action-menu__btn" onClick={onEdit} data-ui-log="Edge action – Edit relation">
         <Pencil size={14} />
         Edit
       </button>
-      <button type="button" className="edge-action-menu__btn" onClick={onReverse}>
+      <button type="button" className="edge-action-menu__btn" onClick={onReverse} data-ui-log="Edge action – Reverse relation">
         <ArrowLeftRight size={14} />
         Reverse direction
       </button>
-      <button type="button" className="edge-action-menu__btn edge-action-menu__btn--danger" onClick={onDelete}>
+      <button
+        type="button"
+        className="edge-action-menu__btn edge-action-menu__btn--danger"
+        onClick={onDelete}
+        data-ui-log="Edge action – Delete relation"
+      >
         <Trash2 size={14} />
         Delete
       </button>

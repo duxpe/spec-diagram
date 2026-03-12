@@ -303,7 +303,13 @@ export function N3InternalsEditorDialog({
             <h2>{dialogTitle}</h2>
             <p className="n3-internals-dialog__subtitle">Structured N3 editing attached to this N2 element.</p>
           </div>
-          <button type="button" className="n3-internals-dialog__close" onClick={onClose} aria-label="Close internals editor">
+          <button
+            type="button"
+            className="n3-internals-dialog__close"
+            onClick={onClose}
+            aria-label="Close internals editor"
+            data-ui-log="N3 internals – Close dialog"
+          >
             <X size={18} />
           </button>
         </header>
@@ -314,6 +320,7 @@ export function N3InternalsEditorDialog({
               type="button"
               className={activeClassTab === 'methods' ? 'dialog-tabs__tab active' : 'dialog-tabs__tab'}
               onClick={() => setActiveClassTab('methods')}
+              data-ui-log="N3 internals – Switch to methods tab"
             >
               Methods
             </button>
@@ -321,6 +328,7 @@ export function N3InternalsEditorDialog({
               type="button"
               className={activeClassTab === 'attributes' ? 'dialog-tabs__tab active' : 'dialog-tabs__tab'}
               onClick={() => setActiveClassTab('attributes')}
+              data-ui-log="N3 internals – Switch to attributes tab"
             >
               Attributes
             </button>
@@ -381,22 +389,37 @@ export function N3InternalsEditorDialog({
                         />
                       </td>
                       <td>
-                        <button type="button" onClick={() => openNoteEditor({ scope: 'method', localId: row.localId })}>
+                        <button
+                          type="button"
+                          onClick={() => openNoteEditor({ scope: 'method', localId: row.localId })}
+                          data-ui-log={`N3 internals – ${row.note ? 'Edit' : 'Add'} method note`}
+                        >
                           {row.note ? 'Edit note' : 'Add note'}
                         </button>
                       </td>
                       <td>
                         <div className="n3-table__actions">
-                          <button type="button" onClick={() => setMethods((prev) => moveItem(prev, index, 'up'))} aria-label="Move method up">
+                          <button
+                            type="button"
+                            onClick={() => setMethods((prev) => moveItem(prev, index, 'up'))}
+                            aria-label="Move method up"
+                            data-ui-log="N3 internals – Move method up"
+                          >
                             <ArrowUp size={14} />
                           </button>
-                          <button type="button" onClick={() => setMethods((prev) => moveItem(prev, index, 'down'))} aria-label="Move method down">
+                          <button
+                            type="button"
+                            onClick={() => setMethods((prev) => moveItem(prev, index, 'down'))}
+                            aria-label="Move method down"
+                            data-ui-log="N3 internals – Move method down"
+                          >
                             <ArrowDown size={14} />
                           </button>
                           <button
                             type="button"
                             onClick={() => setMethods((prev) => prev.filter((entry) => entry.localId !== row.localId))}
                             aria-label="Delete method"
+                            data-ui-log="N3 internals – Delete method"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -406,7 +429,12 @@ export function N3InternalsEditorDialog({
                   ))}
                 </tbody>
               </table>
-              <button type="button" className="n3-table__add" onClick={() => setMethods((prev) => [...prev, { ...EMPTY_METHOD, localId: makeLocalId() }])}>
+              <button
+                type="button"
+                className="n3-table__add"
+                onClick={() => setMethods((prev) => [...prev, { ...EMPTY_METHOD, localId: makeLocalId() }])}
+                data-ui-log="N3 internals – Add method"
+              >
                 <Plus size={14} /> Add method
               </button>
             </div>
@@ -467,22 +495,37 @@ export function N3InternalsEditorDialog({
                         />
                       </td>
                       <td>
-                        <button type="button" onClick={() => openNoteEditor({ scope: 'attribute', localId: row.localId })}>
+                        <button
+                          type="button"
+                          onClick={() => openNoteEditor({ scope: 'attribute', localId: row.localId })}
+                          data-ui-log={`N3 internals – ${row.note ? 'Edit' : 'Add'} attribute note`}
+                        >
                           {row.note ? 'Edit note' : 'Add note'}
                         </button>
                       </td>
                       <td>
                         <div className="n3-table__actions">
-                          <button type="button" onClick={() => setAttributes((prev) => moveItem(prev, index, 'up'))} aria-label="Move attribute up">
+                          <button
+                            type="button"
+                            onClick={() => setAttributes((prev) => moveItem(prev, index, 'up'))}
+                            aria-label="Move attribute up"
+                            data-ui-log="N3 internals – Move attribute up"
+                          >
                             <ArrowUp size={14} />
                           </button>
-                          <button type="button" onClick={() => setAttributes((prev) => moveItem(prev, index, 'down'))} aria-label="Move attribute down">
+                          <button
+                            type="button"
+                            onClick={() => setAttributes((prev) => moveItem(prev, index, 'down'))}
+                            aria-label="Move attribute down"
+                            data-ui-log="N3 internals – Move attribute down"
+                          >
                             <ArrowDown size={14} />
                           </button>
                           <button
                             type="button"
                             onClick={() => setAttributes((prev) => prev.filter((entry) => entry.localId !== row.localId))}
                             aria-label="Delete attribute"
+                            data-ui-log="N3 internals – Delete attribute"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -492,7 +535,12 @@ export function N3InternalsEditorDialog({
                   ))}
                 </tbody>
               </table>
-              <button type="button" className="n3-table__add" onClick={() => setAttributes((prev) => [...prev, { ...EMPTY_ATTRIBUTE, localId: makeLocalId() }])}>
+              <button
+                type="button"
+                className="n3-table__add"
+                onClick={() => setAttributes((prev) => [...prev, { ...EMPTY_ATTRIBUTE, localId: makeLocalId() }])}
+                data-ui-log="N3 internals – Add attribute"
+              >
                 <Plus size={14} /> Add attribute
               </button>
             </div>
@@ -619,22 +667,37 @@ export function N3InternalsEditorDialog({
                         />
                       </td>
                       <td>
-                        <button type="button" onClick={() => openNoteEditor({ scope: 'endpoint', localId: row.localId })}>
+                        <button
+                          type="button"
+                          onClick={() => openNoteEditor({ scope: 'endpoint', localId: row.localId })}
+                          data-ui-log={`N3 internals – ${row.note ? 'Edit' : 'Add'} endpoint note`}
+                        >
                           {row.note ? 'Edit note' : 'Add note'}
                         </button>
                       </td>
                       <td>
                         <div className="n3-table__actions">
-                          <button type="button" onClick={() => setEndpoints((prev) => moveItem(prev, index, 'up'))} aria-label="Move endpoint up">
+                          <button
+                            type="button"
+                            onClick={() => setEndpoints((prev) => moveItem(prev, index, 'up'))}
+                            aria-label="Move endpoint up"
+                            data-ui-log="N3 internals – Move endpoint up"
+                          >
                             <ArrowUp size={14} />
                           </button>
-                          <button type="button" onClick={() => setEndpoints((prev) => moveItem(prev, index, 'down'))} aria-label="Move endpoint down">
+                          <button
+                            type="button"
+                            onClick={() => setEndpoints((prev) => moveItem(prev, index, 'down'))}
+                            aria-label="Move endpoint down"
+                            data-ui-log="N3 internals – Move endpoint down"
+                          >
                             <ArrowDown size={14} />
                           </button>
                           <button
                             type="button"
                             onClick={() => setEndpoints((prev) => prev.filter((entry) => entry.localId !== row.localId))}
                             aria-label="Delete endpoint"
+                            data-ui-log="N3 internals – Delete endpoint"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -645,7 +708,12 @@ export function N3InternalsEditorDialog({
                 </tbody>
               </table>
 
-              <button type="button" className="n3-table__add" onClick={() => setEndpoints((prev) => [...prev, { ...EMPTY_ENDPOINT, localId: makeLocalId() }])}>
+              <button
+                type="button"
+                className="n3-table__add"
+                onClick={() => setEndpoints((prev) => [...prev, { ...EMPTY_ENDPOINT, localId: makeLocalId() }])}
+                data-ui-log="N3 internals – Add endpoint"
+              >
                 <Plus size={14} /> Add endpoint
               </button>
             </div>
@@ -655,8 +723,17 @@ export function N3InternalsEditorDialog({
         {payloadError ? <p className="error-text n3-internals-dialog__error">{payloadError}</p> : null}
 
         <div className="dialog-card__actions">
-          <button type="button" onClick={onClose}>Cancel</button>
-          <button type="button" className="btn--primary" onClick={handleSave}>Save</button>
+          <button type="button" onClick={onClose} data-ui-log="N3 internals – Cancel">
+            Cancel
+          </button>
+          <button
+            type="button"
+            className="btn--primary"
+            onClick={handleSave}
+            data-ui-log="N3 internals – Save"
+          >
+            Save
+          </button>
         </div>
       </div>
 
@@ -673,8 +750,21 @@ export function N3InternalsEditorDialog({
               placeholder="Add implementation notes for this row"
             />
             <div className="dialog-card__actions">
-              <button type="button" onClick={() => setNoteTarget(null)}>Cancel</button>
-              <button type="button" className="btn--primary" onClick={applyNote}>Save note</button>
+              <button
+                type="button"
+                onClick={() => setNoteTarget(null)}
+                data-ui-log="N3 internals – Cancel note"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn--primary"
+                onClick={applyNote}
+                data-ui-log="N3 internals – Save note"
+              >
+                Save note
+              </button>
             </div>
           </div>
         </div>

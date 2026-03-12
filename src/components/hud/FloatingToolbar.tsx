@@ -139,6 +139,7 @@ export function FloatingToolbar({
           className="floating-toolbar__btn active"
           title="Select (V)"
           aria-label="Selection tool"
+          data-ui-log="Floating toolbar – Selection tool"
         >
           <MousePointer2 size={20} />
         </button>
@@ -152,6 +153,7 @@ export function FloatingToolbar({
             aria-label="Add semantic block"
             aria-expanded={isShapesOpen}
             onClick={() => setIsShapesOpen(!isShapesOpen)}
+            data-ui-log="Floating toolbar – Toggle block palette"
           >
             <Shapes size={20} />
             {palette.length > 0 && <span className="floating-toolbar__btn-badge" />}
@@ -180,13 +182,14 @@ export function FloatingToolbar({
                   <div key={group} style={{ marginBottom: '8px' }}>
                     <h4 className="floating-toolbar__submenu-title">{group}</h4>
                     {items.map((item) => (
-                      <button
-                        key={item.patternRole ?? item.type}
-                        type="button"
-                        className="floating-toolbar__submenu-item"
-                        onClick={() => handleCreateNode(item)}
-                      >
-                        <GenericNodeIcon
+                    <button
+                      key={item.patternRole ?? item.type}
+                      type="button"
+                      className="floating-toolbar__submenu-item"
+                      onClick={() => handleCreateNode(item)}
+                      data-ui-log={`Floating toolbar – Add ${item.label}`}
+                    >
+                      <GenericNodeIcon
                           iconId={item.defaultAppearance?.icon ?? getDefaultAppearance(item.type).icon}
                           size={16}
                         />
@@ -205,6 +208,7 @@ export function FloatingToolbar({
           className="floating-toolbar__btn"
           title="Create relation"
           aria-label="Create relation between nodes"
+          data-ui-log="Floating toolbar – Create relation"
         >
           <Link2 size={20} />
         </button>
@@ -220,6 +224,7 @@ export function FloatingToolbar({
             title="Zoom in"
             aria-label="Zoom in"
             onClick={onZoomIn}
+            data-ui-log="Floating toolbar – Zoom in"
           >
             <ZoomIn size={20} />
           </button>
@@ -232,6 +237,7 @@ export function FloatingToolbar({
             title="Zoom out"
             aria-label="Zoom out"
             onClick={onZoomOut}
+            data-ui-log="Floating toolbar – Zoom out"
           >
             <ZoomOut size={20} />
           </button>
@@ -244,6 +250,7 @@ export function FloatingToolbar({
             title="Fit view"
             aria-label="Fit view"
             onClick={onFitView}
+            data-ui-log="Floating toolbar – Fit view"
           >
             <Maximize2 size={20} />
           </button>
@@ -259,6 +266,7 @@ export function FloatingToolbar({
           title="Save (Ctrl+S)"
           aria-label="Save board"
           onClick={onSave}
+          data-ui-log="Floating toolbar – Save board"
         >
           <Save size={20} />
         </button>
@@ -269,6 +277,7 @@ export function FloatingToolbar({
           title="Export"
           aria-label="Export workspace"
           onClick={onOpenExport}
+          data-ui-log="Floating toolbar – Export workspace"
         >
           <Download size={20} />
         </button>
@@ -279,6 +288,7 @@ export function FloatingToolbar({
           title="Import"
           aria-label="Import workspace"
           onClick={onOpenImport}
+          data-ui-log="Floating toolbar – Import workspace"
         >
           <Upload size={20} />
         </button>

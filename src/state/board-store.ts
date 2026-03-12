@@ -22,6 +22,7 @@ import {
 import { useAppStore } from '@/state/app-store'
 import { useWorkspaceStore } from '@/state/workspace-store'
 import { nowIso } from '@/utils/dates'
+import { logUiEvent } from '@/utils/ui-logger'
 import { ZodError } from 'zod'
 
 interface ParentContext {
@@ -63,7 +64,7 @@ interface BoardState {
   reverseRelation: (id: string) => void
   deleteNode: (nodeId: string) => void
   deleteRelation: (relationId: string) => void
-  applyCanvasState: (sourceBoardId: string, nodes: SemanticNode[], relations: Relation[]) => void
+  applyCanvasState: (sourceBoardId: string, nodes: SemanticNode[], relations: Relation[]) => boolean
   saveCurrentBoard: () => Promise<boolean>
   openOrCreateChildBoard: (nodeId: string) => Promise<Board>
 }
@@ -217,7 +218,16 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   async loadBoard(workspaceId, boardId) {
     const loadRequestKey = `${workspaceId}:${boardId}:${nowIso()}`
-    set({ loading: true, error: undefined, loadRequestKey })
+    set({
+      loading: true,
+      error: undefined,
+      loadRequestKey,
+      currentBoard: undefined,
+      parentContext: undefined,
+      nodes: [],
+      relations: [],
+      dirty: false
+    })
 
     try {
       const [board, nodes, relations] = await Promise.all([
@@ -231,7 +241,16 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       }
 
       if (!board || board.workspaceId !== workspaceId) {
-        set({ loading: false, error: 'Board not found for workspace', loadRequestKey: undefined })
+        set({
+          loading: false,
+          error: 'Board not found for workspace',
+          loadRequestKey: undefined,
+          currentBoard: undefined,
+          parentContext: undefined,
+          nodes: [],
+          relations: [],
+          dirty: false
+        })
         return
       }
 
@@ -261,7 +280,12 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       set({
         loading: false,
         error: error instanceof Error ? error.message : 'Failed to load board',
-        loadRequestKey: undefined
+        loadRequestKey: undefined,
+        currentBoard: undefined,
+        parentContext: undefined,
+        nodes: [],
+        relations: [],
+        dirty: false
       })
     }
   },
@@ -288,6 +312,14 @@ export const useBoardStore = create<BoardState>((set, get) => ({
       })
 
       ValidationService.parse(semanticNodeSchema, node)
+
+      logUiEvent('Node created', {
+        nodeId: node.id,
+        title: node.title,
+        type: node.type,
+        level: node.level,
+        boardId: node.boardId
+      })
 
       set((state) => ({
         nodes: [...state.nodes, node],
@@ -437,6 +469,16 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   },
 
   deleteNode(nodeId) {
+    const nodeToDelete = get().nodes.find((node) => node.id === nodeId)
+    if (nodeToDelete) {
+      logUiEvent('Node deleted', {
+        nodeId,
+        title: nodeToDelete.title,
+        type: nodeToDelete.type,
+        boardId: nodeToDelete.boardId
+      })
+    }
+
     set((state) => {
       const nodes = state.nodes.filter((node) => node.id !== nodeId)
       const relations = state.relations.filter(
@@ -466,12 +508,12 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
   applyCanvasState(sourceBoardId, nodes, relations) {
     const currentBoardId = get().currentBoard?.id
-    if (!currentBoardId || currentBoardId !== sourceBoardId) return
+    if (!currentBoardId || currentBoardId !== sourceBoardId) return false
 
     const currentNodes = get().nodes
     const currentRelations = get().relations
     const hasChanges = hasCanvasDiff(currentNodes, nodes, currentRelations, relations)
-    if (!hasChanges) return
+    if (!hasChanges) return false
 
     const hasDeletedNode = nodes.length < currentNodes.length
     const hasDeletedRelation = relations.length < currentRelations.length
@@ -492,6 +534,8 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     if (hasDeletedNode || hasDeletedRelation) {
       void get().saveCurrentBoard()
     }
+
+    return true
   },
 
   async saveCurrentBoard() {

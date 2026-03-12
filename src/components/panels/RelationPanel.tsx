@@ -119,6 +119,7 @@ export function RelationPanel({
               fontSize: '0.78rem',
               gap: 4
             }}
+            data-ui-log="Relation panel – Swap direction"
           >
             <ArrowLeftRight size={14} />
             Swap
@@ -154,7 +155,7 @@ export function RelationPanel({
 
         {relationSuggestion ? <p className="relation-panel__hint">{relationSuggestion}</p> : null}
 
-        <button type="submit" disabled={!canSubmit}>
+        <button type="submit" disabled={!canSubmit} data-ui-log="Relation panel – Create relation">
           Create relation
         </button>
       </form>

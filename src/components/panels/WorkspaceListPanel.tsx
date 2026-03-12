@@ -45,7 +45,7 @@ export function WorkspaceListPanel({
 }: WorkspaceListPanelProps): JSX.Element {
   if (workspaces.length === 0) {
     return (
-      <div className="projects-panel__empty">
+      <div className="projects-gallery__empty">
         <p>No projects yet. Create a new project or import one to get started.</p>
       </div>
     )
@@ -59,7 +59,7 @@ export function WorkspaceListPanel({
   }
 
   return (
-    <ul className="projects-panel__list">
+    <ul className="projects-gallery__list">
       {workspaces.map((workspace) => {
         const active = workspace.id === currentWorkspaceId
         const boardCount = workspace.boardIds.length
@@ -89,6 +89,7 @@ export function WorkspaceListPanel({
                     event.stopPropagation()
                     onRemoveWorkspace(workspace.id, workspace.name)
                   }}
+                  data-ui-log={`Workspace list – Delete project ${workspace.name}`}
                 >
                   <Trash2 size={14} />
                 </button>
@@ -97,11 +98,13 @@ export function WorkspaceListPanel({
                 {workspace.description ?? 'No description provided yet.'}
               </p>
               <div className="project-card__footer">
-                <span>Updated {formatUpdatedAt(workspace.updatedAt)}</span>
-                <span className="project-card__meta-separator" aria-hidden="true">
-                  •
+                <span className="project-card__meta">
+                  <span className="project-card__meta-icon" aria-hidden="true">
+                    ■
+                  </span>
+                  <span>{boardCount > 0 ? boardLabel : 'No boards yet'}</span>
                 </span>
-                <span>{boardCount > 0 ? boardLabel : 'No boards yet'}</span>
+                <span className="project-card__meta-date">Updated {formatUpdatedAt(workspace.updatedAt)}</span>
               </div>
             </article>
           </li>

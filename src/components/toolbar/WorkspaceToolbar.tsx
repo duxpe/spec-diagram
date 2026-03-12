@@ -33,7 +33,9 @@ export function WorkspaceToolbar({ onCreateWorkspace }: WorkspaceToolbarProps): 
         value={description}
         onChange={(event) => setDescription(event.target.value)}
       />
-      <button type="submit">Create project</button>
+      <button type="submit" data-ui-log="Workspace toolbar – Create project">
+        Create project
+      </button>
     </form>
   )
 }

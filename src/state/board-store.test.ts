@@ -64,8 +64,9 @@ describe('board-store canvas sync actions', () => {
       saveCurrentBoard: saveSpy
     })
 
-    useBoardStore.getState().applyCanvasState('board_1', [makeNode('node_a')], [])
+    const applied = useBoardStore.getState().applyCanvasState('board_1', [makeNode('node_a')], [])
 
+    expect(applied).toBe(true)
     expect(useBoardStore.getState().nodes).toHaveLength(1)
     expect(useBoardStore.getState().relations).toHaveLength(0)
     expect(saveSpy).toHaveBeenCalledTimes(1)
@@ -82,10 +83,11 @@ describe('board-store canvas sync actions', () => {
       dirty: false
     })
 
-    useBoardStore
+    const applied = useBoardStore
       .getState()
       .applyCanvasState('board_1', [{ ...nodeA }], [{ ...relation }])
 
+    expect(applied).toBe(false)
     expect(useBoardStore.getState().dirty).toBe(false)
     expect(useBoardStore.getState().nodes[0]).toBe(nodeA)
     expect(useBoardStore.getState().relations[0]).toBe(relation)
@@ -101,10 +103,11 @@ describe('board-store canvas sync actions', () => {
       dirty: false
     })
 
-    useBoardStore
+    const applied = useBoardStore
       .getState()
       .applyCanvasState('board_2', [makeNode('node_a', { x: 999 })], [])
 
+    expect(applied).toBe(false)
     expect(useBoardStore.getState().nodes[0]?.x).toBe(10)
     expect(useBoardStore.getState().dirty).toBe(false)
   })

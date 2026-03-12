@@ -55,7 +55,7 @@ interface RFCanvasProps {
   relations: Relation[]
   selectedNodeId?: string
   onSelectNode: (nodeId?: string) => void
-  onCanvasChange: (boardId: string, nodes: SemanticNode[], relations: Relation[]) => void
+  onCanvasChange: (boardId: string, nodes: SemanticNode[], relations: Relation[]) => boolean | void
   onCanvasReady?: (controls: ZoomControls) => void
   onNodeClick?: (nodeId: string, screenX: number, screenY: number) => void
   onPendingConnect?: (
@@ -159,28 +159,69 @@ export function RFCanvas({
     nodes: initialNodes,
     edges: initialEdges
   })
+  const skipDomainSyncRef = useRef(false)
+  const pendingDomainSyncRef = useRef(false)
+  const syncFrameRef = useRef<number | null>(null)
+  const latestDomainStateRef = useRef({ nodes: semanticNodes, relations })
 
   useEffect(() => {
     latestCanvasStateRef.current = { nodes, edges }
   }, [nodes, edges])
 
   // Sync domain state changes to React Flow (domain -> RF)
-  useEffect(() => {
-    // Skip if we're currently applying changes back to domain
-    if (isApplyingDomainRef.current) return
+  const runDomainSync = useCallback(() => {
+    const { nodes: currentNodes, relations: currentRelations } = latestDomainStateRef.current
+    const nodeById = new Map(currentNodes.map((n) => [n.id, n]))
+    const rfNodes = toRFNodes(currentNodes) as Node[]
+    const rfEdges = toRFEdges(currentRelations, nodeById) as Edge[]
 
-    const nodeById = new Map(semanticNodes.map((n) => [n.id, n]))
-    const rfNodes = toRFNodes(semanticNodes) as Node[]
-    const rfEdges = toRFEdges(relations, nodeById) as Edge[]
-
-    // Preserve React Flow's internal selection state so that selecting a node
-    // and then editing it (which updates domain state) doesn't close the inspector.
     setNodes((currentNodes) => {
       const selectedIds = new Set(currentNodes.filter((n) => n.selected).map((n) => n.id))
       return rfNodes.map((n) => ({ ...n, selected: selectedIds.has(n.id) }))
     })
     setEdges(rfEdges)
-  }, [semanticNodes, relations, setNodes, setEdges])
+  }, [setNodes, setEdges])
+
+  const attemptDomainSync = useCallback(() => {
+    if (skipDomainSyncRef.current) {
+      skipDomainSyncRef.current = false
+      return
+    }
+
+    if (isApplyingDomainRef.current) {
+      if (pendingDomainSyncRef.current) return
+
+      pendingDomainSyncRef.current = true
+      syncFrameRef.current = requestAnimationFrame(() => {
+        syncFrameRef.current = null
+        pendingDomainSyncRef.current = false
+        if (isApplyingDomainRef.current) {
+          attemptDomainSync()
+          return
+        }
+        runDomainSync()
+      })
+      return
+    }
+
+    runDomainSync()
+  }, [runDomainSync])
+
+  useEffect(() => {
+    attemptDomainSync()
+    return () => {
+      if (syncFrameRef.current !== null) {
+        cancelAnimationFrame(syncFrameRef.current)
+        syncFrameRef.current = null
+        pendingDomainSyncRef.current = false
+      }
+    }
+  }, [attemptDomainSync])
+
+  useEffect(() => {
+    latestDomainStateRef.current = { nodes: semanticNodes, relations }
+    attemptDomainSync()
+  }, [semanticNodes, relations, attemptDomainSync])
 
   const emitCanvasChange = useCallback(() => {
     if (isApplyingDomainRef.current) return
@@ -200,7 +241,10 @@ export function RFCanvas({
         existingRelations: latest.relations
       })
 
-      onCanvasChange(latest.boardId, mapped.nodes, mapped.relations)
+      const applied = onCanvasChange(latest.boardId, mapped.nodes, mapped.relations)
+      if (applied === true) {
+        skipDomainSyncRef.current = true
+      }
     } finally {
       isApplyingDomainRef.current = false
     }
@@ -281,6 +325,7 @@ export function RFCanvas({
   const handleNodeClick = useCallback(
     (event: React.MouseEvent, node: Node) => {
       if (!onNodeClickProp) return
+      if (event.button !== 0) return
       const semanticId = getSemanticNodeIdFromRFNode(node)
       if (semanticId) {
         onNodeClickProp(semanticId, event.clientX, event.clientY)

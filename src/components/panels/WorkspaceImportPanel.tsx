@@ -22,7 +22,7 @@ export function WorkspaceImportPanel({ onImport }: WorkspaceImportPanelProps): J
   }
 
   return (
-    <label className="projects-import">
+    <label className="projects-gallery__import-button">
       <input type="file" accept="application/json" onChange={handleChange} disabled={isLoading} />
       <span>{isLoading ? 'Importing...' : 'Import project JSON'}</span>
     </label>

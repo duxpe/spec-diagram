@@ -58,6 +58,7 @@ export function ExportDialog({
             aria-selected={tab === 'json'}
             className={tab === 'json' ? 'dialog-tabs__tab active' : 'dialog-tabs__tab'}
             onClick={() => setTab('json')}
+            data-ui-log="Export dialog – Select JSON tab"
           >
             JSON
           </button>
@@ -67,6 +68,7 @@ export function ExportDialog({
             aria-selected={tab === 'prompts'}
             className={tab === 'prompts' ? 'dialog-tabs__tab active' : 'dialog-tabs__tab'}
             onClick={() => setTab('prompts')}
+            data-ui-log="Export dialog – Select prompts tab"
           >
             Prompts (Markdown)
           </button>
@@ -94,13 +96,19 @@ export function ExportDialog({
                 <option value="spec_prompt">spec_prompt</option>
                 <option value="task_prompt">task_prompt</option>
               </select>
-              <button type="button" onClick={() => onGeneratePrompts(promptType)} disabled={promptLoading}>
+              <button
+                type="button"
+                onClick={() => onGeneratePrompts(promptType)}
+                disabled={promptLoading}
+                data-ui-log="Export dialog – Generate prompts"
+              >
                 {promptLoading ? 'Generating...' : 'Generate prompts'}
               </button>
               <button
                 type="button"
                 onClick={onDownloadPromptZip}
                 disabled={promptLoading || promptItems.length === 0}
+                data-ui-log="Export dialog – Download prompt ZIP"
               >
                 Download ZIP
               </button>
@@ -125,7 +133,7 @@ export function ExportDialog({
         )}
 
         <div className="dialog-card__actions">
-          <button type="button" onClick={onClose}>
+          <button type="button" onClick={onClose} data-ui-log="Export dialog – Close">
             Close
           </button>
         </div>

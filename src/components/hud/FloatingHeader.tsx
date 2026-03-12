@@ -60,33 +60,36 @@ export function FloatingHeader({
 
       <div className="floating-header__actions">
         {parentBoardId ? (
-          <button
-            type="button"
-            className="floating-header__btn floating-header__btn--text"
-            onClick={onBackToParent}
-            title="Back to parent board"
-          >
-            <ChevronLeft size={16} />
-            Parent
-          </button>
-        ) : null}
-
-        <Link
-          to="/projects"
-          className="floating-header__btn floating-header__btn--text"
-          title="Go to projects"
-        >
-          Projects
-        </Link>
-
         <button
           type="button"
-          className="floating-header__btn"
-          onClick={nextTheme}
-          title={`Theme: ${themeMode}`}
+          className="floating-header__btn floating-header__btn--text"
+          onClick={onBackToParent}
+          title="Back to parent board"
+          data-ui-log="Floating header – Back to parent board"
         >
-          <ThemeIcon size={18} />
+          <ChevronLeft size={16} />
+          Parent
         </button>
+      ) : null}
+
+      <Link
+        to="/projects"
+        className="floating-header__btn floating-header__btn--text"
+        title="Go to projects"
+        data-ui-log="Floating header – Go to projects"
+      >
+        Projects
+      </Link>
+
+      <button
+        type="button"
+        className="floating-header__btn"
+        onClick={nextTheme}
+        title={`Theme: ${themeMode}`}
+        data-ui-log="Floating header – Toggle theme mode"
+      >
+        <ThemeIcon size={18} />
+      </button>
       </div>
     </header>
   )

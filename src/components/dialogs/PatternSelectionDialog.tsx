@@ -77,6 +77,7 @@ export function PatternSelectionDialog({
                 type="button"
                 className={`pattern-card${selectedPattern === pattern.id ? ' pattern-card--selected' : ''}`}
                 onClick={() => setSelectedPattern(pattern.id)}
+                data-ui-log={`Pattern selection – Choose ${pattern.name}`}
               >
                 <span className="pattern-card__name">{pattern.name}</span>
                 <span className="pattern-card__desc">{pattern.description}</span>
@@ -85,13 +86,14 @@ export function PatternSelectionDialog({
           </div>
 
           <div className="dialog-card__actions">
-            <button type="button" onClick={handleClose}>
+            <button type="button" onClick={handleClose} data-ui-log="Pattern selection – Cancel">
               Cancel
             </button>
             <button
               type="submit"
               className="btn--primary"
               disabled={!name.trim() || !selectedPattern}
+              data-ui-log="Pattern selection – Create project"
             >
               Create project
             </button>

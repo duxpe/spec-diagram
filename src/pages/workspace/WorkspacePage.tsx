@@ -95,10 +95,8 @@ export function WorkspacePage(): JSX.Element {
 
   return (
     <div className="projects-screen">
-      <div className="projects-screen__background" aria-hidden="true" />
-      <div className="projects-screen__world" aria-hidden="true" />
       <div className="projects-screen__content">
-        <header className="projects-hero">
+        <section className="projects-hero">
           <div className="projects-hero__copy">
             <p className="projects-hero__eyebrow">System Design S.Architecture Planning</p>
             <h1>SysDs-SG</h1>
@@ -107,48 +105,51 @@ export function WorkspacePage(): JSX.Element {
               prompts for specs and implementation tasks.
             </p>
           </div>
-          <button
-            type="button"
-            className="btn--primary projects-hero__action"
-            onClick={() => setPatternDialogOpen(true)}
-          >
-            <span aria-hidden="true">+</span>
-            New project
-          </button>
-        </header>
+          <div className="projects-hero__actions">
+            <label className="projects-hero__search">
+              <span className="projects-hero__search-icon" aria-hidden="true">
+                ⌕
+              </span>
+              <input type="search" placeholder="Search projects" aria-label="Search projects" />
+            </label>
+            <button
+              type="button"
+              className="btn--primary projects-hero__action"
+              onClick={() => setPatternDialogOpen(true)}
+              data-ui-log="Workspace page – New project"
+            >
+              <span aria-hidden="true">+</span>
+              New project
+            </button>
+          </div>
+        </section>
 
-        <section className="projects-panel">
-          <div className="projects-panel__header">
+        <section className="projects-gallery">
+          <div className="projects-gallery__heading">
             <div>
               <h2>Projects</h2>
               <p>Select or manage projects</p>
             </div>
-            <div className="projects-panel__search">
-              <span className="projects-panel__search-icon" aria-hidden="true">
-                ⌕
-              </span>
-              <input type="text" placeholder="Search projects" aria-label="Search projects" />
-            </div>
           </div>
 
-        <WorkspaceListPanel
-          workspaces={workspaces}
-          currentWorkspaceId={currentWorkspace?.id}
-          onOpenWorkspace={(workspaceIdToOpen) => {
-            void handleOpenWorkspace(workspaceIdToOpen)
-          }}
-          onRemoveWorkspace={(workspaceIdToRemove, workspaceName) => {
-            requestWorkspaceDeletion(workspaceIdToRemove, workspaceName)
-          }}
-        />
+          <WorkspaceListPanel
+            workspaces={workspaces}
+            currentWorkspaceId={currentWorkspace?.id}
+            onOpenWorkspace={(workspaceIdToOpen) => {
+              void handleOpenWorkspace(workspaceIdToOpen)
+            }}
+            onRemoveWorkspace={(workspaceIdToRemove, workspaceName) => {
+              requestWorkspaceDeletion(workspaceIdToRemove, workspaceName)
+            }}
+          />
 
-          <div className="projects-panel__footer">
+          <div className="projects-gallery__actions">
             <WorkspaceImportPanel
               onImport={async (jsonInput) => {
                 await handleImportWorkspace(jsonInput)
               }}
             />
-            <p>Import from file (JSON)</p>
+            <span className="projects-gallery__import-note">Import from file (JSON)</span>
           </div>
         </section>
 

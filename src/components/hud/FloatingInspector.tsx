@@ -46,6 +46,7 @@ export function FloatingInspector({
           onClick={onClose}
           title="Close inspector"
           aria-label="Close inspector"
+          data-ui-log="Inspector – Close"
         >
           <X size={18} />
         </button>

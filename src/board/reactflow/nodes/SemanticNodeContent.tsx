@@ -153,6 +153,7 @@ export function SemanticNodeContent({
       <button
         type="button"
         aria-label="Editar Aparência"
+        data-ui-log="Node chip – Open appearance drawer"
         onClick={onOpenAppearance}
         style={{
           background: 'rgba(255, 255, 255, 0.95)',

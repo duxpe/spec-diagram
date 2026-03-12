@@ -41,10 +41,14 @@ export function ImportDialog({ open, onClose, onImport }: ImportDialogProps): JS
           />
 
           <div className="dialog-card__actions">
-            <button type="submit" disabled={isImporting || !value.trim()}>
+            <button
+              type="submit"
+              disabled={isImporting || !value.trim()}
+              data-ui-log="Import dialog – Import workspace"
+            >
               {isImporting ? 'Importing...' : 'Import'}
             </button>
-            <button type="button" onClick={onClose}>
+            <button type="button" onClick={onClose} data-ui-log="Import dialog – Close">
               Close
             </button>
           </div>

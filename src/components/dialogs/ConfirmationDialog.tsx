@@ -36,7 +36,7 @@ export function ConfirmationDialog({
         <p className="confirmation-dialog__description">{description}</p>
 
         <div className="dialog-card__actions">
-          <button type="button" onClick={onClose} disabled={isConfirming}>
+          <button type="button" onClick={onClose} disabled={isConfirming} data-ui-log="Confirmation dialog – Cancel">
             {cancelLabel}
           </button>
           <button
@@ -44,6 +44,7 @@ export function ConfirmationDialog({
             className="confirmation-dialog__confirm"
             onClick={onConfirm}
             disabled={isConfirming}
+            data-ui-log="Confirmation dialog – Confirm"
           >
             {isConfirming ? 'Deleting…' : confirmLabel}
           </button>

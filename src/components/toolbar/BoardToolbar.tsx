@@ -105,6 +105,7 @@ export function BoardToolbar({
                       className="semantic-picker__card"
                       onClick={() => onCreateNode(item.type)}
                       aria-label={`Add ${item.label}`}
+                      data-ui-log={`Board toolbar – Add ${item.label}`}
                     >
                       <span className="semantic-picker__marker" aria-hidden="true">
                         <GenericNodeIcon iconId={getDefaultAppearance(item.type).icon} size={14} />
@@ -133,18 +134,20 @@ export function BoardToolbar({
               </option>
             ))}
           </select>
-          <button type="submit">Add node</button>
+          <button type="submit" data-ui-log="Board toolbar – Add node">
+            Add node
+          </button>
         </form>
       )}
 
       <div className="board-toolbar__group">
-        <button type="button" onClick={onSave}>
+        <button type="button" onClick={onSave} data-ui-log="Board toolbar – Save board">
           Save (Ctrl+S)
         </button>
-        <button type="button" onClick={onOpenExport}>
+        <button type="button" onClick={onOpenExport} data-ui-log="Board toolbar – Export workspace">
           Export
         </button>
-        <button type="button" onClick={onOpenImport}>
+        <button type="button" onClick={onOpenImport} data-ui-log="Board toolbar – Import JSON">
           Import JSON
         </button>
       </div>

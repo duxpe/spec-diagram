@@ -50,6 +50,7 @@ export function SemanticNodeCard({ node, selected, onSelect, onMove }: SemanticN
       onPointerUp={handlePointerUp}
       onClick={() => onSelect(node.id)}
       type="button"
+      data-ui-log={`Canvas – Select node ${node.title}`}
     >
       <span className="semantic-node-card__type">{node.type}</span>
       <strong className="semantic-node-card__title">{node.title}</strong>

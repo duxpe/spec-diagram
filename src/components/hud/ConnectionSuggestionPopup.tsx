@@ -64,6 +64,7 @@ export function ConnectionSuggestionPopup({
                 type="button"
                 className="connection-suggestion-popup__item"
                 onClick={() => onSelect(suggestion)}
+                data-ui-log={`Connection suggestion – Add ${suggestion.label}`}
               >
                 <span className="connection-suggestion-popup__marker">{suggestion.marker}</span>
                 <span className="connection-suggestion-popup__label">{suggestion.label}</span>

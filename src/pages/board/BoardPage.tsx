@@ -172,6 +172,7 @@ export function BoardPage(): JSX.Element {
   }
 
   const handleCreateNode = (request: CreateNodeRequest): void => {
+    if (!currentBoard || currentBoard.id !== boardId) return
     createNode(request.type, request.patternRole, request.defaultAppearance)
   }
 
@@ -430,7 +431,6 @@ export function BoardPage(): JSX.Element {
             selectedNode?.level === 'N2' &&
             ['class', 'interface', 'api_contract'].includes(selectedNode.type)
           }
-          onEdit={handleCloseNodeMenu}
           onEditInternals={() => {
             handleCloseNodeMenu()
             setEditingInternalsNodeId(selectedNodeId)
@@ -558,7 +558,11 @@ export function BoardPage(): JSX.Element {
               }}
             />
             <div className="dialog-card__actions">
-              <button type="button" onClick={() => setPendingRelation(null)}>
+              <button
+                type="button"
+                onClick={() => setPendingRelation(null)}
+                data-ui-log="Relation dialog – Cancel"
+              >
                 Cancel
               </button>
             </div>

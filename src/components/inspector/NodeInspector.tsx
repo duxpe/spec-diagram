@@ -95,6 +95,7 @@ function InspectorSection({
         onClick={() => setIsOpen((prev) => !prev)}
         aria-expanded={isOpen}
         aria-controls={`${panelId}-panel`}
+        data-ui-log={`Inspector section – Toggle ${title}`}
       >
         <div className="inspector-section__toggle-main">
           <span className="inspector-section__title">{title}</span>
@@ -975,6 +976,7 @@ export function NodeInspector({
           className="node-appearance-summary__button node-appearance-summary__trigger"
           onClick={openAppearanceDialog}
           aria-label="Editar Aparência"
+          data-ui-log="Inspector – Open appearance dialog"
         >
           <Palette size={18} />
         </button>
@@ -1018,13 +1020,17 @@ export function NodeInspector({
 
 
       {node.level === 'N2' && ['class', 'interface', 'api_contract'].includes(node.type) && onEditInternals ? (
-        <button type="button" onClick={() => onEditInternals(node.id)}>
+        <button
+          type="button"
+          onClick={() => onEditInternals(node.id)}
+          data-ui-log="Inspector – Edit internals"
+        >
           Edit internals
         </button>
       ) : null}
 
       {canOpenDetail(node) ? (
-        <button type="button" onClick={() => onOpenDetail(node.id)}>
+        <button type="button" onClick={() => onOpenDetail(node.id)} data-ui-log="Inspector – Open detail board">
           Open detail
         </button>
       ) : null}
@@ -1058,7 +1064,7 @@ export function NodeInspector({
                   </div>
                 </div>
                 <div className="node-appearance-dialog__header-actions">
-                  <button type="button" onClick={handleResetAppearance}>
+                  <button type="button" onClick={handleResetAppearance} data-ui-log="Inspector – Reset appearance">
                     Reset visual
                   </button>
                   <button
@@ -1066,6 +1072,7 @@ export function NodeInspector({
                     className="node-appearance-dialog__close"
                     onClick={closeAppearanceDialog}
                     aria-label="Close appearance dialog"
+                    data-ui-log="Inspector – Close appearance dialog"
                   >
                     <X size={18} />
                   </button>
@@ -1073,32 +1080,35 @@ export function NodeInspector({
               </div>
               <div className="node-appearance node-appearance--dialog">
                 <nav className="node-appearance-tablist" role="tablist">
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={appearanceTab === 'visual'}
-                    className={appearanceTab === 'visual' ? 'is-active' : undefined}
-                    onClick={() => setAppearanceTab('visual')}
-                  >
-                    Visual
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={appearanceTab === 'icon'}
-                    className={appearanceTab === 'icon' ? 'is-active' : undefined}
-                    onClick={() => setAppearanceTab('icon')}
-                  >
-                    Icon
-                  </button>
-                  <button
-                    type="button"
-                    role="tab"
-                    aria-selected={appearanceTab === 'extras'}
-                    className={appearanceTab === 'extras' ? 'is-active' : undefined}
-                    onClick={() => setAppearanceTab('extras')}
-                  >
-                    Badge
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={appearanceTab === 'visual'}
+                  className={appearanceTab === 'visual' ? 'is-active' : undefined}
+                  onClick={() => setAppearanceTab('visual')}
+                  data-ui-log="Inspector appearance – Select Visual tab"
+                >
+                  Visual
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={appearanceTab === 'icon'}
+                  className={appearanceTab === 'icon' ? 'is-active' : undefined}
+                  onClick={() => setAppearanceTab('icon')}
+                  data-ui-log="Inspector appearance – Select Icon tab"
+                >
+                  Icon
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={appearanceTab === 'extras'}
+                  className={appearanceTab === 'extras' ? 'is-active' : undefined}
+                  onClick={() => setAppearanceTab('extras')}
+                  data-ui-log="Inspector appearance – Select Badge tab"
+                >
+                  Badge
                   </button>
                 </nav>
                 <div className="node-appearance-tabpanels">
@@ -1197,6 +1207,7 @@ export function NodeInspector({
                         type="button"
                         className={iconProviderTab === 'none' ? 'active' : undefined}
                         onClick={() => setIconProviderTab('none')}
+                        data-ui-log="Inspector appearance – Icon provider Generic"
                       >
                         Generic
                       </button>
@@ -1204,6 +1215,7 @@ export function NodeInspector({
                         type="button"
                         className={iconProviderTab === 'aws' ? 'active' : undefined}
                         onClick={() => setIconProviderTab('aws')}
+                        data-ui-log="Inspector appearance – Icon provider AWS"
                       >
                         AWS
                       </button>
@@ -1211,6 +1223,7 @@ export function NodeInspector({
                         type="button"
                         className={iconProviderTab === 'azure' ? 'active' : undefined}
                         onClick={() => setIconProviderTab('azure')}
+                        data-ui-log="Inspector appearance – Icon provider Azure"
                       >
                         Azure
                       </button>
@@ -1218,6 +1231,7 @@ export function NodeInspector({
                         type="button"
                         className={iconProviderTab === 'gcp' ? 'active' : undefined}
                         onClick={() => setIconProviderTab('gcp')}
+                        data-ui-log="Inspector appearance – Icon provider GCP"
                       >
                         GCP
                       </button>
@@ -1231,6 +1245,7 @@ export function NodeInspector({
                             type="button"
                             className={`icon-picker-card ${resolvedVisual.icon === option.id ? 'selected' : ''}`}
                             onClick={() => syncNodeAppearance({ icon: option.id })}
+                            data-ui-log={`Inspector appearance – Choose icon ${option.label}`}
                           >
                             <GenericNodeIcon iconId={option.id} size={16} />
                             <span>{option.label}</span>
@@ -1252,6 +1267,7 @@ export function NodeInspector({
                                 providerService: option.id
                               })
                             }
+                            data-ui-log={`Inspector appearance – Choose icon ${option.label}`}
                           >
                             <Icon icon={option.icon} width={16} height={16} />
                             <span>{option.label}</span>

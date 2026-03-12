@@ -153,25 +153,39 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     return payload.workspace
   },
   async deleteWorkspace(workspaceId) {
-    const workspace = await workspaceRepo.getById(workspaceId)
-    if (!workspace) return
+    set({ error: undefined })
+    try {
+      const workspace = await workspaceRepo.getById(workspaceId)
+      if (!workspace) return
 
-    await db.transaction('rw', db.workspaces, db.boards, async () => {
-      await db.workspaces.delete(workspaceId)
-      await db.boards.where('workspaceId').equals(workspaceId).delete()
-    })
+      await db.transaction(
+        'rw',
+        [db.workspaces, db.boards, db.nodes, db.relations, db.exports],
+        async () => {
+          await db.workspaces.delete(workspaceId)
+          await db.boards.where('workspaceId').equals(workspaceId).delete()
+          await db.nodes.where('workspaceId').equals(workspaceId).delete()
+          await db.relations.where('workspaceId').equals(workspaceId).delete()
+          await db.exports.where('workspaceId').equals(workspaceId).delete()
+        }
+      )
 
-    const workspaces = await workspaceRepo.list()
-    const nextWorkspace = workspaces[0]
-    const boards = nextWorkspace ? await boardRepo.listByWorkspace(nextWorkspace.id) : []
+      const workspaces = await workspaceRepo.list()
+      const nextWorkspace = workspaces[0]
+      const boards = nextWorkspace ? await boardRepo.listByWorkspace(nextWorkspace.id) : []
 
-    set({
-      workspaces,
-      currentWorkspace: nextWorkspace,
-      boards,
-      error: undefined
-    })
+      set({
+        workspaces,
+        currentWorkspace: nextWorkspace,
+        boards,
+        error: undefined
+      })
 
-    useAppStore.getState().setLastContext(nextWorkspace?.id, nextWorkspace?.rootBoardId)
+      useAppStore.getState().setLastContext(nextWorkspace?.id, nextWorkspace?.rootBoardId)
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : 'Failed to delete workspace'
+      })
+    }
   }
 }))

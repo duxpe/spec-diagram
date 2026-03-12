@@ -91,6 +91,7 @@ export function EditRelationDialog({
               type="button"
               onClick={() => setReversed(!reversed)}
               title="Reverse direction"
+              data-ui-log="Edit relation dialog – Reverse direction"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -144,10 +145,10 @@ export function EditRelationDialog({
           </div>
 
           <div className="dialog-card__actions">
-            <button type="button" onClick={onClose}>
+            <button type="button" onClick={onClose} data-ui-log="Edit relation dialog – Cancel">
               Cancel
             </button>
-            <button type="submit" className="btn--primary">
+            <button type="submit" className="btn--primary" data-ui-log="Edit relation dialog – Save">
               Save
             </button>
           </div>

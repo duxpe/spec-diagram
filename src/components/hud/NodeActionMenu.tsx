@@ -1,10 +1,9 @@
-import { Edit3, Copy, Trash2, ExternalLink, Rows3 } from 'lucide-react'
+import { Copy, Trash2, ExternalLink, Rows3 } from 'lucide-react'
 
 interface NodeActionMenuProps {
   position: { x: number; y: number }
   canOpenDetail: boolean
   canEditInternals?: boolean
-  onEdit: () => void
   onEditInternals?: () => void
   onDuplicate: () => void
   onOpenDetail: () => void
@@ -15,7 +14,6 @@ export function NodeActionMenu({
   position,
   canOpenDetail,
   canEditInternals,
-  onEdit,
   onEditInternals,
   onDuplicate,
   onOpenDetail,
@@ -32,19 +30,10 @@ export function NodeActionMenu({
       <button
         type="button"
         className="node-action-menu__btn"
-        onClick={onEdit}
-        title="Edit properties"
-        aria-label="Edit node properties"
-      >
-        <Edit3 size={18} />
-      </button>
-
-      <button
-        type="button"
-        className="node-action-menu__btn"
         onClick={onDuplicate}
         title="Duplicate"
         aria-label="Duplicate node"
+        data-ui-log="Node action – Duplicate node"
       >
         <Copy size={18} />
       </button>
@@ -56,6 +45,7 @@ export function NodeActionMenu({
           onClick={onEditInternals}
           title="Edit internals"
           aria-label="Edit internals"
+          data-ui-log="Node action – Edit internals"
         >
           <Rows3 size={18} />
         </button>
@@ -68,6 +58,7 @@ export function NodeActionMenu({
           onClick={onOpenDetail}
           title="Open detail board"
           aria-label="Open detail board"
+          data-ui-log="Node action – Open detail board"
         >
           <ExternalLink size={18} />
         </button>
@@ -79,6 +70,7 @@ export function NodeActionMenu({
         onClick={onDelete}
         title="Delete"
         aria-label="Delete node"
+        data-ui-log="Node action – Delete node"
       >
         <Trash2 size={18} />
       </button>
