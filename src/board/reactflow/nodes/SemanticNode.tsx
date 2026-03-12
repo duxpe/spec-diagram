@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, type MouseEvent } from 'react'
 import { NodeResizer } from '@xyflow/react'
 import type { RFNodeData } from '../reactflow-adapter'
 import { ShapeBackground } from '../shapes/ShapeBackground'
@@ -42,14 +42,18 @@ function SemanticNodeComponent({ id, data, selected }: SemanticNodeProps): JSX.E
 
       <NodeHandles isConnectable={true} />
 
-      <div
-        style={{
-          width,
-          height,
-          position: 'relative',
-          cursor: 'pointer'
-        }}
-      >
+        <div
+          style={{
+            width,
+            height,
+            position: 'relative',
+            cursor: 'pointer'
+          }}
+          onContextMenu={(event: MouseEvent<HTMLDivElement>) => {
+            event.preventDefault()
+            data.onContextMenu?.(event)
+          }}
+        >
         <ShapeBackground
           width={width}
           height={height}

@@ -1,10 +1,8 @@
-import { Copy, Trash2, ExternalLink, Rows3 } from 'lucide-react'
+import { Copy, Trash2, ExternalLink } from 'lucide-react'
 
 interface NodeActionMenuProps {
   position: { x: number; y: number }
   canOpenDetail: boolean
-  canEditInternals?: boolean
-  onEditInternals?: () => void
   onDuplicate: () => void
   onOpenDetail: () => void
   onDelete: () => void
@@ -13,8 +11,6 @@ interface NodeActionMenuProps {
 export function NodeActionMenu({
   position,
   canOpenDetail,
-  canEditInternals,
-  onEditInternals,
   onDuplicate,
   onOpenDetail,
   onDelete
@@ -37,19 +33,6 @@ export function NodeActionMenu({
       >
         <Copy size={18} />
       </button>
-
-      {canEditInternals && onEditInternals ? (
-        <button
-          type="button"
-          className="node-action-menu__btn"
-          onClick={onEditInternals}
-          title="Edit internals"
-          aria-label="Edit internals"
-          data-ui-log="Node action – Edit internals"
-        >
-          <Rows3 size={18} />
-        </button>
-      ) : null}
 
       {canOpenDetail && (
         <button

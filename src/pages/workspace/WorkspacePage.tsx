@@ -98,11 +98,11 @@ export function WorkspacePage(): JSX.Element {
       <div className="projects-screen__content">
         <section className="projects-hero">
           <div className="projects-hero__copy">
-            <p className="projects-hero__eyebrow">System Design S.Architecture Planning</p>
+            <p className="projects-hero__eyebrow">System Designer Specs Generator Tool</p>
             <h1>SysDs-SG</h1>
             <p>
-              Design systems visually, break them into technical layers, and export structured
-              prompts for specs and implementation tasks.
+              Design systems visually, specify only what you need, and export structured
+              prompts to generate specs in any LLM you want.
             </p>
           </div>
           <div className="projects-hero__actions">

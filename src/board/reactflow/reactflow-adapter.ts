@@ -1,4 +1,5 @@
 import { MarkerType, type Node, type Edge } from '@xyflow/react'
+import type { MouseEvent } from 'react'
 import { SemanticLevel } from '@/domain/models/board'
 import type {
   AccentColorToken,
@@ -41,6 +42,7 @@ export interface RFNodeData extends Record<string, unknown> {
   hasValidationErrors: boolean
   width: number
   height: number
+  onContextMenu?: (event: MouseEvent<HTMLDivElement>) => void
 }
 
 export interface RFEdgeData extends Record<string, unknown> {
@@ -145,10 +147,19 @@ export function isRelationEquivalent(current: Relation, next: Relation): boolean
 /**
  * Converts semantic domain nodes to React Flow nodes.
  */
-export function toRFNodes(nodes: SemanticNode[]): SemanticRFNode[] {
+export interface NodeMappingOptions {
+  onNodeContextMenu?: (nodeId: string, screenX: number, screenY: number) => void
+}
+
+export function toRFNodes(nodes: SemanticNode[], options?: NodeMappingOptions): SemanticRFNode[] {
   return nodes.map((node) => {
     const visual = resolveNodeVisual(node)
     const hasValidationIssues = getPayloadIssuesForNodeType(node.type, node.data).length > 0
+
+    const contextMenuHandler = options?.onNodeContextMenu
+      ? (event: MouseEvent<HTMLDivElement>) =>
+          options.onNodeContextMenu?.(node.id, event.clientX, event.clientY)
+      : undefined
 
     return {
       id: node.id,
@@ -170,7 +181,8 @@ export function toRFNodes(nodes: SemanticNode[]): SemanticRFNode[] {
         hasChildBoard: !!node.childBoardId,
         hasValidationErrors: hasValidationIssues,
         width: normalizeNumber(node.width),
-        height: normalizeNumber(node.height)
+        height: normalizeNumber(node.height),
+        onContextMenu: contextMenuHandler
       },
       width: normalizeNumber(node.width),
       height: normalizeNumber(node.height),

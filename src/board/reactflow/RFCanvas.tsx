@@ -57,7 +57,7 @@ interface RFCanvasProps {
   onSelectNode: (nodeId?: string) => void
   onCanvasChange: (boardId: string, nodes: SemanticNode[], relations: Relation[]) => boolean | void
   onCanvasReady?: (controls: ZoomControls) => void
-  onNodeClick?: (nodeId: string, screenX: number, screenY: number) => void
+  onNodeContextMenu?: (nodeId: string, screenX: number, screenY: number) => void
   onPendingConnect?: (
     sourceNodeId: string,
     targetNodeId: string,
@@ -119,7 +119,7 @@ export function RFCanvas({
   onSelectNode,
   onCanvasChange,
   onCanvasReady,
-  onNodeClick: onNodeClickProp,
+  onNodeContextMenu: onNodeContextMenuProp,
   onPendingConnect,
   onEdgeContextMenu: onEdgeContextMenuProp,
   onConnectionToEmpty
@@ -147,7 +147,20 @@ export function RFCanvas({
   }, [workspaceId, boardId, level, semanticNodes, relations])
 
   // Convert domain state to React Flow state
-  const initialNodes = useMemo(() => toRFNodes(semanticNodes) as Node[], [])
+  const handleNodeContextMenu = useCallback(
+    (nodeId: string, screenX: number, screenY: number) => {
+      if (!onNodeContextMenuProp) return
+      onNodeContextMenuProp(nodeId, screenX, screenY)
+    },
+    [onNodeContextMenuProp]
+  )
+
+  const mapNodes = useCallback(
+    (nodeList: SemanticNode[]) => toRFNodes(nodeList, { onNodeContextMenu: handleNodeContextMenu }) as Node[],
+    [handleNodeContextMenu]
+  )
+
+  const initialNodes = useMemo(() => mapNodes(semanticNodes), [])
   const initialEdges = useMemo(() => {
     const nodeById = new Map(semanticNodes.map((n) => [n.id, n]))
     return toRFEdges(relations, nodeById) as Edge[]
@@ -172,7 +185,7 @@ export function RFCanvas({
   const runDomainSync = useCallback(() => {
     const { nodes: currentNodes, relations: currentRelations } = latestDomainStateRef.current
     const nodeById = new Map(currentNodes.map((n) => [n.id, n]))
-    const rfNodes = toRFNodes(currentNodes) as Node[]
+    const rfNodes = mapNodes(currentNodes)
     const rfEdges = toRFEdges(currentRelations, nodeById) as Edge[]
 
     setNodes((currentNodes) => {
@@ -321,19 +334,6 @@ export function RFCanvas({
     [onPendingConnect]
   )
 
-  // Handle node click → expose screen position to parent for NodeActionMenu
-  const handleNodeClick = useCallback(
-    (event: React.MouseEvent, node: Node) => {
-      if (!onNodeClickProp) return
-      if (event.button !== 0) return
-      const semanticId = getSemanticNodeIdFromRFNode(node)
-      if (semanticId) {
-        onNodeClickProp(semanticId, event.clientX, event.clientY)
-      }
-    },
-    [onNodeClickProp]
-  )
-
   // Handle selection changes
   const handleSelectionChange = useCallback(
     ({ nodes: selectedNodes }: OnSelectionChangeParams) => {
@@ -422,7 +422,6 @@ export function RFCanvas({
         onConnect={handleConnect}
         onConnectStart={handleConnectStart}
         onConnectEnd={handleConnectEnd}
-        onNodeClick={handleNodeClick}
         onPaneClick={handlePaneClick}
         onEdgeContextMenu={handleEdgeContextMenu}
         onSelectionChange={handleSelectionChange}

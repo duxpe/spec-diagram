@@ -267,14 +267,12 @@ export function BoardPage(): JSX.Element {
     (nodeId?: string): void => {
       setSelectedNodeId(nodeId)
       setInspectorOpen(!!nodeId)
-      if (!nodeId) {
-        setNodeMenuPos(null)
-      }
+      setNodeMenuPos(null)
     },
-    [setSelectedNodeId, setInspectorOpen]
+    [setSelectedNodeId, setInspectorOpen, setNodeMenuPos]
   )
 
-  const handleNodeClick = useCallback(
+  const handleNodeContextMenu = useCallback(
     (nodeId: string, screenX: number, screenY: number): void => {
       handleNodeSelect(nodeId)
       setNodeMenuPos({ x: screenX, y: screenY })
@@ -349,7 +347,7 @@ export function BoardPage(): JSX.Element {
           }
           theme={activeTheme}
           onCanvasReady={(ctrl) => { zoomControlsRef.current = ctrl }}
-          onNodeClick={handleNodeClick}
+          onNodeContextMenu={handleNodeContextMenu}
           onPendingConnect={(sourceNodeId, targetNodeId, sourceHandleId, targetHandleId) =>
             setPendingRelation({ sourceNodeId, targetNodeId, sourceHandleId, targetHandleId })
           }
@@ -427,14 +425,6 @@ export function BoardPage(): JSX.Element {
         <NodeActionMenu
           position={nodeMenuPos}
           canOpenDetail={selectedNode ? canOpenDetail(selectedNode) : false}
-          canEditInternals={
-            selectedNode?.level === 'N2' &&
-            ['class', 'interface', 'api_contract'].includes(selectedNode.type)
-          }
-          onEditInternals={() => {
-            handleCloseNodeMenu()
-            setEditingInternalsNodeId(selectedNodeId)
-          }}
           onDuplicate={handleCloseNodeMenu}
           onOpenDetail={() => {
             handleCloseNodeMenu()

@@ -1,8 +1,11 @@
 import { render, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
+import type { Node } from '@xyflow/react'
+import type { MouseEvent } from 'react'
 import { RFCanvas } from '@/board/reactflow/RFCanvas'
 import { SemanticNode } from '@/domain/models/semantic-node'
 import { Relation } from '@/domain/models/relation'
+import { type RFNodeData } from '@/board/reactflow/reactflow-adapter'
 
 let lastReactFlowProps: Record<string, unknown> | null = null
 
@@ -150,8 +153,8 @@ describe('RFCanvas domain sync', () => {
     })
   })
 
-  it('only forwards node clicks for the primary button', () => {
-    const onNodeClick = vi.fn()
+  it('routes node context menus back to the parent handler', () => {
+    const onNodeContextMenu = vi.fn()
 
     render(
       <RFCanvas
@@ -164,21 +167,23 @@ describe('RFCanvas domain sync', () => {
         relations={[] as Relation[]}
         onSelectNode={vi.fn()}
         onCanvasChange={vi.fn()}
-        onNodeClick={onNodeClick}
+        onNodeContextMenu={onNodeContextMenu}
       />
     )
 
-    const fireNodeClick = lastReactFlowProps?.onNodeClick as
-      | ((event: { button: number; clientX: number; clientY: number }, node: { data: { semanticId: string } }) => void)
-      | undefined
+    const rfNodes = lastReactFlowProps?.nodes as Node<RFNodeData>[] | undefined
+    const semanticNodeData = rfNodes?.[0]?.data
+    const mockEvent = {
+      clientX: 10,
+      clientY: 20,
+      button: 2,
+      preventDefault: vi.fn()
+    } as unknown as MouseEvent<HTMLDivElement>
 
-    const rfNode = { id: 'node_primary', type: 'semantic-node', data: { semanticId: 'node_primary' } }
+    expect(semanticNodeData?.onContextMenu).toBeDefined()
+    semanticNodeData?.onContextMenu?.(mockEvent)
 
-    fireNodeClick?.({ button: 2, clientX: 1, clientY: 2 }, rfNode)
-    expect(onNodeClick).not.toHaveBeenCalled()
-
-    fireNodeClick?.({ button: 0, clientX: 10, clientY: 20 }, rfNode)
-    expect(onNodeClick).toHaveBeenCalledTimes(1)
-    expect(onNodeClick).toHaveBeenCalledWith('node_primary', 10, 20)
+    expect(onNodeContextMenu).toHaveBeenCalledTimes(1)
+    expect(onNodeContextMenu).toHaveBeenCalledWith('node_primary', 10, 20)
   })
 })
