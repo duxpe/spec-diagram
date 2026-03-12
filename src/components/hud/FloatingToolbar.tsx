@@ -16,7 +16,6 @@ import type { NodeAppearance } from '@/domain/models/node-appearance'
 import type { SemanticNodeType } from '@/domain/models/semantic-node'
 import type { ArchitecturePattern } from '@/domain/models/workspace'
 import { N2_NODE_PALETTE } from '@/domain/semantics/n2-node-palette'
-import { N3_NODE_PALETTE } from '@/domain/semantics/n3-node-palette'
 import { getDefaultAppearance } from '@/domain/semantics/node-visual-catalog'
 import { getPatternN1Palette } from '@/domain/semantics/pattern-n1-palette'
 
@@ -53,7 +52,6 @@ function getPaletteByLevel(
 ): ToolbarPaletteItem[] {
   if (level === 'N1') return getPatternN1Palette(pattern)
   if (level === 'N2') return N2_NODE_PALETTE.map((item) => ({ ...item }))
-  if (level === 'N3') return N3_NODE_PALETTE.map((item) => ({ ...item }))
   return []
 }
 

@@ -34,6 +34,7 @@ interface NodeInspectorProps {
   }
   onUpdateNode: (id: string, patch: Partial<Omit<SemanticNode, 'id' | 'workspaceId' | 'boardId'>>) => void
   onOpenDetail: (nodeId: string) => void
+  onEditInternals?: (nodeId: string) => void
 }
 
 function asString(value: unknown, fallback = ''): string {
@@ -67,7 +68,8 @@ export function NodeInspector({
   node,
   parentContext,
   onUpdateNode,
-  onOpenDetail
+  onOpenDetail,
+  onEditInternals
 }: NodeInspectorProps): JSX.Element {
   const [draftTitle, setDraftTitle] = useState('')
   const [draftDescription, setDraftDescription] = useState('')
@@ -1046,6 +1048,12 @@ export function NodeInspector({
           onUpdateNode(node.id, { height })
         }}
       />
+
+      {node.level === 'N2' && ['class', 'interface', 'api_contract'].includes(node.type) && onEditInternals ? (
+        <button type="button" onClick={() => onEditInternals(node.id)}>
+          Edit internals
+        </button>
+      ) : null}
 
       {canOpenDetail(node) ? (
         <button type="button" onClick={() => onOpenDetail(node.id)}>

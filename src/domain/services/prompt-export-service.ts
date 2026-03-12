@@ -28,8 +28,10 @@ interface RelationDescriptor {
 }
 
 interface N3NodeContext {
-  node: SemanticNode
-  relations: RelationDescriptor[]
+  type: 'method' | 'attribute' | 'endpoint'
+  title: string
+  description?: string
+  data: Record<string, unknown>
 }
 
 interface N2NodeContext {
@@ -117,7 +119,7 @@ function formatRelations(relations: RelationDescriptor[]): string[] {
   })
 }
 
-function formatNodes(nodes: SemanticNode[]): string[] {
+function formatNodes(nodes: Array<{ type: string; title: string }>): string[] {
   if (nodes.length === 0) return [`- ${MISSING_TEXT}`]
 
   return nodes.map((node) => `- ${node.type}: ${textValue(node.title)}`)
@@ -196,7 +198,7 @@ function renderN2Blocks(context: ExportContext): string {
         '- Relacoes do componente:',
         ...formatRelations(n2.relations).map((line) => `  ${line}`),
         '- Blocos N3:',
-        ...formatNodes(n2.n3Nodes.map((entry) => entry.node)).map((line) => `  ${line}`)
+        ...formatNodes(n2.n3Nodes).map((line) => `  ${line}`)
       ]
 
       return lines.join('\n')
@@ -213,12 +215,10 @@ function renderN3Details(context: ExportContext): string {
       const n3Markdown = n2.n3Nodes
         .map((n3) => {
           const lines = [
-            `#### ${n3.node.type} - ${textValue(n3.node.title)}`,
-            `- Descricao: ${textValue(n3.node.description)}`,
+            `#### ${n3.type} - ${textValue(n3.title)}`,
+            `- Descricao: ${textValue(n3.description)}`,
             '- Payload semantico:',
-            ...formatNodeData(n3.node.data).map((line) => `  ${line}`),
-            '- Relacoes locais:',
-            ...formatRelations(n3.relations).map((line) => `  ${line}`)
+            ...formatNodeData(n3.data).map((line) => `  ${line}`)
           ]
 
           return lines.join('\n')
@@ -393,7 +393,7 @@ function renderTaskPromptMarkdown(context: ExportContext): string {
     '- Casos de erro conhecidos:',
     context.n2Nodes
       .flatMap((entry) => entry.n3Nodes)
-      .flatMap((entry) => listValue(entry.node.data.errorCases))
+      .flatMap((entry) => listValue(entry.data.errorCases))
       .map((value) => `- ${value}`)
       .join('\n') || `- ${MISSING_TEXT}`,
     '',
@@ -405,6 +405,78 @@ function renderTaskPromptMarkdown(context: ExportContext): string {
     '- Escreva em portugues.',
     '- Nao invente contexto nao fornecido; use Open Questions / Assumptions para lacunas.'
   ].join('\n')
+}
+
+function buildN3ContextEntries(node: SemanticNode): N3NodeContext[] {
+  if (node.type !== 'class' && node.type !== 'interface' && node.type !== 'api_contract') {
+    return []
+  }
+
+  const internals =
+    typeof node.data.internals === 'object' && node.data.internals !== null
+      ? (node.data.internals as Record<string, unknown>)
+      : {}
+
+  const asNonEmpty = (value: unknown): string | undefined => {
+    if (typeof value !== 'string') return undefined
+    const trimmed = value.trim()
+    return trimmed.length > 0 ? trimmed : undefined
+  }
+
+  if (node.type === 'api_contract') {
+    const endpoints = Array.isArray(internals.endpoints) ? internals.endpoints : []
+    return endpoints
+      .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+      .map((entry) => {
+        const method = asNonEmpty(entry.httpMethod) ?? 'METHOD'
+        const url = asNonEmpty(entry.url) ?? 'endpoint'
+        return {
+          type: 'endpoint',
+          title: `${method} ${url}`,
+          description: asNonEmpty(entry.note),
+          data: {
+            httpMethod: entry.httpMethod,
+            url: entry.url,
+            requestFormat: entry.requestFormat,
+            responseFormat: entry.responseFormat,
+            note: entry.note
+          }
+        } satisfies N3NodeContext
+      })
+  }
+
+  const methods = Array.isArray(internals.methods) ? internals.methods : []
+  const attributes = Array.isArray(internals.attributes) ? internals.attributes : []
+
+  const methodEntries = methods
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map((entry) => ({
+      type: 'method' as const,
+      title: asNonEmpty(entry.name) ?? 'method',
+      description: asNonEmpty(entry.note),
+      data: {
+        returnType: entry.returnType,
+        name: entry.name,
+        parameters: entry.parameters,
+        note: entry.note
+      }
+    }))
+
+  const attributeEntries = attributes
+    .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+    .map((entry) => ({
+      type: 'attribute' as const,
+      title: asNonEmpty(entry.name) ?? 'attribute',
+      description: asNonEmpty(entry.note),
+      data: {
+        type: entry.type,
+        name: entry.name,
+        defaultValue: entry.defaultValue,
+        note: entry.note
+      }
+    }))
+
+  return [...methodEntries, ...attributeEntries]
 }
 
 function renderPromptMarkdown(context: ExportContext, exportType: ExportPromptType): string {
@@ -474,23 +546,10 @@ function buildExportContexts(input: PromptExportBuildInput): ExportContext[] {
         .filter((relation): relation is RelationDescriptor => Boolean(relation))
         .sort(compareRelations)
 
-      const n3Board = findChildBoard(n2Node, 'N3', boardsById, childBoardsByParentNodeId)
-      const n3Nodes = n3Board ? (nodesByBoardId.get(n3Board.id) ?? []) : []
-      const n3Relations = n3Board ? relationsByBoardId.get(n3Board.id) ?? [] : []
-
-      const n3Contexts: N3NodeContext[] = n3Nodes.map((n3Node) => ({
-        node: n3Node,
-        relations: n3Relations
-          .filter((relation) => relation.sourceNodeId === n3Node.id || relation.targetNodeId === n3Node.id)
-          .map((relation) => relationToDescriptor(relation, nodesById))
-          .filter((relation): relation is RelationDescriptor => Boolean(relation))
-          .sort(compareRelations)
-      }))
-
       return {
         node: n2Node,
         relations,
-        n3Nodes: n3Contexts
+        n3Nodes: buildN3ContextEntries(n2Node)
       }
     })
 

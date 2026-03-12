@@ -114,12 +114,6 @@ const N1_DRILLDOWN_ELIGIBLE_TYPES = new Set<SemanticNodeType>([
   'adapter'
 ])
 
-const N2_DRILLDOWN_ELIGIBLE_TYPES = new Set<SemanticNodeType>([
-  'class',
-  'interface',
-  'api_contract'
-])
-
 export function getAllowedNodeTypes(level: SemanticLevel): SemanticNodeType[] {
   if (level === 'N1') return N1_NODE_TYPES
   if (level === 'N2') return N2_NODE_TYPES
@@ -144,7 +138,7 @@ export function isRelationTypeAllowedForLevel(level: SemanticLevel, type: Relati
 
 export function canOpenDetail(node: Pick<SemanticNode, 'level' | 'type'>): boolean {
   if (node.level === 'N3') return false
-  if (node.level === 'N2') return N2_DRILLDOWN_ELIGIBLE_TYPES.has(node.type)
+  if (node.level === 'N2') return false
   return N1_DRILLDOWN_ELIGIBLE_TYPES.has(node.type)
 }
 
@@ -182,17 +176,28 @@ export function getDefaultNodeData(level: SemanticLevel, type: SemanticNodeType)
     switch (type) {
       case 'class':
         return {
-          responsibility: 'Describe class responsibility'
+          responsibility: 'Describe class responsibility',
+          internals: {
+            methods: [],
+            attributes: []
+          }
         }
       case 'interface':
         return {
-          purpose: 'Describe interface purpose'
+          purpose: 'Describe interface purpose',
+          internals: {
+            methods: [],
+            attributes: []
+          }
         }
       case 'api_contract':
         return {
           kind: 'http',
           inputSummary: ['Describe contract input'],
-          outputSummary: ['Describe contract output']
+          outputSummary: ['Describe contract output'],
+          internals: {
+            endpoints: []
+          }
         }
       case 'free_note_input':
         return {

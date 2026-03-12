@@ -50,7 +50,7 @@ describe('BoardToolbar', () => {
     expect(screen.queryByRole('button', { name: 'Add System' })).not.toBeInTheDocument()
   })
 
-  it('renders searchable N3 picker and creates node by click', () => {
+  it('hides picker cards for N3 boards', () => {
     const onCreateNode = vi.fn()
 
     render(
@@ -63,12 +63,9 @@ describe('BoardToolbar', () => {
       />
     )
 
-    fireEvent.change(screen.getByLabelText('Search semantic blocks'), {
-      target: { value: 'method' }
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Add Method' }))
-    expect(onCreateNode).toHaveBeenCalledWith('method')
+    expect(screen.getByText('N3 blocks are edited from the parent N2 internals modal.')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Add Method' })).not.toBeInTheDocument()
+    expect(onCreateNode).not.toHaveBeenCalled()
     expect(screen.queryByRole('button', { name: 'Add System' })).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Node type')).not.toBeInTheDocument()
   })

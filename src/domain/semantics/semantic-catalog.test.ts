@@ -68,8 +68,8 @@ describe('semantic-catalog', () => {
   })
 
   it('enforces N2 drill-down eligibility', () => {
-    expect(canOpenDetail({ level: 'N2', type: 'class' })).toBe(true)
-    expect(canOpenDetail({ level: 'N2', type: 'api_contract' })).toBe(true)
+    expect(canOpenDetail({ level: 'N2', type: 'class' })).toBe(false)
+    expect(canOpenDetail({ level: 'N2', type: 'api_contract' })).toBe(false)
     expect(canOpenDetail({ level: 'N2', type: 'free_note_input' })).toBe(false)
   })
 
@@ -87,12 +87,19 @@ describe('semantic-catalog', () => {
     const apiContractData = getDefaultNodeData('N2', 'api_contract')
 
     expect(classData).toMatchObject({
-      responsibility: expect.any(String)
+      responsibility: expect.any(String),
+      internals: {
+        methods: [],
+        attributes: []
+      }
     })
     expect(apiContractData).toMatchObject({
       kind: 'http',
       inputSummary: expect.any(Array),
-      outputSummary: expect.any(Array)
+      outputSummary: expect.any(Array),
+      internals: {
+        endpoints: []
+      }
     })
   })
 

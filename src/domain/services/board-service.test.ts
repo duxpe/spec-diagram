@@ -24,15 +24,15 @@ describe('BoardService', () => {
     expect(childBoard.parentNodeId).toBe('node_1')
   })
 
-  it('throws when creating child board from N3', () => {
+  it('throws when creating child board from N2', () => {
     expect(() =>
       BoardService.createChildBoard({
         workspaceId: 'ws_1',
         parentBoardId: 'board_1',
         parentNodeId: 'node_1',
-        parentLevel: 'N3'
+        parentLevel: 'N2'
       })
-    ).toThrowError('N3 nodes cannot open deeper boards in MVP')
+    ).toThrowError('N2 nodes cannot open deeper boards in MVP')
   })
 
   it('throws when relation attempts cross-board nodes', () => {

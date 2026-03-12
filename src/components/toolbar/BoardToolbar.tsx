@@ -4,7 +4,6 @@ import { SemanticLevel } from '@/domain/models/board'
 import { SemanticNodeType } from '@/domain/models/semantic-node'
 import { N1_NODE_PALETTE } from '@/domain/semantics/n1-node-palette'
 import { N2_NODE_PALETTE } from '@/domain/semantics/n2-node-palette'
-import { N3_NODE_PALETTE } from '@/domain/semantics/n3-node-palette'
 import { getDefaultAppearance } from '@/domain/semantics/node-visual-catalog'
 import { getAllowedNodeTypes } from '@/domain/semantics/semantic-catalog'
 
@@ -28,7 +27,6 @@ function getPaletteByLevel(level: SemanticLevel): Array<{
 }> {
   if (level === 'N1') return N1_NODE_PALETTE
   if (level === 'N2') return N2_NODE_PALETTE
-  if (level === 'N3') return N3_NODE_PALETTE
   return []
 }
 
@@ -78,7 +76,9 @@ export function BoardToolbar({
 
   return (
     <div className="board-toolbar panel">
-      {palette.length > 0 ? (
+      {level === 'N3' ? (
+        <p className="semantic-picker__empty">N3 blocks are edited from the parent N2 internals modal.</p>
+      ) : palette.length > 0 ? (
         <div className="semantic-picker">
           <label htmlFor="semantic-picker-search" className="board-toolbar__label">
             Search semantic blocks

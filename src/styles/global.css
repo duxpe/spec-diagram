@@ -954,6 +954,126 @@ label {
   justify-content: flex-end;
 }
 
+.n3-internals-dialog {
+  width: min(1120px, 96vw);
+  max-height: min(84dvh, 900px);
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+}
+
+.n3-internals-dialog__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.n3-internals-dialog__header h2 {
+  margin: 0;
+}
+
+.n3-internals-dialog__subtitle {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+}
+
+.n3-internals-dialog__close {
+  padding: 6px;
+  min-width: 36px;
+}
+
+.n3-internals-dialog__content {
+  overflow: auto;
+  border: 1px solid var(--stroke);
+  border-radius: 12px;
+  padding: 12px;
+  background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
+}
+
+.n3-internals-dialog__empty {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.n3-internals-dialog__error {
+  margin: 0;
+}
+
+.n3-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.n3-table th,
+.n3-table td {
+  border: 1px solid var(--stroke-light);
+  padding: 8px;
+  text-align: left;
+  vertical-align: top;
+}
+
+.n3-table th {
+  font-size: 0.82rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.n3-table td button {
+  white-space: nowrap;
+}
+
+.n3-table__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.n3-table__actions button {
+  min-width: 30px;
+  padding: 6px;
+}
+
+.n3-table__add {
+  margin-top: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.n3-contract-form {
+  display: grid;
+  gap: 10px;
+}
+
+.n3-contract-form__grid {
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.n3-contract-form__grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.n3-contract-form__grid label {
+  display: grid;
+  gap: 6px;
+}
+
+.n3-note-backdrop {
+  z-index: 20;
+}
+
+.n3-note-dialog {
+  width: min(620px, 92vw);
+}
+
+.n3-note-dialog .dialog-card__header h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 @media (max-width: 1100px) {
   .app-shell {
     grid-template-columns: minmax(0, 1fr);
@@ -990,6 +1110,11 @@ label {
   .dialog-export-panel__controls {
     grid-template-columns: 1fr;
     align-items: stretch;
+  }
+
+  .n3-contract-form__grid,
+  .n3-contract-form__grid--two {
+    grid-template-columns: 1fr;
   }
 }
 

@@ -11,6 +11,7 @@ import { BoardLayout } from '@/components/layout/BoardLayout'
 import { ConnectionSuggestionPopup } from '@/components/hud/ConnectionSuggestionPopup'
 import { EdgeActionMenu } from '@/components/hud/EdgeActionMenu'
 import { EditRelationDialog } from '@/components/dialogs/EditRelationDialog'
+import { N3InternalsEditorDialog } from '@/components/dialogs/N3InternalsEditorDialog'
 import { RelationPanel } from '@/components/panels/RelationPanel'
 import { useBoardAutosave } from '@/features/autosave/useBoardAutosave'
 import { ExportPromptType, PromptExportBundle } from '@/domain/models/export'
@@ -22,6 +23,7 @@ import {
   getConnectionSuggestions,
   type ConnectionSuggestion
 } from '@/domain/semantics/connection-suggestion-engine'
+import { canOpenDetail } from '@/domain/semantics/semantic-catalog'
 import { PATTERN_CATALOG } from '@/domain/semantics/pattern-catalog'
 import { useBoardStore } from '@/state/board-store'
 import { useUiStore } from '@/state/ui-store'
@@ -94,6 +96,8 @@ export function BoardPage(): JSX.Element {
     canvasX: number
     canvasY: number
   } | null>(null)
+  const [editingInternalsNodeId, setEditingInternalsNodeId] = useState<string | null>(null)
+  const n3RedirectedRef = useRef(false)
   const zoomControlsRef = useRef<ZoomControls | null>(null)
 
   useBoardAutosave()
@@ -101,6 +105,8 @@ export function BoardPage(): JSX.Element {
   useEffect(() => {
     setSelectedNodeId(undefined)
     setNodeMenuPos(null)
+    setEditingInternalsNodeId(null)
+    n3RedirectedRef.current = false
   }, [workspaceId, boardId, setSelectedNodeId])
 
   useEffect(() => {
@@ -131,9 +137,24 @@ export function BoardPage(): JSX.Element {
     return () => window.removeEventListener('keydown', handleSave)
   }, [saveCurrentBoard])
 
+  useEffect(() => {
+    if (!workspaceId || !currentBoard) return
+    if (currentBoard.level !== 'N3') return
+    if (!currentBoard.parentBoardId) return
+    if (n3RedirectedRef.current) return
+
+    n3RedirectedRef.current = true
+    window.alert('Legacy N3 boards are no longer editable. Internals now live in the parent N2 node modal.')
+    navigate(`/project/${workspaceId}/board/${currentBoard.parentBoardId}`)
+  }, [currentBoard, navigate, workspaceId])
+
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId),
     [nodes, selectedNodeId]
+  )
+  const editingInternalsNode = useMemo(
+    () => nodes.find((node) => node.id === editingInternalsNodeId),
+    [nodes, editingInternalsNodeId]
   )
 
   if (!workspaceId || !boardId) {
@@ -368,6 +389,7 @@ export function BoardPage(): JSX.Element {
             parentContext={parentContext}
             onUpdateNode={updateNode}
             onOpenDetail={(nodeId) => void handleOpenDetail(nodeId)}
+            onEditInternals={(nodeId) => setEditingInternalsNodeId(nodeId)}
           />
         </FloatingInspector>
       ) : null}
@@ -376,8 +398,16 @@ export function BoardPage(): JSX.Element {
       {selectedNodeId && nodeMenuPos ? (
         <NodeActionMenu
           position={nodeMenuPos}
-          canOpenDetail={currentBoard?.level !== 'N3'}
+          canOpenDetail={selectedNode ? canOpenDetail(selectedNode) : false}
+          canEditInternals={
+            selectedNode?.level === 'N2' &&
+            ['class', 'interface', 'api_contract'].includes(selectedNode.type)
+          }
           onEdit={handleCloseNodeMenu}
+          onEditInternals={() => {
+            handleCloseNodeMenu()
+            setEditingInternalsNodeId(selectedNodeId)
+          }}
           onDuplicate={handleCloseNodeMenu}
           onOpenDetail={() => {
             handleCloseNodeMenu()
@@ -526,6 +556,17 @@ export function BoardPage(): JSX.Element {
         open={isImportDialogOpen}
         onClose={() => setImportDialogOpen(false)}
         onImport={handleImportWorkspace}
+      />
+
+      <N3InternalsEditorDialog
+        open={!!editingInternalsNode}
+        node={editingInternalsNode}
+        onClose={() => setEditingInternalsNodeId(null)}
+        onSave={(dataPatch) => {
+          if (!editingInternalsNode) return
+          updateNode(editingInternalsNode.id, { data: dataPatch })
+          setEditingInternalsNodeId(null)
+        }}
       />
     </>
   )

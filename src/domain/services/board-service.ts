@@ -56,7 +56,7 @@ export class BoardService {
     const childLevel = NavigationService.inferChildLevel(input.parentLevel)
 
     if (!childLevel) {
-      throw new Error('N3 nodes cannot open deeper boards in MVP')
+      throw new Error(`${input.parentLevel} nodes cannot open deeper boards in MVP`)
     }
 
     const now = nowIso()

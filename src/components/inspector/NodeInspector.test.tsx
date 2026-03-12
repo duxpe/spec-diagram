@@ -102,6 +102,7 @@ describe('NodeInspector', () => {
 
   it('renders N2 class fields and persists valid class payload', () => {
     const onUpdateNode = vi.fn()
+    const onEditInternals = vi.fn()
 
     render(
       <NodeInspector
@@ -116,6 +117,7 @@ describe('NodeInspector', () => {
         }}
         onUpdateNode={onUpdateNode}
         onOpenDetail={vi.fn()}
+        onEditInternals={onEditInternals}
       />
     )
 
@@ -128,6 +130,10 @@ describe('NodeInspector', () => {
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
       data: { responsibility: 'Coordinate account aggregates' }
     })
+
+    fireEvent.click(screen.getByRole('button', { name: 'Edit internals' }))
+    expect(onEditInternals).toHaveBeenCalledWith('node_1')
+    expect(screen.queryByRole('button', { name: 'Open detail' })).not.toBeInTheDocument()
   })
 
   it('validates N2 api contract required fields before persisting', () => {

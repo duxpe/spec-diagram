@@ -18,7 +18,7 @@ function buildFixture() {
     name: 'Payments Platform',
     description: 'Sistema de pagamentos modular',
     rootBoardId: 'board_n1',
-    boardIds: ['board_n1', 'board_n2', 'board_n3'],
+    boardIds: ['board_n1', 'board_n2'],
     createdAt: now,
     updatedAt: now
   }
@@ -44,18 +44,6 @@ function buildFixture() {
       nodeIds: [],
       relationIds: [],
       createdAt: '2026-03-10T00:10:00.000Z',
-      updatedAt: now
-    },
-    {
-      id: 'board_n3',
-      workspaceId: 'ws_1',
-      parentBoardId: 'board_n2',
-      parentNodeId: 'node_class',
-      level: 'N3',
-      name: 'AccountService detail',
-      nodeIds: [],
-      relationIds: [],
-      createdAt: '2026-03-10T00:20:00.000Z',
       updatedAt: now
     }
   ]
@@ -125,9 +113,25 @@ function buildFixture() {
       y: 20,
       width: 220,
       height: 110,
-      childBoardId: 'board_n3',
       data: {
-        responsibility: 'Aplicar regras de conta'
+        responsibility: 'Aplicar regras de conta',
+        internals: {
+          methods: [
+            {
+              returnType: 'Result<Account>',
+              name: 'execute',
+              parameters: 'input: ExecuteCommand',
+              note: 'Executar comando'
+            }
+          ],
+          attributes: [
+            {
+              type: 'string',
+              name: 'accountId',
+              note: 'Identificador da conta'
+            }
+          ]
+        }
       },
       createdAt: '2026-03-10T00:11:00.000Z',
       updatedAt: now
@@ -147,42 +151,6 @@ function buildFixture() {
         purpose: 'Contrato de acesso externo'
       },
       createdAt: '2026-03-10T00:12:00.000Z',
-      updatedAt: now
-    },
-    {
-      id: 'node_method',
-      workspaceId: 'ws_1',
-      boardId: 'board_n3',
-      level: 'N3',
-      type: 'method',
-      title: 'execute',
-      x: 20,
-      y: 20,
-      width: 220,
-      height: 110,
-      data: {
-        signature: 'execute(input): output',
-        purpose: 'Executar comando'
-      },
-      createdAt: '2026-03-10T00:21:00.000Z',
-      updatedAt: now
-    },
-    {
-      id: 'node_attribute',
-      workspaceId: 'ws_1',
-      boardId: 'board_n3',
-      level: 'N3',
-      type: 'attribute',
-      title: 'accountId',
-      x: 280,
-      y: 20,
-      width: 220,
-      height: 110,
-      data: {
-        typeSignature: 'string',
-        purpose: 'Identificador da conta'
-      },
-      createdAt: '2026-03-10T00:22:00.000Z',
       updatedAt: now
     }
   ]
@@ -205,16 +173,6 @@ function buildFixture() {
       sourceNodeId: 'node_class',
       targetNodeId: 'node_interface',
       type: 'implements',
-      createdAt: now,
-      updatedAt: now
-    },
-    {
-      id: 'rel_n3',
-      workspaceId: 'ws_1',
-      boardId: 'board_n3',
-      sourceNodeId: 'node_method',
-      targetNodeId: 'node_attribute',
-      type: 'uses',
       createdAt: now,
       updatedAt: now
     }
@@ -243,6 +201,7 @@ describe('prompt-export-service', () => {
     const systemPrompt = bundle.items.find((item) => item.rootNodeId === 'node_sys')
     expect(systemPrompt?.markdown).toContain('### class - AccountService')
     expect(systemPrompt?.markdown).toContain('#### method - execute')
+    expect(systemPrompt?.markdown).toContain('#### attribute - accountId')
     expect(systemPrompt?.markdown).toContain('## Contratos, interfaces e integracoes')
   })
 
