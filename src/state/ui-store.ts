@@ -10,6 +10,7 @@ interface UiState {
   isExportDialogOpen: boolean
   isImportDialogOpen: boolean
   themeMode: ThemeMode
+  appearanceDialogNodeId?: string
   setSelectedNodeId: (nodeId?: string) => void
   setRelationSourceNodeId: (nodeId?: string) => void
   setRelationTargetNodeId: (nodeId?: string) => void
@@ -17,6 +18,7 @@ interface UiState {
   setExportDialogOpen: (open: boolean) => void
   setImportDialogOpen: (open: boolean) => void
   setThemeMode: (mode: ThemeMode) => void
+  setAppearanceDialogNodeId: (nodeId?: string) => void
   resolveActiveTheme: () => ActiveTheme
   resetRelationDraft: () => void
 }
@@ -39,6 +41,7 @@ export const useUiStore = create<UiState>()(
       isExportDialogOpen: false,
       isImportDialogOpen: false,
       themeMode: 'system',
+      appearanceDialogNodeId: undefined,
       setSelectedNodeId: (selectedNodeId) => set({ selectedNodeId }),
       setRelationSourceNodeId: (relationSourceNodeId) => set({ relationSourceNodeId }),
       setRelationTargetNodeId: (relationTargetNodeId) => set({ relationTargetNodeId }),
@@ -46,6 +49,7 @@ export const useUiStore = create<UiState>()(
       setExportDialogOpen: (isExportDialogOpen) => set({ isExportDialogOpen }),
       setImportDialogOpen: (isImportDialogOpen) => set({ isImportDialogOpen }),
       setThemeMode: (themeMode) => set({ themeMode }),
+      setAppearanceDialogNodeId: (appearanceDialogNodeId) => set({ appearanceDialogNodeId }),
       resolveActiveTheme: () => {
         const mode = get().themeMode
         return mode === 'system' ? resolveSystemTheme() : mode

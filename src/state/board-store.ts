@@ -64,7 +64,7 @@ interface BoardState {
   deleteNode: (nodeId: string) => void
   deleteRelation: (relationId: string) => void
   applyCanvasState: (sourceBoardId: string, nodes: SemanticNode[], relations: Relation[]) => void
-  saveCurrentBoard: () => Promise<void>
+  saveCurrentBoard: () => Promise<boolean>
   openOrCreateChildBoard: (nodeId: string) => Promise<Board>
 }
 
@@ -497,7 +497,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   async saveCurrentBoard() {
     const { currentBoard, nodes, relations } = get()
 
-    if (!currentBoard || !get().dirty) return
+    if (!currentBoard || !get().dirty) return true
 
     set({ saving: true, error: undefined })
 
@@ -515,16 +515,20 @@ export const useBoardStore = create<BoardState>((set, get) => ({
 
       await db.transaction('rw', db.boards, db.nodes, db.relations, async () => {
         await db.boards.put(updatedBoard)
+        await db.nodes.where('boardId').equals(updatedBoard.id).delete()
         await db.nodes.bulkPut(nodes)
+        await db.relations.where('boardId').equals(updatedBoard.id).delete()
         await db.relations.bulkPut(relations)
       })
 
       set({ currentBoard: updatedBoard, dirty: false, saving: false })
+      return true
     } catch (error) {
       set({
         saving: false,
         error: error instanceof Error ? error.message : 'Failed to persist board'
       })
+      return false
     }
   },
 

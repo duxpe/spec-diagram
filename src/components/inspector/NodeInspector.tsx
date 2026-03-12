@@ -1,4 +1,6 @@
-import { ChangeEvent, useEffect, useMemo, useState } from 'react'
+import { ChangeEvent, ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { Palette, X } from 'lucide-react'
 import { Icon } from '@iconify/react'
 import { GenericNodeIcon } from '@/components/icons/semantic-icons'
 import { NodeAppearance, VisualProvider } from '@/domain/models/node-appearance'
@@ -17,6 +19,7 @@ import {
   getShapeOptions,
   resolveNodeVisual
 } from '@/domain/semantics/node-visual-catalog'
+import { useUiStore } from '@/state/ui-store'
 
 interface NodeInspectorProps {
   node?: SemanticNode
@@ -64,6 +67,53 @@ function FieldError({ message }: { message?: string }): JSX.Element | null {
   return <p className="field-error">{message}</p>
 }
 
+interface InspectorSectionProps {
+  title: string
+  summary?: string
+  defaultOpen?: boolean
+  children: ReactNode
+}
+
+function InspectorSection({
+  title,
+  summary,
+  defaultOpen = false,
+  children
+}: InspectorSectionProps): JSX.Element {
+  const [isOpen, setIsOpen] = useState(defaultOpen)
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'section'
+  const panelId = `inspector-section-${slug}`
+
+  return (
+    <section className="inspector-section">
+      <button
+        type="button"
+        className="inspector-section__toggle"
+        onClick={() => setIsOpen((prev) => !prev)}
+        aria-expanded={isOpen}
+        aria-controls={`${panelId}-panel`}
+      >
+        <div className="inspector-section__toggle-main">
+          <span className="inspector-section__title">{title}</span>
+          {summary ? <span className="inspector-section__summary">{summary}</span> : null}
+        </div>
+        <span className="inspector-section__indicator" aria-hidden="true">
+          {isOpen ? '−' : '+'}
+        </span>
+      </button>
+      <div
+        id={`${panelId}-panel`}
+        className={`inspector-section__panel ${isOpen ? 'is-open' : ''}`}
+      >
+        {children}
+      </div>
+    </section>
+  )
+}
+
 export function NodeInspector({
   node,
   parentContext,
@@ -77,9 +127,14 @@ export function NodeInspector({
   const [draftAppearance, setDraftAppearance] = useState<NodeAppearance>({})
   const [iconSearch, setIconSearch] = useState('')
   const [iconProviderTab, setIconProviderTab] = useState<VisualProvider>('none')
+  const [appearanceTab, setAppearanceTab] = useState<'visual' | 'icon' | 'extras'>('visual')
   const [titleError, setTitleError] = useState<string>()
   const [payloadErrors, setPayloadErrors] = useState<Array<{ field: string; message: string }>>([])
   const [appearanceError, setAppearanceError] = useState<string>()
+  const [isAppearanceDialogOpen, setIsAppearanceDialogOpen] = useState(false)
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null)
+  const appearanceDialogNodeId = useUiStore((state) => state.appearanceDialogNodeId)
+  const setAppearanceDialogNodeId = useUiStore((state) => state.setAppearanceDialogNodeId)
 
   useEffect(() => {
     if (!node) {
@@ -106,6 +161,54 @@ export function NodeInspector({
     setAppearanceError(undefined)
   }, [node])
 
+  const openAppearanceDialog = useCallback((): void => {
+    if (!node) return
+    setAppearanceDialogNodeId(node.id)
+  }, [node, setAppearanceDialogNodeId])
+
+  const closeAppearanceDialog = useCallback((): void => {
+    setAppearanceDialogNodeId(undefined)
+  }, [setAppearanceDialogNodeId])
+
+  useEffect(() => {
+    if (!node) {
+      setIsAppearanceDialogOpen(false)
+      closeAppearanceDialog()
+      return
+    }
+
+    setIsAppearanceDialogOpen(appearanceDialogNodeId === node.id)
+  }, [appearanceDialogNodeId, node, closeAppearanceDialog])
+
+  useEffect(() => {
+    if (isAppearanceDialogOpen) {
+      setAppearanceTab('visual')
+    }
+  }, [isAppearanceDialogOpen])
+
+  useEffect(() => {
+    const container = document.createElement('div')
+    document.body.appendChild(container)
+    setPortalContainer(container)
+
+    return () => {
+      document.body.removeChild(container)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!isAppearanceDialogOpen) return
+
+    const handleEscape = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        closeAppearanceDialog()
+      }
+    }
+
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isAppearanceDialogOpen, closeAppearanceDialog])
+
   const fieldErrorByName = useMemo(() => {
     const map = new Map<string, string>()
 
@@ -126,6 +229,7 @@ export function NodeInspector({
   const roundedWidth = Math.round(node.width)
   const roundedHeight = Math.round(node.height)
   const resolvedVisual = resolveNodeVisual({ type: node.type, appearance: draftAppearance })
+  const sizeSummary = `${roundedWidth} × ${roundedHeight} px`
   const providerServiceOptions = getCloudServiceOptions(resolvedVisual.provider)
   const genericIconOptions = getGenericIconOptions()
   const cloudIconOptions = iconProviderTab === 'none' ? [] : getCloudServiceOptions(iconProviderTab)
@@ -136,6 +240,12 @@ export function NodeInspector({
   const filteredCloudIcons = cloudIconOptions.filter((item) =>
     item.label.toLowerCase().includes(iconSearch.trim().toLowerCase())
   )
+
+  const appearanceProviderSummary = resolvedVisual.providerService
+    ? `${getProviderLabel(resolvedVisual.provider)} / ${
+        getCloudServiceById(resolvedVisual.providerService)?.label ?? 'Custom'
+      }`
+    : `${getProviderLabel(resolvedVisual.provider)} / Generic icon`
 
   const syncNodeData = (patch: Record<string, unknown>): void => {
     const nextData = { ...draftData, ...patch }
@@ -810,244 +920,102 @@ export function NodeInspector({
 
   return (
     <div className="node-inspector">
-      <p className="node-inspector__type">Type: {node.type}</p>
-      {parentContext ? (
-        <>
-          <p className="node-inspector__parent">
-            Parent ({parentContext.immediate.level}): {parentContext.immediate.boardName} /{' '}
-            {parentContext.immediate.nodeTitle}
-          </p>
-          {parentContext.ancestor ? (
+      <InspectorSection
+        title="General info"
+        summary={`${node.level} · ${node.type}`}
+        defaultOpen
+      >
+        <p className="node-inspector__type">Type: {node.type}</p>
+        {parentContext ? (
+          <>
             <p className="node-inspector__parent">
-              Ancestor ({parentContext.ancestor.level}): {parentContext.ancestor.boardName} /{' '}
-              {parentContext.ancestor.nodeTitle}
+              Parent ({parentContext.immediate.level}): {parentContext.immediate.boardName} /{' '}
+              {parentContext.immediate.nodeTitle}
             </p>
-          ) : null}
-        </>
-      ) : null}
+            {parentContext.ancestor ? (
+              <p className="node-inspector__parent">
+                Ancestor ({parentContext.ancestor.level}): {parentContext.ancestor.boardName} /{' '}
+                {parentContext.ancestor.nodeTitle}
+              </p>
+            ) : null}
+          </>
+        ) : null}
 
-      <label htmlFor="node-title">Title</label>
-      <input
-        id="node-title"
-        type="text"
-        value={draftTitle}
-        onChange={(event) => handleFieldChange('title', event)}
-      />
-      <FieldError message={titleError} />
-
-      <label htmlFor="node-description">Description</label>
-      <textarea
-        id="node-description"
-        value={draftDescription}
-        onChange={(event) => handleFieldChange('description', event)}
-      />
-
-      {renderTypedDataForm()}
-
-      <div className="node-appearance">
-        <div className="node-appearance__header">
-          <h3>Aparência</h3>
-          <button type="button" onClick={handleResetAppearance}>
-            Reset visual
-          </button>
-        </div>
-        <p className="node-appearance__preview">
-          <span className="node-appearance__preview-icon" aria-hidden="true">
-            <GenericNodeIcon iconId={resolvedVisual.icon} size={18} />
-          </span>
-          <span>
-            {getProviderLabel(resolvedVisual.provider)}
-            {resolvedVisual.providerService
-              ? ` / ${getCloudServiceById(resolvedVisual.providerService)?.label ?? 'Custom'}`
-              : ' / Generic'}
-          </span>
-        </p>
-
-        <label htmlFor="node-shape-variant">Shape</label>
-        <select
-          id="node-shape-variant"
-          value={resolvedVisual.shapeVariant}
-          onChange={(event) => syncNodeAppearance({ shapeVariant: event.target.value as NodeAppearance['shapeVariant'] })}
-        >
-          {getShapeOptions().map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <label htmlFor="node-accent-color">Accent</label>
-        <select
-          id="node-accent-color"
-          value={resolvedVisual.accentColor}
-          onChange={(event) =>
-            syncNodeAppearance({ accentColor: event.target.value as NodeAppearance['accentColor'] })
-          }
-        >
-          {getAccentOptions().map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <label htmlFor="node-provider-visual">Provider visual</label>
-        <select
-          id="node-provider-visual"
-          value={resolvedVisual.provider}
-          onChange={(event) => {
-            const provider = event.target.value as VisualProvider
-            setIconProviderTab(provider)
-            syncNodeAppearance({ provider, providerService: undefined })
-          }}
-        >
-          {getProviderOptions().map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <label htmlFor="node-provider-service">Cloud service</label>
-        <select
-          id="node-provider-service"
-          value={resolvedVisual.providerService ?? ''}
-          onChange={(event) =>
-            syncNodeAppearance({
-              providerService: event.target.value ? (event.target.value as NodeAppearance['providerService']) : undefined
-            })
-          }
-          disabled={resolvedVisual.provider === 'none'}
-        >
-          <option value="">Generic icon</option>
-          {providerServiceOptions.map((option) => (
-            <option key={option.id} value={option.id}>
-              {option.label}
-            </option>
-          ))}
-        </select>
-
-        <label htmlFor="node-show-provider-badge">
-          <input
-            id="node-show-provider-badge"
-            type="checkbox"
-            checked={resolvedVisual.showProviderBadge}
-            onChange={(event) => syncNodeAppearance({ showProviderBadge: event.target.checked })}
-          />
-          {' '}Show provider badge
-        </label>
-
-        <label htmlFor="node-icon-search">Icon search</label>
+        <label htmlFor="node-title">Title</label>
         <input
-          id="node-icon-search"
-          type="search"
-          value={iconSearch}
-          placeholder="Search icons"
-          onChange={(event) => setIconSearch(event.target.value)}
+          id="node-title"
+          type="text"
+          value={draftTitle}
+          onChange={(event) => handleFieldChange('title', event)}
+        />
+        <FieldError message={titleError} />
+
+        <label htmlFor="node-description">Description</label>
+        <textarea
+          id="node-description"
+          value={draftDescription}
+          onChange={(event) => handleFieldChange('description', event)}
         />
 
-        <div className="icon-picker-tabs" role="tablist" aria-label="Icon providers">
-          <button
-            type="button"
-            className={iconProviderTab === 'none' ? 'active' : undefined}
-            onClick={() => setIconProviderTab('none')}
-          >
-            Generic
-          </button>
-          <button
-            type="button"
-            className={iconProviderTab === 'aws' ? 'active' : undefined}
-            onClick={() => setIconProviderTab('aws')}
-          >
-            AWS
-          </button>
-          <button
-            type="button"
-            className={iconProviderTab === 'azure' ? 'active' : undefined}
-            onClick={() => setIconProviderTab('azure')}
-          >
-            Azure
-          </button>
-          <button
-            type="button"
-            className={iconProviderTab === 'gcp' ? 'active' : undefined}
-            onClick={() => setIconProviderTab('gcp')}
-          >
-            GCP
-          </button>
+        {renderTypedDataForm()}
+      </InspectorSection>
+
+      <div className="node-appearance-summary">
+        <div className="node-appearance-summary__preview" aria-hidden="true">
+          <span className="node-appearance-summary__preview-icon">
+            <GenericNodeIcon iconId={resolvedVisual.icon} size={18} />
+          </span>
         </div>
-
-        {iconProviderTab === 'none' ? (
-          <div className="icon-picker-grid">
-            {filteredGenericIcons.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`icon-picker-card ${resolvedVisual.icon === option.id ? 'selected' : ''}`}
-                onClick={() => syncNodeAppearance({ icon: option.id })}
-              >
-                <GenericNodeIcon iconId={option.id} size={16} />
-                <span>{option.label}</span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <div className="icon-picker-grid">
-            {filteredCloudIcons.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={`icon-picker-card ${resolvedVisual.providerService === option.id ? 'selected' : ''}`}
-                onClick={() =>
-                  syncNodeAppearance({
-                    provider: option.provider,
-                    providerService: option.id
-                  })
-                }
-              >
-                <Icon icon={option.icon} width={16} height={16} />
-                <span>{option.label}</span>
-              </button>
-            ))}
-          </div>
-        )}
-
-        <FieldError message={appearanceError} />
+        <div className="node-appearance-summary__details">
+          <p className="node-appearance-summary__title">Aparência</p>
+          <p className="node-appearance-summary__provider">{appearanceProviderSummary}</p>
+        </div>
+        <button
+          type="button"
+          className="node-appearance-summary__button node-appearance-summary__trigger"
+          onClick={openAppearanceDialog}
+          aria-label="Editar Aparência"
+        >
+          <Palette size={18} />
+        </button>
       </div>
 
-      <label htmlFor="node-width">Width</label>
-      <input
-        id="node-width"
-        type="number"
-        value={roundedWidth}
-        min={120}
-        onChange={(event) => {
-          const rawWidth = Number(event.target.value)
-          if (!Number.isFinite(rawWidth) || rawWidth <= 0) return
+      <InspectorSection title="Size" summary={sizeSummary}>
+        <label htmlFor="node-width">Width</label>
+        <input
+          id="node-width"
+          type="number"
+          value={roundedWidth}
+          min={120}
+          onChange={(event) => {
+            const rawWidth = Number(event.target.value)
+            if (!Number.isFinite(rawWidth) || rawWidth <= 0) return
 
-          const width = Math.round(rawWidth)
-          if (width === roundedWidth) return
+            const width = Math.round(rawWidth)
+            if (width === roundedWidth) return
 
-          onUpdateNode(node.id, { width })
-        }}
-      />
+            onUpdateNode(node.id, { width })
+          }}
+        />
 
-      <label htmlFor="node-height">Height</label>
-      <input
-        id="node-height"
-        type="number"
-        value={roundedHeight}
-        min={70}
-        onChange={(event) => {
-          const rawHeight = Number(event.target.value)
-          if (!Number.isFinite(rawHeight) || rawHeight <= 0) return
+        <label htmlFor="node-height">Height</label>
+        <input
+          id="node-height"
+          type="number"
+          value={roundedHeight}
+          min={70}
+          onChange={(event) => {
+            const rawHeight = Number(event.target.value)
+            if (!Number.isFinite(rawHeight) || rawHeight <= 0) return
 
-          const height = Math.round(rawHeight)
-          if (height === roundedHeight) return
+            const height = Math.round(rawHeight)
+            if (height === roundedHeight) return
 
-          onUpdateNode(node.id, { height })
-        }}
-      />
+            onUpdateNode(node.id, { height })
+          }}
+        />
+      </InspectorSection>
+
 
       {node.level === 'N2' && ['class', 'interface', 'api_contract'].includes(node.type) && onEditInternals ? (
         <button type="button" onClick={() => onEditInternals(node.id)}>
@@ -1060,6 +1028,264 @@ export function NodeInspector({
           Open detail
         </button>
       ) : null}
+
+      {portalContainer && isAppearanceDialogOpen && (
+        createPortal(
+          <div className="dialog-backdrop" onClick={closeAppearanceDialog}>
+            <div
+              className="dialog-card node-appearance-dialog"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Aparência"
+              onClick={(event) => event.stopPropagation()}
+            >
+              <div className="dialog-card__header node-appearance-dialog__header">
+                <div className="node-appearance-dialog__header-main">
+                  <span className="node-appearance__preview" aria-hidden="true">
+                    <span className="node-appearance__preview-icon">
+                      <GenericNodeIcon iconId={resolvedVisual.icon} size={18} />
+                    </span>
+                    <span>
+                      {getProviderLabel(resolvedVisual.provider)}
+                      {resolvedVisual.providerService
+                        ? ` / ${getCloudServiceById(resolvedVisual.providerService)?.label ?? 'Custom'}`
+                        : ' / Generic'}
+                    </span>
+                  </span>
+                  <div>
+                    <h2>Aparência</h2>
+                    <p className="node-appearance__provider-summary">{appearanceProviderSummary}</p>
+                  </div>
+                </div>
+                <div className="node-appearance-dialog__header-actions">
+                  <button type="button" onClick={handleResetAppearance}>
+                    Reset visual
+                  </button>
+                  <button
+                    type="button"
+                    className="node-appearance-dialog__close"
+                    onClick={closeAppearanceDialog}
+                    aria-label="Close appearance dialog"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
+              </div>
+              <div className="node-appearance node-appearance--dialog">
+                <nav className="node-appearance-tablist" role="tablist">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={appearanceTab === 'visual'}
+                    className={appearanceTab === 'visual' ? 'is-active' : undefined}
+                    onClick={() => setAppearanceTab('visual')}
+                  >
+                    Visual
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={appearanceTab === 'icon'}
+                    className={appearanceTab === 'icon' ? 'is-active' : undefined}
+                    onClick={() => setAppearanceTab('icon')}
+                  >
+                    Icon
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={appearanceTab === 'extras'}
+                    className={appearanceTab === 'extras' ? 'is-active' : undefined}
+                    onClick={() => setAppearanceTab('extras')}
+                  >
+                    Badge
+                  </button>
+                </nav>
+                <div className="node-appearance-tabpanels">
+                  <section
+                    role="tabpanel"
+                    aria-hidden={appearanceTab !== 'visual'}
+                    hidden={appearanceTab !== 'visual'}
+                    className="node-appearance-tabpanel"
+                  >
+                    <label htmlFor="node-shape-variant">Shape</label>
+                    <select
+                      id="node-shape-variant"
+                      value={resolvedVisual.shapeVariant}
+                      onChange={(event) =>
+                        syncNodeAppearance({ shapeVariant: event.target.value as NodeAppearance['shapeVariant'] })
+                      }
+                    >
+                      {getShapeOptions().map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <label htmlFor="node-accent-color">Accent</label>
+                    <select
+                      id="node-accent-color"
+                      value={resolvedVisual.accentColor}
+                      onChange={(event) =>
+                        syncNodeAppearance({ accentColor: event.target.value as NodeAppearance['accentColor'] })
+                      }
+                    >
+                      {getAccentOptions().map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <label htmlFor="node-provider-visual">Provider visual</label>
+                    <select
+                      id="node-provider-visual"
+                      value={resolvedVisual.provider}
+                      onChange={(event) => {
+                        const provider = event.target.value as VisualProvider
+                        setIconProviderTab(provider)
+                        syncNodeAppearance({ provider, providerService: undefined })
+                      }}
+                    >
+                      {getProviderOptions().map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+
+                    <label htmlFor="node-provider-service">Cloud service</label>
+                    <select
+                      id="node-provider-service"
+                      value={resolvedVisual.providerService ?? ''}
+                      onChange={(event) =>
+                        syncNodeAppearance({
+                          providerService: event.target.value
+                            ? (event.target.value as NodeAppearance['providerService'])
+                            : undefined
+                        })
+                      }
+                      disabled={resolvedVisual.provider === 'none'}
+                    >
+                      <option value="">Generic icon</option>
+                      {providerServiceOptions.map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </section>
+
+                  <section
+                    role="tabpanel"
+                    aria-hidden={appearanceTab !== 'icon'}
+                    hidden={appearanceTab !== 'icon'}
+                    className="node-appearance-tabpanel"
+                  >
+                    <label htmlFor="node-icon-search">Icon search</label>
+                    <input
+                      id="node-icon-search"
+                      type="search"
+                      value={iconSearch}
+                      placeholder="Search icons"
+                      onChange={(event) => setIconSearch(event.target.value)}
+                    />
+
+                    <div className="icon-picker-tabs" role="tablist" aria-label="Icon providers">
+                      <button
+                        type="button"
+                        className={iconProviderTab === 'none' ? 'active' : undefined}
+                        onClick={() => setIconProviderTab('none')}
+                      >
+                        Generic
+                      </button>
+                      <button
+                        type="button"
+                        className={iconProviderTab === 'aws' ? 'active' : undefined}
+                        onClick={() => setIconProviderTab('aws')}
+                      >
+                        AWS
+                      </button>
+                      <button
+                        type="button"
+                        className={iconProviderTab === 'azure' ? 'active' : undefined}
+                        onClick={() => setIconProviderTab('azure')}
+                      >
+                        Azure
+                      </button>
+                      <button
+                        type="button"
+                        className={iconProviderTab === 'gcp' ? 'active' : undefined}
+                        onClick={() => setIconProviderTab('gcp')}
+                      >
+                        GCP
+                      </button>
+                    </div>
+
+                    {iconProviderTab === 'none' ? (
+                      <div className="icon-picker-grid">
+                        {filteredGenericIcons.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className={`icon-picker-card ${resolvedVisual.icon === option.id ? 'selected' : ''}`}
+                            onClick={() => syncNodeAppearance({ icon: option.id })}
+                          >
+                            <GenericNodeIcon iconId={option.id} size={16} />
+                            <span>{option.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="icon-picker-grid">
+                        {filteredCloudIcons.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className={`icon-picker-card ${
+                              resolvedVisual.providerService === option.id ? 'selected' : ''
+                            }`}
+                            onClick={() =>
+                              syncNodeAppearance({
+                                provider: option.provider,
+                                providerService: option.id
+                              })
+                            }
+                          >
+                            <Icon icon={option.icon} width={16} height={16} />
+                            <span>{option.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
+                  <section
+                    role="tabpanel"
+                    aria-hidden={appearanceTab !== 'extras'}
+                    hidden={appearanceTab !== 'extras'}
+                    className="node-appearance-tabpanel"
+                  >
+                    <label htmlFor="node-show-provider-badge">
+                      <input
+                        id="node-show-provider-badge"
+                        type="checkbox"
+                        checked={resolvedVisual.showProviderBadge}
+                        onChange={(event) => syncNodeAppearance({ showProviderBadge: event.target.checked })}
+                      />
+                      {' '}Show provider badge
+                    </label>
+                  </section>
+                </div>
+
+                <FieldError message={appearanceError} />
+              </div>
+            </div>
+          </div>,
+          portalContainer
+        )
+      )}
     </div>
   )
 }

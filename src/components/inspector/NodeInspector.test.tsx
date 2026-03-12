@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 import { NodeInspector } from '@/components/inspector/NodeInspector'
 
@@ -246,7 +246,10 @@ describe('NodeInspector', () => {
 
     render(<NodeInspector node={baseNode} onUpdateNode={onUpdateNode} onOpenDetail={vi.fn()} />)
 
-    fireEvent.change(screen.getByLabelText('Provider visual'), { target: { value: 'aws' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Aparência' }))
+    const appearanceDialog = screen.getByRole('dialog', { name: 'Aparência' })
+
+    fireEvent.change(within(appearanceDialog).getByLabelText('Provider visual'), { target: { value: 'aws' } })
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
       appearance: {
         provider: 'aws',
@@ -254,7 +257,11 @@ describe('NodeInspector', () => {
       }
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Lambda' }))
+    const iconTab = within(appearanceDialog).getByRole('tab', { name: 'Icon' })
+    fireEvent.click(iconTab)
+    expect(iconTab).toHaveAttribute('aria-selected', 'true')
+
+    fireEvent.click(within(appearanceDialog).getByRole('button', { name: 'Lambda' }))
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
       appearance: {
         provider: 'aws',
@@ -281,7 +288,9 @@ describe('NodeInspector', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reset visual' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Editar Aparência' }))
+    const appearanceDialog = screen.getByRole('dialog', { name: 'Aparência' })
+    fireEvent.click(within(appearanceDialog).getByRole('button', { name: 'Reset visual' }))
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', { appearance: undefined })
   })
 })

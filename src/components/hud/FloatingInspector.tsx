@@ -17,19 +17,25 @@ interface FloatingInspectorProps {
   }
   onClose: () => void
   children: React.ReactNode
+  hidden?: boolean
 }
 
 export function FloatingInspector({
   node,
   onClose,
-  children
+  children,
+  hidden = false
 }: FloatingInspectorProps): JSX.Element | null {
   if (!node) {
     return null
   }
 
   return (
-    <aside className="floating-inspector" aria-label="Node inspector">
+    <aside
+      className={`floating-inspector${hidden ? ' floating-inspector--hidden' : ''}`}
+      aria-label="Node inspector"
+      aria-hidden={hidden}
+    >
       <div className="floating-inspector__header">
         <h2 className="floating-inspector__title">
           {node.title}

@@ -54,7 +54,7 @@ function makeRelation(id: string, sourceNodeId: string, targetNodeId: string): R
 
 describe('board-store canvas sync actions', () => {
   it('applyCanvasState triggers immediate persistence on destructive changes', async () => {
-    const saveSpy = vi.fn(async () => undefined)
+    const saveSpy = vi.fn(async () => true)
 
     useBoardStore.setState({
       currentBoard: makeBoard(),
@@ -112,7 +112,7 @@ describe('board-store canvas sync actions', () => {
   it('deleteNode removes connected relations', () => {
     const nodeA = makeNode('node_a')
     const nodeB = makeNode('node_b')
-    const saveSpy = vi.fn(async () => undefined)
+    const saveSpy = vi.fn(async () => true)
 
     useBoardStore.setState({
       currentBoard: makeBoard(),
@@ -218,7 +218,7 @@ describe('board-store canvas sync actions', () => {
   })
 
   it('reverseRelation keeps physical handles by swapping handle ids', () => {
-    const saveSpy = vi.fn(async () => undefined)
+    const saveSpy = vi.fn(async () => true)
     const relation = {
       ...makeRelation('rel_ab', 'node_a', 'node_b'),
       sourceHandleId: 'right',

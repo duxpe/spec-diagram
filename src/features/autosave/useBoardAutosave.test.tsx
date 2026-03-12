@@ -30,7 +30,7 @@ describe('useBoardAutosave', () => {
   })
 
   it('saves after debounce when board is dirty', () => {
-    const saveSpy = vi.fn(async () => undefined)
+    const saveSpy = vi.fn(async () => true)
     useBoardStore.setState({
       dirty: true,
       saveCurrentBoard: saveSpy
@@ -46,7 +46,7 @@ describe('useBoardAutosave', () => {
   })
 
   it('does not force save during cleanup before debounce fires', () => {
-    const saveSpy = vi.fn(async () => undefined)
+    const saveSpy = vi.fn(async () => true)
     useBoardStore.setState({
       dirty: true,
       saveCurrentBoard: saveSpy

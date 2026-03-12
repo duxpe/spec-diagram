@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { RFCanvas, type ZoomControls } from '@/board/reactflow/RFCanvas'
 import { ExportDialog } from '@/components/dialogs/ExportDialog'
@@ -64,6 +64,9 @@ export function BoardPage(): JSX.Element {
 
   const selectedNodeId = useUiStore((state) => state.selectedNodeId)
   const setSelectedNodeId = useUiStore((state) => state.setSelectedNodeId)
+  const isInspectorOpen = useUiStore((state) => state.isInspectorOpen)
+  const setInspectorOpen = useUiStore((state) => state.setInspectorOpen)
+  const appearanceDialogNodeId = useUiStore((state) => state.appearanceDialogNodeId)
   const isExportDialogOpen = useUiStore((state) => state.isExportDialogOpen)
   const setExportDialogOpen = useUiStore((state) => state.setExportDialogOpen)
   const isImportDialogOpen = useUiStore((state) => state.isImportDialogOpen)
@@ -106,8 +109,9 @@ export function BoardPage(): JSX.Element {
     setSelectedNodeId(undefined)
     setNodeMenuPos(null)
     setEditingInternalsNodeId(null)
+    setInspectorOpen(false)
     n3RedirectedRef.current = false
-  }, [workspaceId, boardId, setSelectedNodeId])
+  }, [workspaceId, boardId, setSelectedNodeId, setInspectorOpen])
 
   useEffect(() => {
     return () => {
@@ -123,6 +127,12 @@ export function BoardPage(): JSX.Element {
       await loadBoard(workspaceId, boardId)
     })()
   }, [workspaceId, boardId, openWorkspace, loadBoard])
+
+  useEffect(() => {
+    if (appearanceDialogNodeId) {
+      setNodeMenuPos(null)
+    }
+  }, [appearanceDialogNodeId])
 
   useEffect(() => {
     const handleSave = (event: KeyboardEvent): void => {
@@ -167,7 +177,8 @@ export function BoardPage(): JSX.Element {
 
   const handleOpenDetail = async (nodeId: string): Promise<void> => {
     try {
-      await saveCurrentBoard()
+      const saved = await saveCurrentBoard()
+      if (!saved) return
       const childBoard = await openOrCreateChildBoard(nodeId)
       await refreshCurrentWorkspace()
       navigate(`/project/${workspaceId}/board/${childBoard.id}`)
@@ -239,22 +250,41 @@ export function BoardPage(): JSX.Element {
 
   const handleBackToParent = async (): Promise<void> => {
     if (!currentBoard?.parentBoardId) return
-    await saveCurrentBoard()
+    const saved = await saveCurrentBoard()
+    if (!saved) return
     navigate(`/project/${workspaceId}/board/${currentBoard.parentBoardId}`)
   }
 
   const handleDeleteSelectedNode = (): void => {
     if (selectedNodeId) {
       deleteNode(selectedNodeId)
-      setSelectedNodeId(undefined)
-      setNodeMenuPos(null)
+      handleCloseInspector()
     }
   }
 
-  const handleNodeClick = (nodeId: string, screenX: number, screenY: number): void => {
-    setSelectedNodeId(nodeId)
-    setNodeMenuPos({ x: screenX, y: screenY })
-  }
+  const handleNodeSelect = useCallback(
+    (nodeId?: string): void => {
+      setSelectedNodeId(nodeId)
+      setInspectorOpen(!!nodeId)
+      if (!nodeId) {
+        setNodeMenuPos(null)
+      }
+    },
+    [setSelectedNodeId, setInspectorOpen]
+  )
+
+  const handleNodeClick = useCallback(
+    (nodeId: string, screenX: number, screenY: number): void => {
+      handleNodeSelect(nodeId)
+      setNodeMenuPos({ x: screenX, y: screenY })
+    },
+    [handleNodeSelect]
+  )
+
+  const handleCloseInspector = useCallback((): void => {
+    handleNodeSelect(undefined)
+    setNodeMenuPos(null)
+  }, [handleNodeSelect])
 
   const handleCloseNodeMenu = (): void => {
     setNodeMenuPos(null)
@@ -312,10 +342,7 @@ export function BoardPage(): JSX.Element {
           nodes={nodes}
           relations={relations}
           selectedNodeId={selectedNodeId}
-          onSelectNode={(nodeId) => {
-            setSelectedNodeId(nodeId)
-            if (!nodeId) setNodeMenuPos(null)
-          }}
+          onSelectNode={handleNodeSelect}
           onCanvasChange={(sourceBoardId, nextNodes, nextRelations) =>
             applyCanvasState(sourceBoardId, nextNodes, nextRelations)
           }
@@ -376,12 +403,12 @@ export function BoardPage(): JSX.Element {
         onFitView={() => zoomControlsRef.current?.fitView()}
       />
 
-      {selectedNode ? (
+      {selectedNode && isInspectorOpen ? (
         <FloatingInspector
           node={selectedNode}
+          hidden={!!appearanceDialogNodeId}
           onClose={() => {
-            setSelectedNodeId(undefined)
-            setNodeMenuPos(null)
+            handleCloseInspector()
           }}
         >
           <NodeInspector
@@ -395,7 +422,7 @@ export function BoardPage(): JSX.Element {
       ) : null}
 
       {/* Contextual Node Action Menu */}
-      {selectedNodeId && nodeMenuPos ? (
+      {selectedNodeId && nodeMenuPos && !appearanceDialogNodeId ? (
         <NodeActionMenu
           position={nodeMenuPos}
           canOpenDetail={selectedNode ? canOpenDetail(selectedNode) : false}

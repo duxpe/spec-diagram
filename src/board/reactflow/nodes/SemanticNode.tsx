@@ -4,6 +4,7 @@ import type { RFNodeData } from '../reactflow-adapter'
 import { ShapeBackground } from '../shapes/ShapeBackground'
 import { NodeHandles } from './NodeHandles'
 import { SemanticNodeContent } from './SemanticNodeContent'
+import { useUiStore } from '@/state/ui-store'
 
 interface SemanticNodeProps {
   id: string
@@ -11,9 +12,14 @@ interface SemanticNodeProps {
   selected?: boolean
 }
 
-function SemanticNodeComponent({ data, selected }: SemanticNodeProps): JSX.Element {
+function SemanticNodeComponent({ id, data, selected }: SemanticNodeProps): JSX.Element {
   const width = data.width ?? 220
   const height = data.height ?? 110
+  const setAppearanceDialogNodeId = useUiStore((state) => state.setAppearanceDialogNodeId)
+
+  const handleOpenAppearance = (): void => {
+    setAppearanceDialogNodeId(id)
+  }
 
   return (
     <>
@@ -65,6 +71,7 @@ function SemanticNodeComponent({ data, selected }: SemanticNodeProps): JSX.Eleme
           showProviderBadge={data.showProviderBadge}
           hasChildBoard={data.hasChildBoard}
           hasValidationErrors={data.hasValidationErrors}
+          onOpenAppearance={handleOpenAppearance}
         />
       </div>
     </>

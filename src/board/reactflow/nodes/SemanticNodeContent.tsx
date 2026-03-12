@@ -16,6 +16,7 @@ interface SemanticNodeContentProps {
   showProviderBadge: boolean
   hasChildBoard: boolean
   hasValidationErrors: boolean
+  onOpenAppearance?: () => void
 }
 
 // Header height must match ShapeBackground
@@ -96,7 +97,8 @@ export function SemanticNodeContent({
   providerService,
   showProviderBadge,
   hasChildBoard,
-  hasValidationErrors
+  hasValidationErrors,
+  onOpenAppearance
 }: SemanticNodeContentProps): JSX.Element {
   const providerServiceData = providerService ? getCloudServiceById(providerService) : null
   const isMethodNode = semanticType === 'method'
@@ -148,29 +150,33 @@ export function SemanticNodeContent({
       <div style={contentStyle}>{renderContent()}</div>
 
       {/* Icon chip (top-left, below header) */}
-      <div
+      <button
+        type="button"
+        aria-label="Editar Aparência"
+        onClick={onOpenAppearance}
         style={{
           background: 'rgba(255, 255, 255, 0.95)',
           border: '1px solid rgba(148, 163, 184, 0.3)',
-          borderRadius: '6px',
-          boxShadow: '0 2px 6px rgba(15, 23, 42, 0.08)',
-          pointerEvents: 'none',
+          borderRadius: '10px',
+          boxShadow: '0 4px 12px rgba(15, 23, 42, 0.15)',
+          pointerEvents: 'auto',
           position: 'absolute',
-          top: HEADER_HEIGHT + 8,
-          left: '8px',
-          width: '28px',
-          height: '28px',
+          top: HEADER_HEIGHT + 4,
+          left: '4px',
+          width: '42px',
+          height: '42px',
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          cursor: 'pointer'
         }}
       >
         {providerServiceData ? (
-          <Icon icon={providerServiceData.icon} width={14} height={14} style={{ color: '#64748b' }} />
+          <Icon icon={providerServiceData.icon} width={22} height={22} style={{ color: '#475569' }} />
         ) : (
-          <GenericNodeIcon iconId={icon} size={14} color="#64748b" />
+          <GenericNodeIcon iconId={icon} size={22} color="#475569" />
         )}
-      </div>
+      </button>
 
       {/* Provider badge (top-right, below header) */}
       {showProviderBadge && provider !== 'none' && (
