@@ -67,8 +67,6 @@ export function WorkspaceListPanel({
     <ul className="projects-gallery__list">
       {workspaces.map((workspace) => {
         const active = workspace.id === currentWorkspaceId
-        const boardCount = workspace.boardIds.length
-        const boardLabel = boardCount === 1 ? '1 board' : `${boardCount} boards`
 
         return (
           <li key={workspace.id}>
@@ -115,12 +113,6 @@ export function WorkspaceListPanel({
                 {getWorkspaceSummary(workspace)}
               </p>
               <div className="project-card__footer">
-                <span className="project-card__meta">
-                  <span className="project-card__meta-icon" aria-hidden="true">
-                    ■
-                  </span>
-                  <span>{boardCount > 0 ? boardLabel : 'No boards yet'}</span>
-                </span>
                 <span className="project-card__meta-date">Updated {formatUpdatedAt(workspace.updatedAt)}</span>
               </div>
             </article>

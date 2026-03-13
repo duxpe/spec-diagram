@@ -38,7 +38,7 @@ export function PatternSelectionDialog({
   const [constraints, setConstraints] = useState(initialBrief.constraints)
   const [nfrs, setNfrs] = useState(initialBrief.nfrs)
   const [globalDecisions, setGlobalDecisions] = useState(initialBrief.globalDecisions)
-  const [isBriefOpen, setIsBriefOpen] = useState(Boolean(initialWorkspace?.brief))
+  const [step, setStep] = useState<1 | 2>(1)
 
   useEffect(() => {
     setName(initialWorkspace?.name ?? '')
@@ -51,7 +51,7 @@ export function PatternSelectionDialog({
     setConstraints(initialBrief.constraints)
     setNfrs(initialBrief.nfrs)
     setGlobalDecisions(initialBrief.globalDecisions)
-    setIsBriefOpen(Boolean(initialWorkspace?.brief))
+    setStep(1)
   }, [
     initialBrief.constraints,
     initialBrief.context,
@@ -94,7 +94,7 @@ export function PatternSelectionDialog({
     setConstraints('')
     setNfrs('')
     setGlobalDecisions('')
-    setIsBriefOpen(false)
+    setStep(1)
   }
 
   const handleClose = (): void => {
@@ -108,7 +108,7 @@ export function PatternSelectionDialog({
     setConstraints(initialBrief.constraints)
     setNfrs(initialBrief.nfrs)
     setGlobalDecisions(initialBrief.globalDecisions)
-    setIsBriefOpen(Boolean(initialWorkspace?.brief))
+    setStep(1)
     onClose()
   }
 
@@ -130,127 +130,157 @@ export function PatternSelectionDialog({
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div className="pattern-dialog__form-fields">
-            <input
-              type="text"
-              placeholder="Project name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              autoFocus
-            />
-            <input
-              type="text"
-              placeholder="Description (optional)"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </div>
+          {step === 1 && (
+            <>
+              <div className="pattern-dialog__form-fields">
+                <label>
+                  Project Name
+                  <input
+                    type="text"
+                    placeholder="Project name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    autoFocus
+                  />
+                </label>
+                <label>
+                  Project Description
+                  <input
+                    type="text"
+                    placeholder="Description (optional)"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                  />
+                </label>
+              </div>
 
-          <button
-            type="button"
-            className="pattern-dialog__brief-toggle"
-            onClick={() => setIsBriefOpen((value) => !value)}
-          >
-            {isBriefOpen ? 'Hide spec quality fields' : 'Improve spec quality'}
-          </button>
+              <div className="pattern-dialog__brief">
+                <label>
+                  Project goal
+                  <textarea
+                    rows={2}
+                    placeholder="What the project is trying to achieve"
+                    value={goal}
+                    onChange={(event) => setGoal(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Context
+                  <textarea
+                    rows={2}
+                    placeholder="Relevant product or business context"
+                    value={context}
+                    onChange={(event) => setContext(event.target.value)}
+                  />
+                </label>
+                <label>
+                  In scope
+                  <textarea
+                    rows={2}
+                    placeholder="One scope item per line"
+                    value={scopeIn}
+                    onChange={(event) => setScopeIn(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Out of scope
+                  <textarea
+                    rows={2}
+                    placeholder="One exclusion per line"
+                    value={scopeOut}
+                    onChange={(event) => setScopeOut(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Constraints
+                  <textarea
+                    rows={2}
+                    placeholder="One constraint per line"
+                    value={constraints}
+                    onChange={(event) => setConstraints(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Priority NFRs
+                  <textarea
+                    rows={2}
+                    placeholder="One non-functional priority per line"
+                    value={nfrs}
+                    onChange={(event) => setNfrs(event.target.value)}
+                  />
+                </label>
+                <label>
+                  Global decisions
+                  <textarea
+                    rows={2}
+                    placeholder="One decision or assumption per line"
+                    value={globalDecisions}
+                    onChange={(event) => setGlobalDecisions(event.target.value)}
+                  />
+                </label>
+              </div>
 
-          {isBriefOpen ? (
-            <div className="pattern-dialog__brief">
-              <label>
-                Project goal
-                <textarea
-                  rows={2}
-                  placeholder="What the project is trying to achieve"
-                  value={goal}
-                  onChange={(event) => setGoal(event.target.value)}
-                />
-              </label>
-              <label>
-                Context
-                <textarea
-                  rows={2}
-                  placeholder="Relevant product or business context"
-                  value={context}
-                  onChange={(event) => setContext(event.target.value)}
-                />
-              </label>
-              <label>
-                In scope
-                <textarea
-                  rows={2}
-                  placeholder="One scope item per line"
-                  value={scopeIn}
-                  onChange={(event) => setScopeIn(event.target.value)}
-                />
-              </label>
-              <label>
-                Out of scope
-                <textarea
-                  rows={2}
-                  placeholder="One exclusion per line"
-                  value={scopeOut}
-                  onChange={(event) => setScopeOut(event.target.value)}
-                />
-              </label>
-              <label>
-                Constraints
-                <textarea
-                  rows={2}
-                  placeholder="One constraint per line"
-                  value={constraints}
-                  onChange={(event) => setConstraints(event.target.value)}
-                />
-              </label>
-              <label>
-                Priority NFRs
-                <textarea
-                  rows={2}
-                  placeholder="One non-functional priority per line"
-                  value={nfrs}
-                  onChange={(event) => setNfrs(event.target.value)}
-                />
-              </label>
-              <label>
-                Global decisions
-                <textarea
-                  rows={2}
-                  placeholder="One decision or assumption per line"
-                  value={globalDecisions}
-                  onChange={(event) => setGlobalDecisions(event.target.value)}
-                />
-              </label>
-            </div>
-          ) : null}
+              <div className="dialog-card__actions">
+                <button type="button" onClick={handleClose} data-ui-log="Pattern selection – Cancel">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className="btn--primary"
+                  onClick={() => {
+                    if (name.trim()) {
+                      setStep(2)
+                    }
+                  }}
+                  disabled={!name.trim()}
+                  data-ui-log="Pattern selection – Next: Pattern choice"
+                >
+                  Next
+                </button>
+              </div>
+            </>
+          )}
 
-          <div className="pattern-dialog__grid">
-            {PATTERNS.map((pattern) => (
-              <button
-                key={pattern.id}
-                type="button"
-                className={`pattern-card${selectedPattern === pattern.id ? ' pattern-card--selected' : ''}`}
-                onClick={() => setSelectedPattern(pattern.id)}
-                data-ui-log={`Pattern selection – Choose ${pattern.name}`}
-              >
-                <span className="pattern-card__name">{pattern.name}</span>
-                <span className="pattern-card__desc">{pattern.description}</span>
-              </button>
-            ))}
-          </div>
+          {step === 2 && (
+            <>
+              <div className="pattern-dialog__grid">
+                {PATTERNS.map((pattern) => (
+                  <button
+                    key={pattern.id}
+                    type="button"
+                    className={`pattern-card${selectedPattern === pattern.id ? ' pattern-card--selected' : ''}`}
+                    onClick={() => setSelectedPattern(pattern.id)}
+                    data-ui-log={`Pattern selection – Choose ${pattern.name}`}
+                  >
+                    <span className="pattern-card__name">{pattern.name}</span>
+                    <span className="pattern-card__desc">{pattern.description}</span>
+                  </button>
+                ))}
+              </div>
 
-          <div className="dialog-card__actions">
-            <button type="button" onClick={handleClose} data-ui-log="Pattern selection – Cancel">
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="btn--primary"
-              disabled={!name.trim() || !selectedPattern}
-              data-ui-log={`Pattern selection – ${mode === 'edit' ? 'Save project' : 'Create project'}`}
-            >
-              {mode === 'edit' ? 'Save project' : 'Create project'}
-            </button>
-          </div>
+              <div className="dialog-card__actions">
+                <button type="button" onClick={handleClose} data-ui-log="Pattern selection – Cancel">
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  data-ui-log="Pattern selection – Back to spec quality"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  className="btn--primary"
+                  disabled={!name.trim() || !selectedPattern}
+                  data-ui-log={`Pattern selection – ${mode === 'edit' ? 'Save project' : 'Create project'}`}
+                >
+                  {mode === 'edit' ? 'Save project' : 'Create project'}
+                </button>
+              </div>
+            </>
+          )}
         </form>
       </div>
     </div>

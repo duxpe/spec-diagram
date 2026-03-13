@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { ChangeEvent, useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog'
 import { PatternSelectionDialog } from '@/components/dialogs/PatternSelectionDialog'
@@ -19,6 +19,8 @@ export function WorkspacePage(): JSX.Element {
   const importWorkspace = useWorkspaceStore((state) => state.importWorkspace)
   const deleteWorkspace = useWorkspaceStore((state) => state.deleteWorkspace)
   const error = useWorkspaceStore((state) => state.error)
+
+  const [searchTerm, setSearchTerm] = useState('')
 
   const [isPatternDialogOpen, setPatternDialogOpen] = useState(false)
   const [workspaceBeingEdited, setWorkspaceBeingEdited] = useState<Workspace | null>(null)
@@ -112,6 +114,21 @@ export function WorkspacePage(): JSX.Element {
     }
   }
 
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase()
+  const filteredWorkspaces = normalizedSearchTerm
+    ? workspaces.filter((workspace) => {
+        const searchable = [workspace.name, workspace.description, workspace.brief?.goal, workspace.brief?.context]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase()
+        return searchable.includes(normalizedSearchTerm)
+      })
+    : workspaces
+
+  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>): void => {
+    setSearchTerm(event.target.value)
+  }
+
   return (
     <div className="projects-screen">
       <div className="projects-screen__content">
@@ -125,12 +142,18 @@ export function WorkspacePage(): JSX.Element {
             </p>
           </div>
           <div className="projects-hero__actions">
-            <label className="projects-hero__search">
-              <span className="projects-hero__search-icon" aria-hidden="true">
-                ⌕
-              </span>
-              <input type="search" placeholder="Search projects" aria-label="Search projects" />
-            </label>
+              <label className="projects-hero__search">
+                <span className="projects-hero__search-icon" aria-hidden="true">
+                  ⌕
+                </span>
+                <input
+                  type="search"
+                  placeholder="Search projects"
+                  aria-label="Search projects"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                />
+              </label>
             <button
               type="button"
               className="btn--primary projects-hero__action"
@@ -152,7 +175,7 @@ export function WorkspacePage(): JSX.Element {
           </div>
 
           <WorkspaceListPanel
-            workspaces={workspaces}
+            workspaces={filteredWorkspaces}
             currentWorkspaceId={currentWorkspace?.id}
             onOpenWorkspace={(workspaceIdToOpen) => {
               void handleOpenWorkspace(workspaceIdToOpen)
