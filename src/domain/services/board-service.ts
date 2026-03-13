@@ -1,7 +1,7 @@
 import { Board, SemanticLevel } from '@/domain/models/board'
 import type { NodeAppearance } from '@/domain/models/node-appearance'
 import { Relation, RelationType } from '@/domain/models/relation'
-import { SemanticNode, SemanticNodeType } from '@/domain/models/semantic-node'
+import { SemanticNode, SemanticNodeMeaning, SemanticNodeType } from '@/domain/models/semantic-node'
 import {
   getDefaultNodeData,
   isNodeTypeAllowedForLevel,
@@ -19,7 +19,7 @@ function titleize(text: string): string {
     .join(' ')
 }
 
-function resolveDefaultNodeTitle(type: SemanticNodeType, patternRole?: string): string {
+export function resolveDefaultNodeTitle(type: SemanticNodeType, patternRole?: string): string {
   if (patternRole) {
     for (const definition of Object.values(PATTERN_CATALOG)) {
       const entry = definition.n1Nodes.find((node) => node.patternRole === patternRole)
@@ -81,6 +81,9 @@ export class BoardService {
     level: SemanticLevel
     type?: SemanticNodeType
     title?: string
+    description?: string
+    meaning?: SemanticNodeMeaning
+    data?: Record<string, unknown>
     x?: number
     y?: number
     patternRole?: string
@@ -102,11 +105,13 @@ export class BoardService {
       type,
       patternRole: input.patternRole,
       title,
+      description: input.description,
+      meaning: input.meaning,
       x: input.x ?? 120,
       y: input.y ?? 80,
       width: 220,
       height: 110,
-      data: getDefaultNodeData(input.level, type),
+      data: input.data ?? getDefaultNodeData(input.level, type),
       appearance: input.defaultAppearance ? { ...input.defaultAppearance } : undefined,
       createdAt: now,
       updatedAt: now

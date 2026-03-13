@@ -1373,8 +1373,14 @@ label {
   }
 
   .n3-contract-form__grid,
-  .n3-contract-form__grid--two {
+  .n3-contract-form__grid--two,
+  .pattern-dialog__brief {
     grid-template-columns: 1fr;
+  }
+
+  .pattern-dialog__brief label:first-child,
+  .pattern-dialog__brief label:nth-child(2) {
+    grid-column: span 1;
   }
 }
 
@@ -1847,6 +1853,70 @@ label {
   margin-bottom: 16px;
   max-height: 400px;
   overflow-y: auto;
+}
+
+.pattern-dialog__brief-toggle,
+.node-creation-dialog__advanced-toggle {
+  justify-self: start;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  padding: 6px 12px;
+  font-size: 0.82rem;
+}
+
+.pattern-dialog__brief {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0 16px;
+}
+
+.pattern-dialog__brief label,
+.node-creation-dialog__form label,
+.node-creation-dialog__advanced label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
+.pattern-dialog__brief label:first-child,
+.pattern-dialog__brief label:nth-child(2) {
+  grid-column: span 2;
+}
+
+.node-creation-dialog {
+  width: min(560px, 92vw);
+}
+
+.node-creation-dialog__form,
+.node-creation-dialog__advanced {
+  display: grid;
+  gap: 10px;
+}
+
+.node-inspector__prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.node-inspector__prompt-chip {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.node-inspector__helper {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  line-height: 1.5;
 }
 
 .pattern-card {

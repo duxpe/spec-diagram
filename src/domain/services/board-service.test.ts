@@ -65,6 +65,25 @@ describe('BoardService', () => {
     )
   })
 
+  it('preserves explicit meaning fields during node creation', () => {
+    const node = BoardService.createNode({
+      workspaceId: 'ws_1',
+      boardId: 'board_1',
+      level: 'N1',
+      type: 'container_service',
+      title: 'Payments API',
+      meaning: {
+        purpose: 'Accept payment requests',
+        primaryResponsibility: 'Validate and orchestrate payment intake'
+      }
+    })
+
+    expect(node.meaning).toEqual({
+      purpose: 'Accept payment requests',
+      primaryResponsibility: 'Validate and orchestrate payment intake'
+    })
+  })
+
   it('blocks invalid node type for N1 level', () => {
     expect(() =>
       BoardService.createNode({

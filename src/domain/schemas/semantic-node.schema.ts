@@ -3,6 +3,8 @@ import { semanticLevelSchema } from '@/domain/schemas/board.schema'
 import { getPayloadSchemaForNodeType } from '@/domain/schemas/semantic-node-payload.schema'
 import { nodeAppearanceSchema } from '@/domain/schemas/node-appearance.schema'
 
+const optionalTextList = z.array(z.string().trim().min(1)).optional()
+
 export const semanticNodeTypeSchema = z.enum([
   'system',
   'container_service',
@@ -20,6 +22,20 @@ export const semanticNodeTypeSchema = z.enum([
   'free_note_output'
 ])
 
+export const semanticNodeMeaningSchema = z
+  .object({
+    purpose: z.string().trim().min(1).optional(),
+    primaryResponsibility: z.string().trim().min(1).optional(),
+    role: z.string().trim().min(1).optional(),
+    summary: z.string().trim().min(1).optional(),
+    inputs: optionalTextList,
+    outputs: optionalTextList,
+    constraints: optionalTextList,
+    decisionNote: z.string().trim().min(1).optional(),
+    errorNote: z.string().trim().min(1).optional()
+  })
+  .strict()
+
 export const semanticNodeSchema = z
   .object({
     id: z.string().min(1),
@@ -31,6 +47,7 @@ export const semanticNodeSchema = z
     patternRole: z.string().min(1).optional(),
     title: z.string().min(1),
     description: z.string().optional(),
+    meaning: semanticNodeMeaningSchema.optional(),
     x: z.number(),
     y: z.number(),
     width: z.number().positive(),

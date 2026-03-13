@@ -138,6 +138,32 @@ function firstDefinedText(data: Record<string, unknown>, keys: string[]): string
   return MISSING_TEXT
 }
 
+function firstMeaningText(
+  node: SemanticNode,
+  keys: Array<keyof NonNullable<SemanticNode['meaning']>>,
+  fallbackKeys: string[] = []
+): string {
+  for (const key of keys) {
+    const value = node.meaning?.[key]
+    if (typeof value === 'string' && value.trim().length > 0) return value.trim()
+    if (Array.isArray(value) && value.length > 0) return value.join('; ')
+  }
+
+  return firstDefinedText(node.data, fallbackKeys)
+}
+
+function workspaceBriefValue(
+  workspace: Workspace,
+  key: keyof NonNullable<Workspace['brief']>,
+  fallback?: string
+): string {
+  const value = workspace.brief?.[key]
+  if (typeof value === 'string' && value.trim().length > 0) return value.trim()
+  if (Array.isArray(value) && value.length > 0) return value.join('; ')
+  if (typeof fallback === 'string' && fallback.trim().length > 0) return fallback.trim()
+  return MISSING_TEXT
+}
+
 function relationToDescriptor(
   relation: Relation,
   nodesById: Map<string, SemanticNode>
@@ -192,7 +218,7 @@ function renderN2Blocks(context: ExportContext): string {
     .map((n2) => {
       const lines = [
         `### ${n2.node.type} - ${textValue(n2.node.title)}`,
-        `- Descricao: ${textValue(n2.node.description)}`,
+        `- Descricao: ${firstMeaningText(n2.node, ['purpose', 'summary'], [])}`,
         '- Payload semantico:',
         ...formatNodeData(n2.node.data).map((line) => `  ${line}`),
         '- Relacoes do componente:',
@@ -245,7 +271,7 @@ function renderContractsAndIntegrations(context: ExportContext): string {
         'inputSummary',
         'outputSummary'
       ])
-      return `- ${entry.node.type}: ${entry.node.title} -> ${summary}`
+      return `- ${entry.node.type}: ${entry.node.title} -> ${firstMeaningText(entry.node, ['purpose', 'primaryResponsibility'], []) || summary}`
     })
     .join('\n')
 }
@@ -280,6 +306,8 @@ function renderSpecPromptMarkdown(context: ExportContext): string {
     'outputs',
     'outputSummary'
   ])
+  const meaningInputs = context.rootNode.meaning?.inputs?.join('; ') ?? expectedInputs
+  const meaningOutputs = context.rootNode.meaning?.outputs?.join('; ') ?? expectedOutputs
 
   return [
     `# Prompt de Spec - ${context.rootNode.title}`,
@@ -295,21 +323,21 @@ function renderSpecPromptMarkdown(context: ExportContext): string {
     '',
     '## Contexto geral do projeto',
     `- Nome: ${textValue(context.workspace.name)}`,
-    `- Objetivo: ${textValue(context.workspace.description)}`,
-    `- Contexto geral: ${textValue(context.rootBoard.description)}`,
-    `- Escopo relevante: Board raiz ${textValue(context.rootBoard.name)} (N1).`,
+    `- Objetivo: ${workspaceBriefValue(context.workspace, 'goal', context.workspace.description)}`,
+    `- Contexto geral: ${workspaceBriefValue(context.workspace, 'context', context.rootBoard.description)}`,
+    `- Escopo relevante: ${workspaceBriefValue(context.workspace, 'scopeIn')}`,
     '- Restricoes globais:',
-    renderGlobalNotes(context),
+    workspaceBriefValue(context.workspace, 'constraints'),
     '- Decisoes globais:',
-    renderGlobalDecisions(context),
+    workspaceBriefValue(context.workspace, 'globalDecisions'),
     '',
     '## Elemento principal',
     `- Tipo: ${context.rootNode.type}`,
     `- Nome: ${textValue(context.rootNode.title)}`,
-    `- Descricao: ${textValue(context.rootNode.description)}`,
-    `- Responsabilidade: ${firstDefinedText(context.rootNode.data, ['responsibility', 'goal', 'purpose', 'decision'])}`,
-    `- Entradas esperadas: ${expectedInputs}`,
-    `- Saidas esperadas: ${expectedOutputs}`,
+    `- Descricao: ${firstMeaningText(context.rootNode, ['purpose', 'summary'], [])}`,
+    `- Responsabilidade: ${firstMeaningText(context.rootNode, ['primaryResponsibility', 'purpose'], ['responsibility', 'goal', 'purpose', 'decision'])}`,
+    `- Entradas esperadas: ${meaningInputs}`,
+    `- Saidas esperadas: ${meaningOutputs}`,
     '- Relacoes externas:',
     ...formatRelations(context.rootRelations),
     '- Decisoes associadas:',
@@ -363,13 +391,13 @@ function renderTaskPromptMarkdown(context: ExportContext): string {
     '## Contexto do bloco',
     `- Nome: ${textValue(context.rootNode.title)}`,
     `- Tipo: ${context.rootNode.type}`,
-    `- Objetivo: ${textValue(context.workspace.description)}`,
-    `- Responsabilidades: ${firstDefinedText(context.rootNode.data, ['responsibility', 'goal', 'purpose', 'decision'])}`,
+    `- Objetivo: ${workspaceBriefValue(context.workspace, 'goal', context.workspace.description)}`,
+    `- Responsabilidades: ${firstMeaningText(context.rootNode, ['primaryResponsibility', 'purpose'], ['responsibility', 'goal', 'purpose', 'decision'])}`,
     '',
     '## Contexto geral do projeto',
     `- Workspace: ${textValue(context.workspace.name)}`,
     `- Board raiz: ${textValue(context.rootBoard.name)}`,
-    `- Contexto adicional: ${textValue(context.rootBoard.description)}`,
+    `- Contexto adicional: ${workspaceBriefValue(context.workspace, 'context', context.rootBoard.description)}`,
     '',
     '## Relacoes externas do bloco',
     ...formatRelations(context.rootRelations),

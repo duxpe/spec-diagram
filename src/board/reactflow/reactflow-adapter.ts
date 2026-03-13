@@ -116,6 +116,7 @@ export function isNodeEquivalent(current: SemanticNode, next: SemanticNode): boo
     current.type === next.type &&
     current.title === next.title &&
     current.description === next.description &&
+    JSON.stringify(current.meaning ?? null) === JSON.stringify(next.meaning ?? null) &&
     almostEqual(current.x, next.x) &&
     almostEqual(current.y, next.y) &&
     almostEqual(current.width, next.width) &&
@@ -262,6 +263,7 @@ export function fromRFChanges(
           ? nodeData.title
           : (existingNode?.title ?? 'Untitled Node'),
       description: existingNode?.description,
+      meaning: existingNode?.meaning,
       x: asFiniteNumber(rfNode.position?.x, existingNode?.x ?? 0),
       y: asFiniteNumber(rfNode.position?.y, existingNode?.y ?? 0),
       width: asPositiveNumber(

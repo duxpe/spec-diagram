@@ -4,7 +4,7 @@ import { boardRepo } from '@/db/repositories/board-repo'
 import { ExportPromptType, PromptExportBundle } from '@/domain/models/export'
 import { workspaceRepo } from '@/db/repositories/workspace-repo'
 import { Board } from '@/domain/models/board'
-import { ArchitecturePattern, Workspace } from '@/domain/models/workspace'
+import { ArchitecturePattern, Workspace, WorkspaceBrief } from '@/domain/models/workspace'
 import { BoardService } from '@/domain/services/board-service'
 import { ExportService } from '@/domain/services/export-service'
 import { useAppStore } from '@/state/app-store'
@@ -18,7 +18,16 @@ interface WorkspaceState {
   boards: Board[]
   currentWorkspace?: Workspace
   bootstrap: () => Promise<void>
-  createWorkspace: (name: string, description?: string, pattern?: ArchitecturePattern) => Promise<Workspace>
+  createWorkspace: (
+    name: string,
+    description?: string,
+    pattern?: ArchitecturePattern,
+    brief?: WorkspaceBrief
+  ) => Promise<Workspace>
+  updateWorkspace: (
+    workspaceId: string,
+    patch: Partial<Pick<Workspace, 'name' | 'description' | 'architecturePattern' | 'brief'>>
+  ) => Promise<Workspace | undefined>
   openWorkspace: (workspaceId: string) => Promise<void>
   refreshCurrentWorkspace: () => Promise<void>
   exportWorkspace: (workspaceId: string) => Promise<string>
@@ -66,7 +75,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     }
   },
 
-  async createWorkspace(name, description, pattern) {
+  async createWorkspace(name, description, pattern, brief) {
     const now = nowIso()
     const workspaceId = createId('ws')
     const rootBoard = BoardService.createRootBoard(workspaceId)
@@ -75,6 +84,7 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
       id: workspaceId,
       name,
       description,
+      brief,
       rootBoardId: rootBoard.id,
       boardIds: [rootBoard.id],
       architecturePattern: pattern,
@@ -92,6 +102,33 @@ export const useWorkspaceStore = create<WorkspaceState>((set, get) => ({
     useAppStore.getState().setLastContext(workspace.id, rootBoard.id)
 
     return workspace
+  },
+
+  async updateWorkspace(workspaceId, patch) {
+    const currentWorkspace = await workspaceRepo.getById(workspaceId)
+    if (!currentWorkspace) {
+      set({ error: 'Workspace not found' })
+      return undefined
+    }
+
+    const nextWorkspace: Workspace = {
+      ...currentWorkspace,
+      ...patch,
+      updatedAt: nowIso()
+    }
+
+    await workspaceRepo.upsert(nextWorkspace)
+
+    const workspaces = await workspaceRepo.list()
+    const boards = await boardRepo.listByWorkspace(workspaceId)
+    set({
+      workspaces,
+      boards,
+      currentWorkspace: nextWorkspace,
+      error: undefined
+    })
+
+    return nextWorkspace
   },
 
   async openWorkspace(workspaceId) {

@@ -7,14 +7,16 @@ import { workspaceRepo } from '@/db/repositories/workspace-repo'
 import { Board } from '@/domain/models/board'
 import type { NodeAppearance } from '@/domain/models/node-appearance'
 import { Relation, RelationType } from '@/domain/models/relation'
-import { SemanticNode, SemanticNodeType } from '@/domain/models/semantic-node'
+import { SemanticNode, SemanticNodeMeaning, SemanticNodeType } from '@/domain/models/semantic-node'
 import { boardSchema } from '@/domain/schemas/board.schema'
 import { relationSchema } from '@/domain/schemas/relation.schema'
 import { semanticNodeSchema } from '@/domain/schemas/semantic-node.schema'
+import { applyMeaningToNodeData, type NodeMeaningDraft } from '@/domain/semantics/meaning-capture'
 import { BoardService } from '@/domain/services/board-service'
 import { ValidationService } from '@/domain/services/validation-service'
 import {
   canOpenDetail,
+  getDefaultNodeData,
   isNodeTypeAllowedForLevel,
   isPatternRelationTypeAllowed,
   isRelationTypeAllowedForLevel
@@ -49,7 +51,17 @@ interface BoardState {
   nodes: SemanticNode[]
   relations: Relation[]
   loadBoard: (workspaceId: string, boardId: string) => Promise<void>
-  createNode: (type?: SemanticNodeType, patternRole?: string, defaultAppearance?: Partial<NodeAppearance>) => void
+  createNode: (input: {
+    type?: SemanticNodeType
+    patternRole?: string
+    defaultAppearance?: Partial<NodeAppearance>
+    title?: string
+    description?: string
+    meaning?: SemanticNodeMeaning
+    meaningDraft?: NodeMeaningDraft
+    x?: number
+    y?: number
+  }) => SemanticNode | undefined
   updateNode: (id: string, patch: Partial<Omit<SemanticNode, 'id' | 'workspaceId' | 'boardId'>>) => void
   moveNode: (id: string, x: number, y: number) => void
   createRelation: (
@@ -85,6 +97,7 @@ function isNodeSemanticallyEqual(a: SemanticNode, b: SemanticNode): boolean {
     a.type === b.type &&
     a.title === b.title &&
     a.description === b.description &&
+    JSON.stringify(a.meaning ?? null) === JSON.stringify(b.meaning ?? null) &&
     nearlyEqual(a.x, b.x) &&
     nearlyEqual(a.y, b.y) &&
     nearlyEqual(a.width, b.width) &&
@@ -290,25 +303,38 @@ export const useBoardStore = create<BoardState>((set, get) => ({
     }
   },
 
-  createNode(type, patternRole, defaultAppearance) {
+  createNode(input) {
     const currentBoard = get().currentBoard
 
     if (!currentBoard) return
 
-    const requestedType = type ?? 'system'
+    const requestedType = input.type ?? 'system'
     if (!isNodeTypeAllowedForLevel(currentBoard.level, requestedType)) {
       set({ error: `Node type "${requestedType}" is not allowed in ${currentBoard.level}` })
       return
     }
 
     try {
+      const baseData = getDefaultNodeData(currentBoard.level, requestedType)
+
+      const nextData =
+        input.meaning && input.meaningDraft
+          ? applyMeaningToNodeData(requestedType, baseData, input.meaning, input.meaningDraft)
+          : baseData
+
       const node = BoardService.createNode({
         workspaceId: currentBoard.workspaceId,
         boardId: currentBoard.id,
         level: currentBoard.level,
-        type,
-        patternRole,
-        defaultAppearance
+        type: input.type,
+        title: input.title,
+        description: input.description,
+        meaning: input.meaning,
+        data: nextData,
+        x: input.x,
+        y: input.y,
+        patternRole: input.patternRole,
+        defaultAppearance: input.defaultAppearance
       })
 
       ValidationService.parse(semanticNodeSchema, node)
@@ -327,6 +353,8 @@ export const useBoardStore = create<BoardState>((set, get) => ({
         dirty: true,
         error: undefined
       }))
+
+      return node
     } catch (error) {
       set({ error: formatValidationError(error) })
     }

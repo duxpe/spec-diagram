@@ -19,6 +19,13 @@ import {
   getShapeOptions,
   resolveNodeVisual
 } from '@/domain/semantics/node-visual-catalog'
+import {
+  applyMeaningToNodeData,
+  buildNodeMeaning,
+  getDefaultNodeMeaningDraft,
+  getNodeMeaningFields,
+  type NodeMeaningDraft
+} from '@/domain/semantics/meaning-capture'
 import { useUiStore } from '@/state/ui-store'
 
 interface NodeInspectorProps {
@@ -123,7 +130,9 @@ export function NodeInspector({
   onEditInternals
 }: NodeInspectorProps): JSX.Element {
   const [draftTitle, setDraftTitle] = useState('')
-  const [draftDescription, setDraftDescription] = useState('')
+  const [draftMeaning, setDraftMeaning] = useState<NodeMeaningDraft>(
+    getDefaultNodeMeaningDraft('N1', 'system', '')
+  )
   const [draftData, setDraftData] = useState<Record<string, unknown>>({})
   const [draftAppearance, setDraftAppearance] = useState<NodeAppearance>({})
   const [iconSearch, setIconSearch] = useState('')
@@ -140,7 +149,7 @@ export function NodeInspector({
   useEffect(() => {
     if (!node) {
       setDraftTitle('')
-      setDraftDescription('')
+      setDraftMeaning(getDefaultNodeMeaningDraft('N1', 'system', ''))
       setDraftData({})
       setDraftAppearance({})
       setIconSearch('')
@@ -152,7 +161,9 @@ export function NodeInspector({
     }
 
     setDraftTitle(node.title)
-    setDraftDescription(node.description ?? '')
+    setDraftMeaning(
+      getDefaultNodeMeaningDraft(node.level, node.type, node.title, node.patternRole, node.meaning)
+    )
     setDraftData(node.data)
     setDraftAppearance(node.appearance ?? {})
     setIconProviderTab(node.appearance?.provider ?? 'none')
@@ -229,6 +240,7 @@ export function NodeInspector({
 
   const roundedWidth = Math.round(node.width)
   const roundedHeight = Math.round(node.height)
+  const meaningFields = getNodeMeaningFields(node.level, node.type)
   const resolvedVisual = resolveNodeVisual({ type: node.type, appearance: draftAppearance })
   const sizeSummary = `${roundedWidth} × ${roundedHeight} px`
   const providerServiceOptions = getCloudServiceOptions(resolvedVisual.provider)
@@ -257,6 +269,23 @@ export function NodeInspector({
     if (issues.length > 0) return
 
     onUpdateNode(node.id, { data: nextData })
+  }
+
+  const syncNodeMeaning = (patch: Partial<NodeMeaningDraft>): void => {
+    const nextDraft = { ...draftMeaning, ...patch }
+    setDraftMeaning(nextDraft)
+    const nextMeaning = buildNodeMeaning(nextDraft)
+    const nextData = applyMeaningToNodeData(node.type, draftData, nextMeaning, nextDraft)
+    setDraftData(nextData)
+
+    const issues = getPayloadIssuesForNodeType(node.type, nextData)
+    setPayloadErrors(issues)
+
+    onUpdateNode(node.id, {
+      meaning: nextMeaning,
+      description: nextDraft.summary.trim() || nextMeaning.purpose || undefined,
+      ...(issues.length === 0 ? { data: nextData } : {})
+    })
   }
 
   const syncNodeAppearance = (patch: NodeAppearance): void => {
@@ -294,72 +323,51 @@ export function NodeInspector({
     onUpdateNode(node.id, { appearance: undefined })
   }
 
-  const handleFieldChange = (
-    field: 'title' | 'description',
+  const handleTitleChange = (
     event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ): void => {
-    if (field === 'title') {
-      const nextTitle = event.target.value
-      setDraftTitle(nextTitle)
+    const nextTitle = event.target.value
+    setDraftTitle(nextTitle)
 
-      if (nextTitle.trim().length === 0) {
-        setTitleError('Title is required')
-        return
-      }
-
-      setTitleError(undefined)
-      onUpdateNode(node.id, { title: nextTitle })
+    if (nextTitle.trim().length === 0) {
+      setTitleError('Title is required')
       return
     }
 
-    const nextDescription = event.target.value
-    setDraftDescription(nextDescription)
-    onUpdateNode(node.id, { description: nextDescription || undefined })
+    setTitleError(undefined)
+    onUpdateNode(node.id, { title: nextTitle })
   }
+
+  const meaningCompletion = meaningFields.reduce((count, field) => {
+    const value = draftMeaning[field.key]
+    return typeof value === 'string' && value.trim().length > 0 ? count + 1 : count
+  }, 0)
+
+  const behaviorPrompts = (() => {
+    switch (node.type) {
+      case 'api_contract':
+        return ['constraints', 'errorCases']
+      case 'method':
+        return ['preconditions', 'postconditions', 'errorCases', 'sideEffects']
+      case 'attribute':
+        return ['invariants']
+      case 'class':
+        return ['invariants']
+      default:
+        return []
+    }
+  })().filter((key) => {
+    const value = draftData[key]
+    if (Array.isArray(value)) return value.length === 0
+    if (typeof value === 'string') return value.trim().length === 0
+    return value === undefined
+  })
 
   const renderTypedDataForm = (): JSX.Element | null => {
     switch (node.type) {
       case 'system':
         return (
           <>
-            <label htmlFor="node-goal">Goal</label>
-            <input
-              id="node-goal"
-              type="text"
-              value={asString(draftData.goal)}
-              onChange={(event) => syncNodeData({ goal: event.target.value })}
-            />
-            <FieldError message={fieldErrorByName.get('goal')} />
-
-            <label htmlFor="node-primary-responsibilities">Primary responsibilities</label>
-            <textarea
-              id="node-primary-responsibilities"
-              rows={3}
-              value={asListText(draftData.primaryResponsibilities)}
-              onChange={(event) =>
-                syncNodeData({ primaryResponsibilities: parseListText(event.target.value) ?? [] })
-              }
-            />
-            <FieldError message={fieldErrorByName.get('primaryResponsibilities')} />
-
-            <label htmlFor="node-business-context">Business context</label>
-            <textarea
-              id="node-business-context"
-              rows={2}
-              value={asString(draftData.businessContext)}
-              onChange={(event) =>
-                syncNodeData({ businessContext: event.target.value.trim() ? event.target.value : undefined })
-              }
-            />
-
-            <label htmlFor="node-boundaries">Boundaries (one per line)</label>
-            <textarea
-              id="node-boundaries"
-              rows={2}
-              value={asListText(draftData.boundaries)}
-              onChange={(event) => syncNodeData({ boundaries: parseListText(event.target.value) })}
-            />
-
             <label htmlFor="node-assumptions">Assumptions (one per line)</label>
             <textarea
               id="node-assumptions"
@@ -372,37 +380,12 @@ export function NodeInspector({
       case 'container_service':
         return (
           <>
-            <label htmlFor="node-responsibility">Responsibility</label>
-            <input
-              id="node-responsibility"
-              type="text"
-              value={asString(draftData.responsibility)}
-              onChange={(event) => syncNodeData({ responsibility: event.target.value })}
-            />
-            <FieldError message={fieldErrorByName.get('responsibility')} />
-
             <label htmlFor="node-technologies">Technologies (one per line)</label>
             <textarea
               id="node-technologies"
               rows={2}
               value={asListText(draftData.technologies)}
               onChange={(event) => syncNodeData({ technologies: parseListText(event.target.value) })}
-            />
-
-            <label htmlFor="node-inputs">Inputs (one per line)</label>
-            <textarea
-              id="node-inputs"
-              rows={2}
-              value={asListText(draftData.inputs)}
-              onChange={(event) => syncNodeData({ inputs: parseListText(event.target.value) })}
-            />
-
-            <label htmlFor="node-outputs">Outputs (one per line)</label>
-            <textarea
-              id="node-outputs"
-              rows={2}
-              value={asListText(draftData.outputs)}
-              onChange={(event) => syncNodeData({ outputs: parseListText(event.target.value) })}
             />
 
             <label htmlFor="node-owned-by">Owned by</label>
@@ -601,15 +584,6 @@ export function NodeInspector({
       case 'class':
         return (
           <>
-            <label htmlFor="node-class-responsibility">Responsibility</label>
-            <input
-              id="node-class-responsibility"
-              type="text"
-              value={asString(draftData.responsibility)}
-              onChange={(event) => syncNodeData({ responsibility: event.target.value })}
-            />
-            <FieldError message={fieldErrorByName.get('responsibility')} />
-
             <label htmlFor="node-class-stereotypes">Stereotypes (one per line)</label>
             <textarea
               id="node-class-stereotypes"
@@ -650,15 +624,6 @@ export function NodeInspector({
       case 'interface':
         return (
           <>
-            <label htmlFor="node-interface-purpose">Purpose</label>
-            <input
-              id="node-interface-purpose"
-              type="text"
-              value={asString(draftData.purpose)}
-              onChange={(event) => syncNodeData({ purpose: event.target.value })}
-            />
-            <FieldError message={fieldErrorByName.get('purpose')} />
-
             <label htmlFor="node-interface-operations">
               Exposed operations summary (one per line)
             </label>
@@ -671,13 +636,6 @@ export function NodeInspector({
               }
             />
 
-            <label htmlFor="node-interface-notes">Notes (one per line)</label>
-            <textarea
-              id="node-interface-notes"
-              rows={2}
-              value={asListText(draftData.notes)}
-              onChange={(event) => syncNodeData({ notes: parseListText(event.target.value) })}
-            />
           </>
         )
       case 'api_contract':
@@ -717,36 +675,6 @@ export function NodeInspector({
               }
             />
 
-            <label htmlFor="node-contract-input-summary">Input summary (one per line)</label>
-            <textarea
-              id="node-contract-input-summary"
-              rows={3}
-              value={asListText(draftData.inputSummary)}
-              onChange={(event) =>
-                syncNodeData({ inputSummary: parseListText(event.target.value) ?? [] })
-              }
-            />
-            <FieldError message={fieldErrorByName.get('inputSummary')} />
-
-            <label htmlFor="node-contract-output-summary">Output summary (one per line)</label>
-            <textarea
-              id="node-contract-output-summary"
-              rows={3}
-              value={asListText(draftData.outputSummary)}
-              onChange={(event) =>
-                syncNodeData({ outputSummary: parseListText(event.target.value) ?? [] })
-              }
-            />
-            <FieldError message={fieldErrorByName.get('outputSummary')} />
-
-            <label htmlFor="node-contract-constraints">Constraints (one per line)</label>
-            <textarea
-              id="node-contract-constraints"
-              rows={2}
-              value={asListText(draftData.constraints)}
-              onChange={(event) => syncNodeData({ constraints: parseListText(event.target.value) })}
-            />
-
             <label htmlFor="node-contract-error-cases">Error cases (one per line)</label>
             <textarea
               id="node-contract-error-cases"
@@ -759,24 +687,6 @@ export function NodeInspector({
       case 'method':
         return (
           <>
-            <label htmlFor="node-method-signature">Signature</label>
-            <input
-              id="node-method-signature"
-              type="text"
-              value={asString(draftData.signature)}
-              onChange={(event) => syncNodeData({ signature: event.target.value })}
-            />
-            <FieldError message={fieldErrorByName.get('signature')} />
-
-            <label htmlFor="node-method-purpose">Purpose</label>
-            <textarea
-              id="node-method-purpose"
-              rows={2}
-              value={asString(draftData.purpose)}
-              onChange={(event) => syncNodeData({ purpose: event.target.value })}
-            />
-            <FieldError message={fieldErrorByName.get('purpose')} />
-
             <label htmlFor="node-method-visibility">Visibility</label>
             <select
               id="node-method-visibility"
@@ -799,22 +709,6 @@ export function NodeInspector({
               />
               {' '}Async method
             </label>
-
-            <label htmlFor="node-method-inputs">Inputs (one per line)</label>
-            <textarea
-              id="node-method-inputs"
-              rows={2}
-              value={asListText(draftData.inputs)}
-              onChange={(event) => syncNodeData({ inputs: parseListText(event.target.value) })}
-            />
-
-            <label htmlFor="node-method-outputs">Outputs (one per line)</label>
-            <textarea
-              id="node-method-outputs"
-              rows={2}
-              value={asListText(draftData.outputs)}
-              onChange={(event) => syncNodeData({ outputs: parseListText(event.target.value) })}
-            />
 
             <label htmlFor="node-method-side-effects">Side effects (one per line)</label>
             <textarea
@@ -852,24 +746,6 @@ export function NodeInspector({
       case 'attribute':
         return (
           <>
-            <label htmlFor="node-attribute-type-signature">Type signature</label>
-            <input
-              id="node-attribute-type-signature"
-              type="text"
-              value={asString(draftData.typeSignature)}
-              onChange={(event) => syncNodeData({ typeSignature: event.target.value })}
-            />
-            <FieldError message={fieldErrorByName.get('typeSignature')} />
-
-            <label htmlFor="node-attribute-purpose">Purpose</label>
-            <textarea
-              id="node-attribute-purpose"
-              rows={2}
-              value={asString(draftData.purpose)}
-              onChange={(event) => syncNodeData({ purpose: event.target.value })}
-            />
-            <FieldError message={fieldErrorByName.get('purpose')} />
-
             <label htmlFor="node-attribute-visibility">Visibility</label>
             <select
               id="node-attribute-visibility"
@@ -922,11 +798,11 @@ export function NodeInspector({
   return (
     <div className="node-inspector">
       <InspectorSection
-        title="General info"
-        summary={`${node.level} · ${node.type}`}
+        title="Meaning"
+        summary={meaningFields.length > 0 ? `${meaningCompletion}/${meaningFields.length} captured` : 'Title only'}
         defaultOpen
       >
-        <p className="node-inspector__type">Type: {node.type}</p>
+        <p className="node-inspector__type">Type: {node.level} · {node.type}</p>
         {parentContext ? (
           <>
             <p className="node-inspector__parent">
@@ -947,18 +823,59 @@ export function NodeInspector({
           id="node-title"
           type="text"
           value={draftTitle}
-          onChange={(event) => handleFieldChange('title', event)}
+          onChange={handleTitleChange}
         />
         <FieldError message={titleError} />
 
-        <label htmlFor="node-description">Description</label>
-        <textarea
-          id="node-description"
-          value={draftDescription}
-          onChange={(event) => handleFieldChange('description', event)}
-        />
+        {meaningFields.length > 0 ? (
+          meaningFields.map((field) => (
+            <div key={field.key}>
+              <label htmlFor={`node-meaning-${field.key}`}>{field.label}</label>
+              {field.kind === 'textarea' || field.kind === 'list' ? (
+                <textarea
+                  id={`node-meaning-${field.key}`}
+                  rows={field.key === 'purpose' ? 3 : 2}
+                  value={draftMeaning[field.key]}
+                  placeholder={field.placeholder}
+                  onChange={(event) => syncNodeMeaning({ [field.key]: event.target.value })}
+                />
+              ) : (
+                <input
+                  id={`node-meaning-${field.key}`}
+                  type="text"
+                  value={draftMeaning[field.key]}
+                  placeholder={field.placeholder}
+                  onChange={(event) => syncNodeMeaning({ [field.key]: event.target.value })}
+                />
+              )}
+            </div>
+          ))
+        ) : (
+          <p className="node-inspector__helper">
+            This node stays lightweight. Add the actual note text in technical details.
+          </p>
+        )}
+      </InspectorSection>
 
+      <InspectorSection title="Technical details" summary="Structured implementation fields">
         {renderTypedDataForm()}
+      </InspectorSection>
+
+      <InspectorSection
+        title="Behavior and rules"
+        summary={behaviorPrompts.length > 0 ? `${behaviorPrompts.length} prompts` : 'Covered'}
+      >
+        {behaviorPrompts.length > 0 ? (
+          <div className="node-inspector__prompts">
+            {behaviorPrompts.map((prompt) => (
+              <span key={prompt} className="node-inspector__prompt-chip">
+                Add {prompt.replace(/([A-Z])/g, ' $1').toLowerCase()}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <p className="node-inspector__helper">Behavior signals are already captured for this node.</p>
+        )}
       </InspectorSection>
 
       <div className="node-appearance-summary">
@@ -982,7 +899,7 @@ export function NodeInspector({
         </button>
       </div>
 
-      <InspectorSection title="Size" summary={sizeSummary}>
+      <InspectorSection title="Advanced / notes" summary={sizeSummary}>
         <label htmlFor="node-width">Width</label>
         <input
           id="node-width"

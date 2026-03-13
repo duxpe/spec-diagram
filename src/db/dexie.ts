@@ -32,6 +32,15 @@ export class DesignerDatabase extends Dexie {
       relations: '&id, workspaceId, boardId, updatedAt',
       exports: '&id, workspaceId, createdAt'
     })
+
+    // v3: adds workspace brief and node meaning metadata. No index changes needed.
+    this.version(3).stores({
+      workspaces: '&id, updatedAt',
+      boards: '&id, workspaceId, parentBoardId, level, updatedAt',
+      nodes: '&id, workspaceId, boardId, level, type, updatedAt',
+      relations: '&id, workspaceId, boardId, updatedAt',
+      exports: '&id, workspaceId, createdAt'
+    })
   }
 }
 

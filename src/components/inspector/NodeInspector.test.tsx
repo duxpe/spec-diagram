@@ -66,19 +66,33 @@ describe('NodeInspector', () => {
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', { height: 111 })
   })
 
-  it('validates N1 payload fields while editing and blocks invalid persistence', () => {
+  it('syncs N1 meaning edits into the technical payload without duplicate fields', () => {
     const onUpdateNode = vi.fn()
 
     render(<NodeInspector node={baseNode} onUpdateNode={onUpdateNode} onOpenDetail={vi.fn()} />)
 
-    fireEvent.change(screen.getByLabelText('Goal'), { target: { value: '' } })
-    expect(screen.getByText('This field is required')).toBeInTheDocument()
-    expect(onUpdateNode).not.toHaveBeenCalledWith('node_1', expect.objectContaining({ data: expect.anything() }))
+    expect(screen.queryByLabelText('Goal')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Primary responsibilities')).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Goal'), { target: { value: 'Updated system goal' } })
+    fireEvent.change(screen.getByLabelText('Purpose / why it exists'), {
+      target: { value: 'Clarify the business goal' }
+    })
+
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
+      meaning: {
+        purpose: 'Clarify the business goal',
+        primaryResponsibility: undefined,
+        role: undefined,
+        summary: undefined,
+        inputs: undefined,
+        outputs: undefined,
+        constraints: undefined,
+        decisionNote: undefined,
+        errorNote: undefined
+      },
+      description: 'Clarify the business goal',
       data: {
-        goal: 'Updated system goal',
+        goal: 'Clarify the business goal',
         primaryResponsibilities: ['Provide orchestration']
       }
     })
@@ -123,12 +137,17 @@ describe('NodeInspector', () => {
 
     expect(screen.getByText(/Parent \(N1\): Root Board \/ Billing Service/i)).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Responsibility'), {
-      target: { value: 'Coordinate account aggregates' }
+    expect(screen.queryByLabelText('Responsibility')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Stereotypes (one per line)'), {
+      target: { value: 'Aggregate root' }
     })
 
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
-      data: { responsibility: 'Coordinate account aggregates' }
+      data: {
+        responsibility: 'Manage state transitions',
+        stereotypes: ['Aggregate root']
+      }
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Edit internals' }))
@@ -136,9 +155,7 @@ describe('NodeInspector', () => {
     expect(screen.queryByRole('button', { name: 'Open detail' })).not.toBeInTheDocument()
   })
 
-  it('validates N2 api contract required fields before persisting', () => {
-    const onUpdateNode = vi.fn()
-
+  it('keeps contract inputs and outputs in meaning instead of duplicating them in technical details', () => {
     render(
       <NodeInspector
         node={{
@@ -151,14 +168,15 @@ describe('NodeInspector', () => {
             outputSummary: ['account']
           }
         }}
-        onUpdateNode={onUpdateNode}
+        onUpdateNode={vi.fn()}
         onOpenDetail={vi.fn()}
       />
     )
 
-    fireEvent.change(screen.getByLabelText('Input summary (one per line)'), { target: { value: '' } })
-    expect(screen.getByText(/Add at least one input/i)).toBeInTheDocument()
-    expect(onUpdateNode).not.toHaveBeenCalledWith('node_1', expect.objectContaining({ data: expect.anything() }))
+    expect(screen.getByLabelText('High-level inputs')).toBeInTheDocument()
+    expect(screen.getByLabelText('High-level outputs')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Input summary (one per line)')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Output summary (one per line)')).not.toBeInTheDocument()
   })
 
   it('hides open detail for non-eligible N2 notes', () => {
@@ -204,11 +222,25 @@ describe('NodeInspector', () => {
     expect(screen.getByText(/Parent \(N2\): Billing detail \/ AccountService/i)).toBeInTheDocument()
     expect(screen.getByText(/Ancestor \(N1\): Root Board \/ Billing/i)).toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Purpose'), {
+    expect(screen.queryByLabelText('Signature')).not.toBeInTheDocument()
+
+    fireEvent.change(screen.getByLabelText('Purpose / why it exists'), {
       target: { value: 'Handle account lifecycle command' }
     })
 
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
+      meaning: {
+        purpose: 'Handle account lifecycle command',
+        primaryResponsibility: undefined,
+        role: undefined,
+        summary: undefined,
+        inputs: undefined,
+        outputs: undefined,
+        constraints: undefined,
+        decisionNote: undefined,
+        errorNote: undefined
+      },
+      description: 'Handle account lifecycle command',
       data: {
         signature: 'execute(input): output',
         purpose: 'Handle account lifecycle command'
@@ -217,28 +249,24 @@ describe('NodeInspector', () => {
     expect(screen.queryByRole('button', { name: 'Open detail' })).not.toBeInTheDocument()
   })
 
-  it('blocks invalid N3 method payload persistence', () => {
-    const onUpdateNode = vi.fn()
-
+  it('keeps free notes lightweight in the meaning section', () => {
     render(
       <NodeInspector
         node={{
           ...baseNode,
-          level: 'N3',
-          type: 'method',
+          level: 'N2',
+          type: 'free_note_input',
           data: {
-            signature: 'execute(input): output',
-            purpose: 'Process command'
+            expectedInputsText: 'Incoming payload'
           }
         }}
-        onUpdateNode={onUpdateNode}
+        onUpdateNode={vi.fn()}
         onOpenDetail={vi.fn()}
       />
     )
 
-    fireEvent.change(screen.getByLabelText('Signature'), { target: { value: '' } })
-    expect(screen.getByText('This field is required')).toBeInTheDocument()
-    expect(onUpdateNode).not.toHaveBeenCalledWith('node_1', expect.objectContaining({ data: expect.anything() }))
+    expect(screen.getByText('This node stays lightweight. Add the actual note text in technical details.')).toBeInTheDocument()
+    expect(screen.queryByLabelText('Purpose / why it exists')).not.toBeInTheDocument()
   })
 
   it('renders appearance controls and persists valid appearance changes', () => {

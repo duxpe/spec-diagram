@@ -4,7 +4,7 @@ import { ConfirmationDialog } from '@/components/dialogs/ConfirmationDialog'
 import { PatternSelectionDialog } from '@/components/dialogs/PatternSelectionDialog'
 import { WorkspaceListPanel } from '@/components/panels/WorkspaceListPanel'
 import { WorkspaceImportPanel } from '@/components/panels/WorkspaceImportPanel'
-import { ArchitecturePattern } from '@/domain/models/workspace'
+import { ArchitecturePattern, Workspace } from '@/domain/models/workspace'
 import { useWorkspaceStore } from '@/state/workspace-store'
 
 export function WorkspacePage(): JSX.Element {
@@ -14,12 +14,14 @@ export function WorkspacePage(): JSX.Element {
   const workspaces = useWorkspaceStore((state) => state.workspaces)
   const currentWorkspace = useWorkspaceStore((state) => state.currentWorkspace)
   const createWorkspace = useWorkspaceStore((state) => state.createWorkspace)
+  const updateWorkspace = useWorkspaceStore((state) => state.updateWorkspace)
   const openWorkspace = useWorkspaceStore((state) => state.openWorkspace)
   const importWorkspace = useWorkspaceStore((state) => state.importWorkspace)
   const deleteWorkspace = useWorkspaceStore((state) => state.deleteWorkspace)
   const error = useWorkspaceStore((state) => state.error)
 
   const [isPatternDialogOpen, setPatternDialogOpen] = useState(false)
+  const [workspaceBeingEdited, setWorkspaceBeingEdited] = useState<Workspace | null>(null)
   const [workspacePendingDeletion, setWorkspacePendingDeletion] = useState<{
     id: string
     name: string
@@ -45,11 +47,28 @@ export function WorkspacePage(): JSX.Element {
   const handleCreateWorkspace = async (
     name: string,
     description: string | undefined,
-    pattern: ArchitecturePattern
+    pattern: ArchitecturePattern,
+    brief?: Workspace['brief']
   ): Promise<void> => {
-    const workspace = await createWorkspace(name, description, pattern)
+    const workspace = await createWorkspace(name, description, pattern, brief)
     setPatternDialogOpen(false)
     goToWorkspaceRoot(workspace.id, workspace.rootBoardId)
+  }
+
+  const handleUpdateWorkspace = async (
+    workspaceIdToUpdate: string,
+    name: string,
+    description: string | undefined,
+    pattern: ArchitecturePattern,
+    brief?: Workspace['brief']
+  ): Promise<void> => {
+    await updateWorkspace(workspaceIdToUpdate, {
+      name,
+      description,
+      architecturePattern: pattern,
+      brief
+    })
+    setWorkspaceBeingEdited(null)
   }
 
   const handleOpenWorkspace = async (workspaceIdToOpen: string): Promise<void> => {
@@ -138,6 +157,9 @@ export function WorkspacePage(): JSX.Element {
             onOpenWorkspace={(workspaceIdToOpen) => {
               void handleOpenWorkspace(workspaceIdToOpen)
             }}
+            onEditWorkspace={(workspace) => {
+              setWorkspaceBeingEdited(workspace)
+            }}
             onRemoveWorkspace={(workspaceIdToRemove, workspaceName) => {
               requestWorkspaceDeletion(workspaceIdToRemove, workspaceName)
             }}
@@ -159,8 +181,18 @@ export function WorkspacePage(): JSX.Element {
       <PatternSelectionDialog
         open={isPatternDialogOpen}
         onClose={() => setPatternDialogOpen(false)}
-        onCreate={(name, description, pattern) => {
-          void handleCreateWorkspace(name, description, pattern)
+        onSubmit={(name, description, pattern, brief) => {
+          void handleCreateWorkspace(name, description, pattern, brief)
+        }}
+      />
+      <PatternSelectionDialog
+        open={Boolean(workspaceBeingEdited)}
+        mode="edit"
+        initialWorkspace={workspaceBeingEdited ?? undefined}
+        onClose={() => setWorkspaceBeingEdited(null)}
+        onSubmit={(name, description, pattern, brief) => {
+          if (!workspaceBeingEdited) return
+          void handleUpdateWorkspace(workspaceBeingEdited.id, name, description, pattern, brief)
         }}
       />
       <ConfirmationDialog

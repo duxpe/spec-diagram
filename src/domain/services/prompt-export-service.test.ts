@@ -17,6 +17,13 @@ function buildFixture() {
     id: 'ws_1',
     name: 'Payments Platform',
     description: 'Sistema de pagamentos modular',
+    brief: {
+      goal: 'Reduzir falhas de pagamento',
+      context: 'Plataforma central de cobranca',
+      scopeIn: ['Autorizacao', 'Captura'],
+      constraints: ['PCI', 'Baixa latencia'],
+      globalDecisions: ['Fluxo assincrono para conciliacao']
+    },
     rootBoardId: 'board_n1',
     boardIds: ['board_n1', 'board_n2'],
     createdAt: now,
@@ -57,6 +64,12 @@ function buildFixture() {
       type: 'system',
       title: 'Payments Service',
       description: 'Orquestra pagamentos',
+      meaning: {
+        purpose: 'Coordenar o fluxo de pagamento ponta a ponta',
+        primaryResponsibility: 'Orquestrar autorizacao e captura',
+        inputs: ['payment_id', 'customer_id'],
+        outputs: ['payment_status']
+      },
       x: 10,
       y: 10,
       width: 220,
@@ -109,6 +122,10 @@ function buildFixture() {
       level: 'N2',
       type: 'class',
       title: 'AccountService',
+      meaning: {
+        purpose: 'Aplicar regras da conta',
+        primaryResponsibility: 'Executar regras de dominio da conta'
+      },
       x: 20,
       y: 20,
       width: 220,
@@ -203,6 +220,8 @@ describe('prompt-export-service', () => {
     expect(systemPrompt?.markdown).toContain('#### method - execute')
     expect(systemPrompt?.markdown).toContain('#### attribute - accountId')
     expect(systemPrompt?.markdown).toContain('## Contratos, interfaces e integracoes')
+    expect(systemPrompt?.markdown).toContain('Reduzir falhas de pagamento')
+    expect(systemPrompt?.markdown).toContain('Orquestrar autorizacao e captura')
   })
 
   it('is deterministic even when input arrays are shuffled', () => {

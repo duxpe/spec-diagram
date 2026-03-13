@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { RFCanvas, type ZoomControls } from '@/board/reactflow/RFCanvas'
 import { ExportDialog } from '@/components/dialogs/ExportDialog'
 import { ImportDialog } from '@/components/dialogs/ImportDialog'
+import { NodeCreationDialog } from '@/components/dialogs/NodeCreationDialog'
 import { FloatingHeader, FloatingToolbar, FloatingInspector } from '@/components/hud'
 import type { CreateNodeRequest } from '@/components/hud/FloatingToolbar'
 import { NodeActionMenu } from '@/components/hud/NodeActionMenu'
@@ -15,14 +16,17 @@ import { N3InternalsEditorDialog } from '@/components/dialogs/N3InternalsEditorD
 import { RelationPanel } from '@/components/panels/RelationPanel'
 import { useBoardAutosave } from '@/features/autosave/useBoardAutosave'
 import { ExportPromptType, PromptExportBundle } from '@/domain/models/export'
+import type { RelationType } from '@/domain/models/relation'
 import {
   buildPromptZipFileName,
   createPromptZipBlob
 } from '@/domain/services/prompt-export-service'
+import { resolveDefaultNodeTitle } from '@/domain/services/board-service'
 import {
   getConnectionSuggestions,
   type ConnectionSuggestion
 } from '@/domain/semantics/connection-suggestion-engine'
+import { shouldSkipNodeMeaningCapture } from '@/domain/semantics/meaning-capture'
 import { canOpenDetail } from '@/domain/semantics/semantic-catalog'
 import { PATTERN_CATALOG } from '@/domain/semantics/pattern-catalog'
 import { useBoardStore } from '@/state/board-store'
@@ -100,6 +104,13 @@ export function BoardPage(): JSX.Element {
     canvasY: number
   } | null>(null)
   const [editingInternalsNodeId, setEditingInternalsNodeId] = useState<string | null>(null)
+  const [pendingNodeCreation, setPendingNodeCreation] = useState<{
+    request: CreateNodeRequest
+    x?: number
+    y?: number
+    relationSourceNodeId?: string
+    relationType?: RelationType
+  } | null>(null)
   const n3RedirectedRef = useRef(false)
   const zoomControlsRef = useRef<ZoomControls | null>(null)
 
@@ -173,7 +184,53 @@ export function BoardPage(): JSX.Element {
 
   const handleCreateNode = (request: CreateNodeRequest): void => {
     if (!currentBoard || currentBoard.id !== boardId) return
-    createNode(request.type, request.patternRole, request.defaultAppearance)
+    const type = request.type ?? 'system'
+
+    if (shouldSkipNodeMeaningCapture(type)) {
+      const newNode = createNode({
+        ...request,
+        title: resolveDefaultNodeTitle(type, request.patternRole)
+      })
+
+      if (!newNode) return
+      handleNodeSelect(newNode.id)
+      return
+    }
+
+    setPendingNodeCreation({ request })
+  }
+
+  const completeNodeCreation = (payload: {
+    title: string
+    description?: string
+    meaning: Parameters<typeof createNode>[0]['meaning']
+    meaningDraft: NonNullable<Parameters<typeof createNode>[0]['meaningDraft']>
+  }): void => {
+    if (!pendingNodeCreation) return
+
+    const newNode = createNode({
+      ...pendingNodeCreation.request,
+      title: payload.title,
+      description: payload.description,
+      meaning: payload.meaning,
+      meaningDraft: payload.meaningDraft,
+      x: pendingNodeCreation.x,
+      y: pendingNodeCreation.y
+    })
+
+    if (!newNode) return
+
+    if (pendingNodeCreation.relationSourceNodeId && pendingNodeCreation.relationType) {
+      createRelation(
+        pendingNodeCreation.relationSourceNodeId,
+        newNode.id,
+        pendingNodeCreation.relationType
+      )
+    }
+
+    handleNodeSelect(newNode.id)
+    setPendingNodeCreation(null)
+    setConnectionSuggestionState(null)
   }
 
   const handleOpenDetail = async (nodeId: string): Promise<void> => {
@@ -486,21 +543,39 @@ export function BoardPage(): JSX.Element {
             position={{ x: connectionSuggestionState.screenX, y: connectionSuggestionState.screenY }}
             suggestions={suggestions}
             onSelect={(suggestion: ConnectionSuggestion) => {
-              createNode(suggestion.nodeType, suggestion.patternRole, suggestion.defaultAppearance)
-              const newNode = useBoardStore.getState().nodes.at(-1)
-              if (newNode) {
-                useBoardStore.getState().moveNode(
-                  newNode.id,
-                  connectionSuggestionState.canvasX,
-                  connectionSuggestionState.canvasY
-                )
-                createRelation(
-                  connectionSuggestionState.sourceNodeId,
-                  newNode.id,
-                  suggestion.suggestedRelationType
-                )
+              const nextCreation = {
+                request: {
+                  type: suggestion.nodeType,
+                  patternRole: suggestion.patternRole,
+                  defaultAppearance: suggestion.defaultAppearance
+                },
+                x: connectionSuggestionState.canvasX,
+                y: connectionSuggestionState.canvasY,
+                relationSourceNodeId: connectionSuggestionState.sourceNodeId,
+                relationType: suggestion.suggestedRelationType
               }
-              setConnectionSuggestionState(null)
+
+              if (shouldSkipNodeMeaningCapture(suggestion.nodeType)) {
+                const newNode = createNode({
+                  ...nextCreation.request,
+                  title: resolveDefaultNodeTitle(suggestion.nodeType, suggestion.patternRole),
+                  x: nextCreation.x,
+                  y: nextCreation.y
+                })
+
+                if (!newNode) return
+
+                createRelation(
+                  nextCreation.relationSourceNodeId,
+                  newNode.id,
+                  nextCreation.relationType
+                )
+                handleNodeSelect(newNode.id)
+                setConnectionSuggestionState(null)
+                return
+              }
+
+              setPendingNodeCreation(nextCreation)
             }}
             onClose={() => setConnectionSuggestionState(null)}
           />
@@ -578,6 +653,26 @@ export function BoardPage(): JSX.Element {
         onClose={() => setImportDialogOpen(false)}
         onImport={handleImportWorkspace}
       />
+
+      {pendingNodeCreation && currentBoard ? (
+        <NodeCreationDialog
+          open
+          level={currentBoard.level}
+          type={pendingNodeCreation.request.type ?? 'system'}
+          defaultTitle={resolveDefaultNodeTitle(
+            pendingNodeCreation.request.type ?? 'system',
+            pendingNodeCreation.request.patternRole
+          )}
+          patternRole={pendingNodeCreation.request.patternRole}
+          onClose={() => {
+            setPendingNodeCreation(null)
+            if (connectionSuggestionState) {
+              setConnectionSuggestionState(null)
+            }
+          }}
+          onCreate={completeNodeCreation}
+        />
+      ) : null}
 
       <N3InternalsEditorDialog
         open={!!editingInternalsNode}

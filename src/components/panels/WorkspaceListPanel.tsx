@@ -1,11 +1,12 @@
 import { KeyboardEvent } from 'react'
-import { Trash2 } from 'lucide-react'
+import { Pencil, Trash2 } from 'lucide-react'
 import { ArchitecturePattern, Workspace } from '@/domain/models/workspace'
 
 interface WorkspaceListPanelProps {
   workspaces: Workspace[]
   currentWorkspaceId?: string
   onOpenWorkspace: (workspaceId: string) => void
+  onEditWorkspace: (workspace: Workspace) => void
   onRemoveWorkspace: (workspaceId: string, workspaceName: string) => void
 }
 
@@ -37,10 +38,14 @@ const getPatternLabel = (pattern?: ArchitecturePattern): string => {
   return PATTERN_LABELS[pattern] ?? 'Custom system'
 }
 
+const getWorkspaceSummary = (workspace: Workspace): string =>
+  workspace.brief?.goal ?? workspace.description ?? 'No project framing provided yet.'
+
 export function WorkspaceListPanel({
   workspaces,
   currentWorkspaceId,
   onOpenWorkspace,
+  onEditWorkspace,
   onRemoveWorkspace
 }: WorkspaceListPanelProps): JSX.Element {
   if (workspaces.length === 0) {
@@ -84,6 +89,18 @@ export function WorkspaceListPanel({
                 <button
                   type="button"
                   className="project-card__remove"
+                  aria-label={`Edit ${workspace.name}`}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    onEditWorkspace(workspace)
+                  }}
+                  data-ui-log={`Workspace list – Edit project ${workspace.name}`}
+                >
+                  <Pencil size={14} />
+                </button>
+                <button
+                  type="button"
+                  className="project-card__remove"
                   aria-label={`Delete ${workspace.name}`}
                   onClick={(event) => {
                     event.stopPropagation()
@@ -95,7 +112,7 @@ export function WorkspaceListPanel({
                 </button>
               </div>
               <p className="project-card__description">
-                {workspace.description ?? 'No description provided yet.'}
+                {getWorkspaceSummary(workspace)}
               </p>
               <div className="project-card__footer">
                 <span className="project-card__meta">
