@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { X, ArrowUp, ArrowDown, Plus, FilePenLine, Trash2 } from 'lucide-react'
 import type { SemanticNode } from '@/domain/models/semantic-node'
+import { ListInput } from '@/components/inputs/ListInput'
 import {
   getPayloadIssuesForNodeType,
   type N3AttributeInternal,
@@ -61,9 +62,8 @@ function asStringList(value: unknown): string[] {
   return value.filter((item): item is string => typeof item === 'string')
 }
 
-function parseLines(value: string): string[] {
-  return value
-    .split('\n')
+function normalizeList(items: string[]): string[] {
+  return items
     .map((item) => item.trim())
     .filter((item) => item.length > 0)
 }
@@ -155,10 +155,10 @@ export function N3InternalsEditorDialog({
   const [contractKind, setContractKind] = useState('http')
   const [contractConsumer, setContractConsumer] = useState('')
   const [contractProvider, setContractProvider] = useState('')
-  const [contractInputSummary, setContractInputSummary] = useState('')
-  const [contractOutputSummary, setContractOutputSummary] = useState('')
-  const [contractConstraints, setContractConstraints] = useState('')
-  const [contractErrorCases, setContractErrorCases] = useState('')
+  const [contractInputSummary, setContractInputSummary] = useState<string[]>([])
+  const [contractOutputSummary, setContractOutputSummary] = useState<string[]>([])
+  const [contractConstraints, setContractConstraints] = useState<string[]>([])
+  const [contractErrorCases, setContractErrorCases] = useState<string[]>([])
 
   const eligible =
     node &&
@@ -187,10 +187,10 @@ export function N3InternalsEditorDialog({
       setContractKind(asString(data.kind) || 'http')
       setContractConsumer(asString(data.consumer))
       setContractProvider(asString(data.provider))
-      setContractInputSummary(asStringList(data.inputSummary).join('\n'))
-      setContractOutputSummary(asStringList(data.outputSummary).join('\n'))
-      setContractConstraints(asStringList(data.constraints).join('\n'))
-      setContractErrorCases(asStringList(data.errorCases).join('\n'))
+      setContractInputSummary(asStringList(data.inputSummary))
+      setContractOutputSummary(asStringList(data.outputSummary))
+      setContractConstraints(asStringList(data.constraints))
+      setContractErrorCases(asStringList(data.errorCases))
     }
   }, [open, eligible, node])
 
@@ -247,10 +247,10 @@ export function N3InternalsEditorDialog({
           : 'http',
         consumer: sanitizeOptional(contractConsumer),
         provider: sanitizeOptional(contractProvider),
-        inputSummary: parseLines(contractInputSummary),
-        outputSummary: parseLines(contractOutputSummary),
-        constraints: parseLines(contractConstraints),
-        errorCases: parseLines(contractErrorCases),
+        inputSummary: normalizeList(contractInputSummary),
+        outputSummary: normalizeList(contractOutputSummary),
+        constraints: normalizeList(contractConstraints),
+        errorCases: normalizeList(contractErrorCases),
         internals: {
           endpoints: endpoints.map((row) => ({
             httpMethod: row.httpMethod,
@@ -570,25 +570,33 @@ export function N3InternalsEditorDialog({
               </div>
 
               <div className="n3-contract-form__grid n3-contract-form__grid--two">
-                <label>
-                  Input summary (one per line)
-                  <textarea rows={3} value={contractInputSummary} onChange={(event) => setContractInputSummary(event.target.value)} />
-                </label>
-                <label>
-                  Output summary (one per line)
-                  <textarea rows={3} value={contractOutputSummary} onChange={(event) => setContractOutputSummary(event.target.value)} />
-                </label>
+                <ListInput
+                  id="contract-input-summary"
+                  label="Input summary"
+                  items={contractInputSummary}
+                  onChange={(items) => setContractInputSummary(items ?? [])}
+                />
+                <ListInput
+                  id="contract-output-summary"
+                  label="Output summary"
+                  items={contractOutputSummary}
+                  onChange={(items) => setContractOutputSummary(items ?? [])}
+                />
               </div>
 
               <div className="n3-contract-form__grid n3-contract-form__grid--two">
-                <label>
-                  Constraints (one per line)
-                  <textarea rows={2} value={contractConstraints} onChange={(event) => setContractConstraints(event.target.value)} />
-                </label>
-                <label>
-                  Error cases (one per line)
-                  <textarea rows={2} value={contractErrorCases} onChange={(event) => setContractErrorCases(event.target.value)} />
-                </label>
+                <ListInput
+                  id="contract-constraints"
+                  label="Constraints"
+                  items={contractConstraints}
+                  onChange={(items) => setContractConstraints(items ?? [])}
+                />
+                <ListInput
+                  id="contract-error-cases"
+                  label="Error cases"
+                  items={contractErrorCases}
+                  onChange={(items) => setContractErrorCases(items ?? [])}
+                />
               </div>
 
               {endpoints.length === 0 ? <p className="n3-internals-dialog__empty">No endpoints yet. Add rows for contract internals.</p> : null}

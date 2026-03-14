@@ -2,6 +2,7 @@ import { FormEvent, useEffect, useState } from 'react'
 import { buildWorkspaceBrief, getWorkspaceBriefDraft } from '@/domain/semantics/meaning-capture'
 import { ArchitecturePattern, Workspace } from '@/domain/models/workspace'
 import { PATTERN_CATALOG, PatternDefinition } from '@/domain/semantics/pattern-catalog'
+import { ListInput } from '@/components/inputs/ListInput'
 
 interface PatternSelectionDialogProps {
   open: boolean
@@ -17,6 +18,17 @@ interface PatternSelectionDialogProps {
 }
 
 const PATTERNS: PatternDefinition[] = Object.values(PATTERN_CATALOG)
+
+function parseListDraft(value: string): string[] {
+  return value
+    .split('\n')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+}
+
+function joinListDraft(items?: string[]): string {
+  return items?.join('\n') ?? ''
+}
 
 export function PatternSelectionDialog({
   open,
@@ -174,51 +186,41 @@ export function PatternSelectionDialog({
                     onChange={(event) => setContext(event.target.value)}
                   />
                 </label>
-                <label>
-                  In scope
-                  <textarea
-                    rows={2}
-                    placeholder="One scope item per line"
-                    value={scopeIn}
-                    onChange={(event) => setScopeIn(event.target.value)}
-                  />
-                </label>
-                <label>
-                  Out of scope
-                  <textarea
-                    rows={2}
-                    placeholder="One exclusion per line"
-                    value={scopeOut}
-                    onChange={(event) => setScopeOut(event.target.value)}
-                  />
-                </label>
-                <label>
-                  Constraints
-                  <textarea
-                    rows={2}
-                    placeholder="One constraint per line"
-                    value={constraints}
-                    onChange={(event) => setConstraints(event.target.value)}
-                  />
-                </label>
-                <label>
-                  Priority NFRs
-                  <textarea
-                    rows={2}
-                    placeholder="One non-functional priority per line"
-                    value={nfrs}
-                    onChange={(event) => setNfrs(event.target.value)}
-                  />
-                </label>
-                <label>
-                  Global decisions
-                  <textarea
-                    rows={2}
-                    placeholder="One decision or assumption per line"
-                    value={globalDecisions}
-                    onChange={(event) => setGlobalDecisions(event.target.value)}
-                  />
-                </label>
+                <ListInput
+                  id="pattern-scope-in"
+                  label="In scope"
+                  items={parseListDraft(scopeIn)}
+                  placeholder="Describe a scope item"
+                  onChange={(items) => setScopeIn(joinListDraft(items))}
+                />
+                <ListInput
+                  id="pattern-scope-out"
+                  label="Out of scope"
+                  items={parseListDraft(scopeOut)}
+                  placeholder="Describe an exclusion"
+                  onChange={(items) => setScopeOut(joinListDraft(items))}
+                />
+                <ListInput
+                  id="pattern-constraints"
+                  label="Constraints"
+                  items={parseListDraft(constraints)}
+                  placeholder="Describe a constraint"
+                  onChange={(items) => setConstraints(joinListDraft(items))}
+                />
+                <ListInput
+                  id="pattern-nfrs"
+                  label="Priority NFRs"
+                  items={parseListDraft(nfrs)}
+                  placeholder="Describe a non-functional priority"
+                  onChange={(items) => setNfrs(joinListDraft(items))}
+                />
+                <ListInput
+                  id="pattern-global-decisions"
+                  label="Global decisions"
+                  items={parseListDraft(globalDecisions)}
+                  placeholder="Describe a decision or assumption"
+                  onChange={(items) => setGlobalDecisions(joinListDraft(items))}
+                />
               </div>
 
               <div className="dialog-card__actions">

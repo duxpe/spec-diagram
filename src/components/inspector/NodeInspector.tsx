@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import { Palette, X } from 'lucide-react'
 import { Icon } from '@iconify/react'
 import { GenericNodeIcon } from '@/components/icons/semantic-icons'
+import { ListInput } from '@/components/inputs/ListInput'
 import { NodeAppearance, VisualProvider } from '@/domain/models/node-appearance'
 import { SemanticNode } from '@/domain/models/semantic-node'
 import { nodeAppearanceSchema } from '@/domain/schemas/node-appearance.schema'
@@ -51,22 +52,20 @@ function asString(value: unknown, fallback = ''): string {
   return typeof value === 'string' ? value : fallback
 }
 
-function asListText(value: unknown): string {
-  if (!Array.isArray(value)) return ''
-  return value.filter((item): item is string => typeof item === 'string').join('\n')
+function asStringList(value: unknown): string[] {
+  if (!Array.isArray(value)) return []
+  return value.filter((item): item is string => typeof item === 'string')
 }
 
 function asBoolean(value: unknown, fallback = false): boolean {
   return typeof value === 'boolean' ? value : fallback
 }
 
-function parseListText(value: string): string[] | undefined {
-  const items = value
+function parseListText(value: string): string[] {
+  return value
     .split('\n')
     .map((item) => item.trim())
     .filter((item) => item.length > 0)
-
-  return items.length > 0 ? items : undefined
 }
 
 function FieldError({ message }: { message?: string }): JSX.Element | null {
@@ -368,24 +367,22 @@ export function NodeInspector({
       case 'system':
         return (
           <>
-            <label htmlFor="node-assumptions">Assumptions (one per line)</label>
-            <textarea
+            <ListInput
               id="node-assumptions"
-              rows={2}
-              value={asListText(draftData.assumptions)}
-              onChange={(event) => syncNodeData({ assumptions: parseListText(event.target.value) })}
+              label="Assumptions"
+              items={asStringList(draftData.assumptions)}
+              onChange={(items) => syncNodeData({ assumptions: items })}
             />
           </>
         )
       case 'container_service':
         return (
           <>
-            <label htmlFor="node-technologies">Technologies (one per line)</label>
-            <textarea
+            <ListInput
               id="node-technologies"
-              rows={2}
-              value={asListText(draftData.technologies)}
-              onChange={(event) => syncNodeData({ technologies: parseListText(event.target.value) })}
+              label="Technologies"
+              items={asStringList(draftData.technologies)}
+              onChange={(items) => syncNodeData({ technologies: items })}
             />
 
             <label htmlFor="node-owned-by">Owned by</label>
@@ -584,56 +581,43 @@ export function NodeInspector({
       case 'class':
         return (
           <>
-            <label htmlFor="node-class-stereotypes">Stereotypes (one per line)</label>
-            <textarea
+            <ListInput
               id="node-class-stereotypes"
-              rows={2}
-              value={asListText(draftData.stereotypes)}
-              onChange={(event) => syncNodeData({ stereotypes: parseListText(event.target.value) })}
+              label="Stereotypes"
+              items={asStringList(draftData.stereotypes)}
+              onChange={(items) => syncNodeData({ stereotypes: items })}
             />
 
-            <label htmlFor="node-class-exposes-methods">Exposes methods summary (one per line)</label>
-            <textarea
+            <ListInput
               id="node-class-exposes-methods"
-              rows={3}
-              value={asListText(draftData.exposesMethodsSummary)}
-              onChange={(event) =>
-                syncNodeData({ exposesMethodsSummary: parseListText(event.target.value) })
-              }
+              label="Exposes methods summary"
+              items={asStringList(draftData.exposesMethodsSummary)}
+              onChange={(items) => syncNodeData({ exposesMethodsSummary: items })}
             />
 
-            <label htmlFor="node-class-owns-attributes">Owns attributes summary (one per line)</label>
-            <textarea
+            <ListInput
               id="node-class-owns-attributes"
-              rows={3}
-              value={asListText(draftData.ownsAttributesSummary)}
-              onChange={(event) =>
-                syncNodeData({ ownsAttributesSummary: parseListText(event.target.value) })
-              }
+              label="Owns attributes summary"
+              items={asStringList(draftData.ownsAttributesSummary)}
+              onChange={(items) => syncNodeData({ ownsAttributesSummary: items })}
             />
 
-            <label htmlFor="node-class-invariants">Invariants (one per line)</label>
-            <textarea
+            <ListInput
               id="node-class-invariants"
-              rows={2}
-              value={asListText(draftData.invariants)}
-              onChange={(event) => syncNodeData({ invariants: parseListText(event.target.value) })}
+              label="Invariants"
+              items={asStringList(draftData.invariants)}
+              onChange={(items) => syncNodeData({ invariants: items })}
             />
           </>
         )
       case 'interface':
         return (
           <>
-            <label htmlFor="node-interface-operations">
-              Exposed operations summary (one per line)
-            </label>
-            <textarea
+            <ListInput
               id="node-interface-operations"
-              rows={3}
-              value={asListText(draftData.exposedOperationsSummary)}
-              onChange={(event) =>
-                syncNodeData({ exposedOperationsSummary: parseListText(event.target.value) })
-              }
+              label="Exposed operations summary"
+              items={asStringList(draftData.exposedOperationsSummary)}
+              onChange={(items) => syncNodeData({ exposedOperationsSummary: items })}
             />
 
           </>
@@ -675,12 +659,11 @@ export function NodeInspector({
               }
             />
 
-            <label htmlFor="node-contract-error-cases">Error cases (one per line)</label>
-            <textarea
+            <ListInput
               id="node-contract-error-cases"
-              rows={2}
-              value={asListText(draftData.errorCases)}
-              onChange={(event) => syncNodeData({ errorCases: parseListText(event.target.value) })}
+              label="Error cases"
+              items={asStringList(draftData.errorCases)}
+              onChange={(items) => syncNodeData({ errorCases: items })}
             />
           </>
         )
@@ -710,36 +693,32 @@ export function NodeInspector({
               {' '}Async method
             </label>
 
-            <label htmlFor="node-method-side-effects">Side effects (one per line)</label>
-            <textarea
+            <ListInput
               id="node-method-side-effects"
-              rows={2}
-              value={asListText(draftData.sideEffects)}
-              onChange={(event) => syncNodeData({ sideEffects: parseListText(event.target.value) })}
+              label="Side effects"
+              items={asStringList(draftData.sideEffects)}
+              onChange={(items) => syncNodeData({ sideEffects: items })}
             />
 
-            <label htmlFor="node-method-preconditions">Preconditions (one per line)</label>
-            <textarea
+            <ListInput
               id="node-method-preconditions"
-              rows={2}
-              value={asListText(draftData.preconditions)}
-              onChange={(event) => syncNodeData({ preconditions: parseListText(event.target.value) })}
+              label="Preconditions"
+              items={asStringList(draftData.preconditions)}
+              onChange={(items) => syncNodeData({ preconditions: items })}
             />
 
-            <label htmlFor="node-method-postconditions">Postconditions (one per line)</label>
-            <textarea
+            <ListInput
               id="node-method-postconditions"
-              rows={2}
-              value={asListText(draftData.postconditions)}
-              onChange={(event) => syncNodeData({ postconditions: parseListText(event.target.value) })}
+              label="Postconditions"
+              items={asStringList(draftData.postconditions)}
+              onChange={(items) => syncNodeData({ postconditions: items })}
             />
 
-            <label htmlFor="node-method-error-cases">Error cases (one per line)</label>
-            <textarea
+            <ListInput
               id="node-method-error-cases"
-              rows={2}
-              value={asListText(draftData.errorCases)}
-              onChange={(event) => syncNodeData({ errorCases: parseListText(event.target.value) })}
+              label="Error cases"
+              items={asStringList(draftData.errorCases)}
+              onChange={(items) => syncNodeData({ errorCases: items })}
             />
           </>
         )
@@ -781,12 +760,11 @@ export function NodeInspector({
               }
             />
 
-            <label htmlFor="node-attribute-invariants">Invariants (one per line)</label>
-            <textarea
+            <ListInput
               id="node-attribute-invariants"
-              rows={2}
-              value={asListText(draftData.invariants)}
-              onChange={(event) => syncNodeData({ invariants: parseListText(event.target.value) })}
+              label="Invariants"
+              items={asStringList(draftData.invariants)}
+              onChange={(items) => syncNodeData({ invariants: items })}
             />
           </>
         )
@@ -828,28 +806,45 @@ export function NodeInspector({
         <FieldError message={titleError} />
 
         {meaningFields.length > 0 ? (
-          meaningFields.map((field) => (
-            <div key={field.key}>
-              <label htmlFor={`node-meaning-${field.key}`}>{field.label}</label>
-              {field.kind === 'textarea' || field.kind === 'list' ? (
-                <textarea
+          meaningFields.map((field) => {
+            if (field.kind === 'list') {
+              return (
+                <ListInput
+                  key={field.key}
                   id={`node-meaning-${field.key}`}
-                  rows={field.key === 'purpose' ? 3 : 2}
-                  value={draftMeaning[field.key]}
+                  label={field.label}
+                  items={parseListText(draftMeaning[field.key])}
                   placeholder={field.placeholder}
-                  onChange={(event) => syncNodeMeaning({ [field.key]: event.target.value })}
+                  onChange={(items) =>
+                    syncNodeMeaning({ [field.key]: (items ?? []).join('\n') })
+                  }
                 />
-              ) : (
-                <input
-                  id={`node-meaning-${field.key}`}
-                  type="text"
-                  value={draftMeaning[field.key]}
-                  placeholder={field.placeholder}
-                  onChange={(event) => syncNodeMeaning({ [field.key]: event.target.value })}
-                />
-              )}
-            </div>
-          ))
+              )
+            }
+
+            return (
+              <div key={field.key}>
+                <label htmlFor={`node-meaning-${field.key}`}>{field.label}</label>
+                {field.kind === 'textarea' ? (
+                  <textarea
+                    id={`node-meaning-${field.key}`}
+                    rows={field.key === 'purpose' ? 3 : 2}
+                    value={draftMeaning[field.key]}
+                    placeholder={field.placeholder}
+                    onChange={(event) => syncNodeMeaning({ [field.key]: event.target.value })}
+                  />
+                ) : (
+                  <input
+                    id={`node-meaning-${field.key}`}
+                    type="text"
+                    value={draftMeaning[field.key]}
+                    placeholder={field.placeholder}
+                    onChange={(event) => syncNodeMeaning({ [field.key]: event.target.value })}
+                  />
+                )}
+              </div>
+            )
+          })
         ) : (
           <p className="node-inspector__helper">
             This node stays lightweight. Add the actual note text in technical details.

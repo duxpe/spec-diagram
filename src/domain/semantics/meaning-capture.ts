@@ -189,14 +189,14 @@ export function getNodeMeaningFields(
       {
         key: 'inputs',
         label: 'High-level inputs',
-        placeholder: 'One input per line',
+        placeholder: 'Describe an input',
         kind: 'list',
         required: type === 'api_contract'
       },
       {
         key: 'outputs',
         label: 'High-level outputs',
-        placeholder: 'One output per line',
+        placeholder: 'Describe an output',
         kind: 'list',
         required: type === 'api_contract'
       }
@@ -253,7 +253,7 @@ export function getNodeMeaningFields(
     fields.push({
       key: 'constraints',
       label: 'Constraints or boundary notes',
-      placeholder: 'One constraint per line',
+      placeholder: 'Describe a constraint',
       kind: 'list',
       advanced: true
     })

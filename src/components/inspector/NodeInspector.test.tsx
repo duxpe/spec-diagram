@@ -139,7 +139,7 @@ describe('NodeInspector', () => {
 
     expect(screen.queryByLabelText('Responsibility')).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Stereotypes (one per line)'), {
+    fireEvent.change(screen.getByLabelText('Stereotypes'), {
       target: { value: 'Aggregate root' }
     })
 
@@ -175,8 +175,8 @@ describe('NodeInspector', () => {
 
     expect(screen.getByLabelText('High-level inputs')).toBeInTheDocument()
     expect(screen.getByLabelText('High-level outputs')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Input summary (one per line)')).not.toBeInTheDocument()
-    expect(screen.queryByLabelText('Output summary (one per line)')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Input summary')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Output summary')).not.toBeInTheDocument()
   })
 
   it('hides open detail for non-eligible N2 notes', () => {
