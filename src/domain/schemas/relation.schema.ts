@@ -39,7 +39,7 @@ export const relationTypeSchema = z.enum([
 export const relationSchema = z
   .object({
     id: z.string().min(1),
-    workspaceId: z.string().min(1),
+    projectId: z.string().min(1),
     boardId: z.string().min(1),
     sourceNodeId: z.string().min(1),
     targetNodeId: z.string().min(1),

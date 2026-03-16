@@ -8,9 +8,9 @@ import {
   isRelationTypeAllowedForLevel
 } from '@/domain/semantics/semantic-catalog'
 import { NavigationService } from '@/domain/services/navigation-service'
-import { createId } from '@/utils/ids'
+import { createId } from '@/shared/lib/ids'
 import { PATTERN_CATALOG } from '@/domain/semantics/pattern-catalog'
-import { nowIso } from '@/utils/dates'
+import { nowIso } from '@/shared/lib/dates'
 
 function titleize(text: string): string {
   return text
@@ -31,12 +31,12 @@ export function resolveDefaultNodeTitle(type: SemanticNodeType, patternRole?: st
 }
 
 export class BoardService {
-  static createRootBoard(workspaceId: string): Board {
+  static createRootBoard(projectId: string): Board {
     const now = nowIso()
 
     return {
       id: createId('board'),
-      workspaceId,
+      projectId,
       level: 'N1',
       name: 'Root Board',
       nodeIds: [],
@@ -47,7 +47,7 @@ export class BoardService {
   }
 
   static createChildBoard(input: {
-    workspaceId: string
+    projectId: string
     parentBoardId: string
     parentNodeId: string
     parentLevel: SemanticLevel
@@ -63,7 +63,7 @@ export class BoardService {
 
     return {
       id: createId('board'),
-      workspaceId: input.workspaceId,
+      projectId: input.projectId,
       parentBoardId: input.parentBoardId,
       parentNodeId: input.parentNodeId,
       level: childLevel,
@@ -76,7 +76,7 @@ export class BoardService {
   }
 
   static createNode(input: {
-    workspaceId: string
+    projectId: string
     boardId: string
     level: SemanticLevel
     type?: SemanticNodeType
@@ -99,7 +99,7 @@ export class BoardService {
 
     return {
       id: createId('node'),
-      workspaceId: input.workspaceId,
+      projectId: input.projectId,
       boardId: input.boardId,
       level: input.level,
       type,
@@ -119,7 +119,7 @@ export class BoardService {
   }
 
   static createRelation(input: {
-    workspaceId: string
+    projectId: string
     boardId: string
     level: SemanticLevel
     sourceNodeId: string
@@ -150,7 +150,7 @@ export class BoardService {
 
     return {
       id: createId('rel'),
-      workspaceId: input.workspaceId,
+      projectId: input.projectId,
       boardId: input.boardId,
       sourceNodeId: input.sourceNodeId,
       targetNodeId: input.targetNodeId,

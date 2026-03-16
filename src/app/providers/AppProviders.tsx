@@ -1,15 +1,15 @@
 import { ReactNode, useEffect } from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { useUiStore } from '@/state/ui-store'
-import { useWorkspaceStore } from '@/state/workspace-store'
-import { isUiLoggingEnabled, logUiEvent } from '@/utils/ui-logger'
+import { useUiStore } from '@/features/board/model/ui-store'
+import { useProjectStore } from '@/features/project/model/project-store'
+import { isUiLoggingEnabled, logUiEvent } from '@/shared/lib/ui-logger'
 
 interface AppProvidersProps {
   children: ReactNode
 }
 
 export function AppProviders({ children }: AppProvidersProps): JSX.Element {
-  const bootstrap = useWorkspaceStore((state) => state.bootstrap)
+  const bootstrap = useProjectStore((state) => state.bootstrap)
   const themeMode = useUiStore((state) => state.themeMode)
   const resolveActiveTheme = useUiStore((state) => state.resolveActiveTheme)
 

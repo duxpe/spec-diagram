@@ -24,14 +24,12 @@ export type SemanticNodeType =
   | 'interface'
   | 'port'
   | 'adapter'
-  | 'method'
-  | 'attribute'
   | 'free_note_input'
   | 'free_note_output'
 
 export interface SemanticNode {
   id: string
-  workspaceId: string
+  projectId: string
   boardId: string
   parentNodeId?: string
   level: SemanticLevel

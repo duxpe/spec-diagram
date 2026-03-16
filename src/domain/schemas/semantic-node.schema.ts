@@ -16,8 +16,6 @@ export const semanticNodeTypeSchema = z.enum([
   'interface',
   'port',
   'adapter',
-  'method',
-  'attribute',
   'free_note_input',
   'free_note_output'
 ])
@@ -39,7 +37,7 @@ export const semanticNodeMeaningSchema = z
 export const semanticNodeSchema = z
   .object({
     id: z.string().min(1),
-    workspaceId: z.string().min(1),
+    projectId: z.string().min(1),
     boardId: z.string().min(1),
     parentNodeId: z.string().min(1).optional(),
     level: semanticLevelSchema,

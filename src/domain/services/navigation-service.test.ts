@@ -9,8 +9,4 @@ describe('NavigationService', () => {
   it('returns null for N2', () => {
     expect(NavigationService.inferChildLevel('N2')).toBeNull()
   })
-
-  it('returns null for N3', () => {
-    expect(NavigationService.inferChildLevel('N3')).toBeNull()
-  })
 })

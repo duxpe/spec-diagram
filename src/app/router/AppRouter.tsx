@@ -1,6 +1,6 @@
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom'
-import { WorkspacePage } from '@/pages/workspace/WorkspacePage'
-import { BoardPage } from '@/pages/board/BoardPage'
+import { ProjectsPage } from '@/features/project/ui/ProjectsPage'
+import { BoardPage } from '@/features/board/ui/BoardPage'
 
 function HomePage(): JSX.Element {
   const navigate = useNavigate()
@@ -46,8 +46,8 @@ export function AppRouter(): JSX.Element {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/projects" element={<WorkspacePage />} />
-      <Route path="/project/:projectId" element={<WorkspacePage />} />
+      <Route path="/projects" element={<ProjectsPage />} />
+      <Route path="/project/:projectId" element={<ProjectsPage />} />
       <Route path="/project/:projectId/board/:boardId" element={<BoardPage />} />
       <Route path="*" element={<Navigate to="/projects" replace />} />
     </Routes>

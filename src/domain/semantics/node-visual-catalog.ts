@@ -29,8 +29,6 @@ const DEFAULTS_BY_TYPE: Record<SemanticNodeType, VisualDefaults> = {
   interface: { shapeVariant: 'rectangle', icon: 'layers', accentColor: 'purple' },
   port: { shapeVariant: 'oval', icon: 'plug', accentColor: 'cyan' },
   adapter: { shapeVariant: 'trapezoid', icon: 'bridge', accentColor: 'teal' },
-  method: { shapeVariant: 'oval', icon: 'function-square', accentColor: 'blue' },
-  attribute: { shapeVariant: 'oval', icon: 'key-round', accentColor: 'neutral' },
   free_note_input: { shapeVariant: 'cloud', icon: 'arrow-down', accentColor: 'green' },
   free_note_output: { shapeVariant: 'cloud', icon: 'arrow-up', accentColor: 'cyan' }
 }

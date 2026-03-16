@@ -10,6 +10,6 @@ describe('meaning-capture', () => {
 
   it('returns no meaning fields for free-note nodes', () => {
     expect(getNodeMeaningFields('N2', 'free_note_input')).toEqual([])
-    expect(getNodeMeaningFields('N3', 'free_note_output')).toEqual([])
+    expect(getNodeMeaningFields('N2', 'free_note_output')).toEqual([])
   })
 })

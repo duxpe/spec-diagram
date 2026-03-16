@@ -47,24 +47,9 @@ describe('semantic-catalog', () => {
     expect(allowedRelationTypes).not.toContain('writes')
   })
 
-  it('returns N3 node and relation whitelists for N3 boards', () => {
-    const allowedNodeTypes = getAllowedNodeTypes('N3')
-    const allowedRelationTypes = getAllowedRelationTypes('N3')
-
-    expect(allowedNodeTypes).toEqual(
-      expect.arrayContaining(['method', 'attribute', 'free_note_input', 'free_note_output'])
-    )
-    expect(allowedNodeTypes).not.toContain('class')
-
-    expect(allowedRelationTypes).toEqual(expect.arrayContaining(['uses', 'depends_on', 'exposes']))
-    expect(allowedRelationTypes).not.toContain('calls')
-    expect(allowedRelationTypes).not.toContain('implements')
-  })
-
   it('enforces N1 drill-down eligibility', () => {
     expect(canOpenDetail({ level: 'N1', type: 'system' })).toBe(true)
     expect(canOpenDetail({ level: 'N1', type: 'decision' })).toBe(false)
-    expect(canOpenDetail({ level: 'N3', type: 'method' })).toBe(false)
   })
 
   it('enforces N2 drill-down eligibility', () => {
@@ -100,20 +85,6 @@ describe('semantic-catalog', () => {
       internals: {
         endpoints: []
       }
-    })
-  })
-
-  it('provides valid default payload for N3 types', () => {
-    const methodData = getDefaultNodeData('N3', 'method')
-    const attributeData = getDefaultNodeData('N3', 'attribute')
-
-    expect(methodData).toMatchObject({
-      signature: expect.any(String),
-      purpose: expect.any(String)
-    })
-    expect(attributeData).toMatchObject({
-      typeSignature: expect.any(String),
-      purpose: expect.any(String)
     })
   })
 

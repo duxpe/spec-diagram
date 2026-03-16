@@ -1,0 +1,3 @@
+export const NODE_WIDTH_FALLBACK = 220
+export const NODE_HEIGHT_FALLBACK = 110
+export const FLOAT_TOLERANCE = 0.05

@@ -2,7 +2,7 @@ import type { NodeAppearance } from '@/domain/models/node-appearance'
 import type { RelationType } from '@/domain/models/relation'
 import type { SemanticNodeType } from '@/domain/models/semantic-node'
 import type { SemanticLevel } from '@/domain/models/board'
-import type { ArchitecturePattern } from '@/domain/models/workspace'
+import type { ArchitecturePattern } from '@/domain/models/project'
 import { PATTERN_CATALOG } from '@/domain/semantics/pattern-catalog'
 
 export interface ConnectionSuggestion {

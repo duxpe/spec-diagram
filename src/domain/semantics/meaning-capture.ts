@@ -1,6 +1,6 @@
 import type { SemanticLevel } from '@/domain/models/board'
 import type { SemanticNodeMeaning, SemanticNodeType } from '@/domain/models/semantic-node'
-import type { WorkspaceBrief } from '@/domain/models/workspace'
+import type { ProjectBrief } from '@/domain/models/project'
 
 export interface MeaningFieldConfig {
   key:
@@ -13,8 +13,6 @@ export interface MeaningFieldConfig {
     | 'constraints'
     | 'decisionNote'
     | 'errorNote'
-    | 'signature'
-    | 'typeSignature'
   label: string
   placeholder: string
   kind: 'text' | 'textarea' | 'list'
@@ -22,7 +20,7 @@ export interface MeaningFieldConfig {
   advanced?: boolean
 }
 
-export interface WorkspaceBriefDraft {
+export interface ProjectBriefDraft {
   goal: string
   context: string
   scopeIn: string
@@ -43,8 +41,6 @@ export interface NodeMeaningDraft {
   constraints: string
   decisionNote: string
   errorNote: string
-  signature: string
-  typeSignature: string
 }
 
 const NOTE_NODE_TYPES: SemanticNodeType[] = ['free_note_input', 'free_note_output']
@@ -66,7 +62,7 @@ function asLines(value?: string[]): string {
   return value?.join('\n') ?? ''
 }
 
-export function getWorkspaceBriefDraft(brief?: WorkspaceBrief): WorkspaceBriefDraft {
+export function getProjectBriefDraft(brief?: ProjectBrief): ProjectBriefDraft {
   return {
     goal: asText(brief?.goal),
     context: asText(brief?.context),
@@ -78,8 +74,8 @@ export function getWorkspaceBriefDraft(brief?: WorkspaceBrief): WorkspaceBriefDr
   }
 }
 
-export function buildWorkspaceBrief(draft: WorkspaceBriefDraft): WorkspaceBrief | undefined {
-  const brief: WorkspaceBrief = {
+export function buildProjectBrief(draft: ProjectBriefDraft): ProjectBrief | undefined {
+  const brief: ProjectBrief = {
     goal: draft.goal.trim() || undefined,
     context: draft.context.trim() || undefined,
     scopeIn: parseLines(draft.scopeIn),
@@ -109,9 +105,7 @@ export function getDefaultNodeMeaningDraft(
     outputs: asLines(meaning?.outputs),
     constraints: asLines(meaning?.constraints),
     decisionNote: asText(meaning?.decisionNote),
-    errorNote: asText(meaning?.errorNote),
-    signature: type === 'method' ? 'execute(input): output' : '',
-    typeSignature: type === 'attribute' ? 'string' : ''
+    errorNote: asText(meaning?.errorNote)
   }
 }
 
@@ -170,14 +164,12 @@ export function getNodeMeaningFields(
     })
   }
 
-  if (level !== 'N3') {
-    fields.push({
-      key: 'role',
-      label: 'Role in system',
-      placeholder: 'Optional architectural role',
-      kind: 'text'
-    })
-  }
+  fields.push({
+    key: 'role',
+    label: 'Role in system',
+    placeholder: 'Optional architectural role',
+    kind: 'text'
+  })
 
   if (
     level === 'N1' ||
@@ -203,43 +195,6 @@ export function getNodeMeaningFields(
     )
   }
 
-  if (type === 'method') {
-    fields.push(
-      {
-        key: 'signature',
-        label: 'Proposed signature',
-        placeholder: 'execute(input): output',
-        kind: 'text',
-        required: true
-      },
-      {
-        key: 'errorNote',
-        label: 'Error note',
-        placeholder: 'Optional notable error behavior',
-        kind: 'textarea',
-        advanced: true
-      }
-    )
-  }
-
-  if (type === 'attribute') {
-    fields.push(
-      {
-        key: 'typeSignature',
-        label: 'Proposed type',
-        placeholder: 'string',
-        kind: 'text',
-        required: true
-      },
-      {
-        key: 'summary',
-        label: 'Meaning',
-        placeholder: 'Optional summary of what this attribute represents',
-        kind: 'textarea'
-      }
-    )
-  }
-
   if (type === 'class' || type === 'interface') {
     fields.push({
       key: 'summary',
@@ -249,7 +204,7 @@ export function getNodeMeaningFields(
     })
   }
 
-  if (level !== 'N3' && type !== 'decision') {
+  if (type !== 'decision') {
     fields.push({
       key: 'constraints',
       label: 'Constraints or boundary notes',
@@ -312,17 +267,6 @@ export function applyMeaningToNodeData(
       nextData.outputSummary = meaning.outputs ?? ['Describe contract output']
       if (meaning.constraints) nextData.constraints = meaning.constraints
       if (meaning.errorNote) nextData.errorCases = [meaning.errorNote]
-      break
-    case 'method':
-      nextData.signature = draft.signature.trim() || 'execute(input): output'
-      nextData.purpose = meaning.purpose ?? draft.title
-      if (meaning.inputs) nextData.inputs = meaning.inputs
-      if (meaning.outputs) nextData.outputs = meaning.outputs
-      if (meaning.errorNote) nextData.errorCases = [meaning.errorNote]
-      break
-    case 'attribute':
-      nextData.typeSignature = draft.typeSignature.trim() || 'string'
-      nextData.purpose = meaning.purpose ?? meaning.summary ?? draft.title
       break
     case 'free_note_input':
       nextData.expectedInputsText = meaning.purpose ?? meaning.inputs?.join('; ') ?? draft.title

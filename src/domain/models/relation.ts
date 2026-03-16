@@ -35,7 +35,7 @@ export type RelationType =
 
 export interface Relation {
   id: string
-  workspaceId: string
+  projectId: string
   boardId: string
   sourceNodeId: string
   targetNodeId: string

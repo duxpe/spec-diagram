@@ -1,6 +1,6 @@
 import type { NodeAppearance } from '@/domain/models/node-appearance'
 import type { SemanticNodeType } from '@/domain/models/semantic-node'
-import type { ArchitecturePattern } from '@/domain/models/workspace'
+import type { ArchitecturePattern } from '@/domain/models/project'
 import { PATTERN_CATALOG } from '@/domain/semantics/pattern-catalog'
 import { N1_NODE_PALETTE, type N1NodePaletteItem } from '@/domain/semantics/n1-node-palette'
 

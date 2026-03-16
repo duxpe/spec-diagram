@@ -1,4 +1,4 @@
-export type SemanticLevel = 'N1' | 'N2' | 'N3'
+export type SemanticLevel = 'N1' | 'N2'
 
 export interface ViewportState {
   x: number
@@ -8,7 +8,7 @@ export interface ViewportState {
 
 export interface Board {
   id: string
-  workspaceId: string
+  projectId: string
   parentBoardId?: string
   parentNodeId?: string
   level: SemanticLevel

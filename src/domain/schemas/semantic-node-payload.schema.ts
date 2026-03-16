@@ -4,7 +4,6 @@ import { SemanticNodeType } from '@/domain/models/semantic-node'
 const nonEmptyText = z.string().trim().min(1, 'This field is required')
 const optionalText = z.string().trim().min(1).optional()
 const optionalTextList = z.array(nonEmptyText).optional()
-const visibilitySchema = z.enum(['public', 'protected', 'private', 'internal'])
 const httpMethodSchema = z.enum([
   'GET',
   'POST',
@@ -173,32 +172,6 @@ export const n2ApiContractDataSchema = z
   })
   .strict()
 
-export const n3MethodDataSchema = z
-  .object({
-    signature: nonEmptyText,
-    purpose: nonEmptyText,
-    inputs: optionalTextList,
-    outputs: optionalTextList,
-    sideEffects: optionalTextList,
-    preconditions: optionalTextList,
-    postconditions: optionalTextList,
-    errorCases: optionalTextList,
-    visibility: visibilitySchema.optional(),
-    async: z.boolean().optional()
-  })
-  .strict()
-
-export const n3AttributeDataSchema = z
-  .object({
-    typeSignature: nonEmptyText,
-    purpose: nonEmptyText,
-    visibility: visibilitySchema.optional(),
-    required: z.boolean().optional(),
-    defaultValue: optionalText,
-    invariants: optionalTextList
-  })
-  .strict()
-
 const payloadSchemas: Record<SemanticNodeType, z.ZodTypeAny> = {
   system: n1SystemDataSchema,
   container_service: n1ContainerServiceDataSchema,
@@ -210,8 +183,6 @@ const payloadSchemas: Record<SemanticNodeType, z.ZodTypeAny> = {
   interface: n2InterfaceDataSchema,
   port: n1PortDataSchema,
   adapter: n1AdapterDataSchema,
-  method: n3MethodDataSchema,
-  attribute: n3AttributeDataSchema,
   free_note_input: n1FreeNoteInputDataSchema,
   free_note_output: n1FreeNoteOutputDataSchema
 }
