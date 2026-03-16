@@ -84,30 +84,32 @@ export function ProjectListPanel({
                     {getPatternLabel(project.architecturePattern)}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  className="project-card__remove"
-                  aria-label={`Edit ${project.name}`}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onEditProject(project)
-                  }}
-                  data-ui-log={`Project list – Edit project ${project.name}`}
-                >
-                  <Pencil size={14} />
-                </button>
-                <button
-                  type="button"
-                  className="project-card__remove"
-                  aria-label={`Delete ${project.name}`}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    onRemoveProject(project.id, project.name)
-                  }}
-                  data-ui-log={`Project list – Delete project ${project.name}`}
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="project-card__actions">
+                  <button
+                    type="button"
+                    className="project-card__action project-card__action--edit"
+                    aria-label={`Edit ${project.name}`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onEditProject(project)
+                    }}
+                    data-ui-log={`Project list – Edit project ${project.name}`}
+                  >
+                    <Pencil size={14} />
+                  </button>
+                  <button
+                    type="button"
+                    className="project-card__action project-card__action--delete"
+                    aria-label={`Delete ${project.name}`}
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      onRemoveProject(project.id, project.name)
+                    }}
+                    data-ui-log={`Project list – Delete project ${project.name}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
               <p className="project-card__description">
                 {getProjectSummary(project)}
