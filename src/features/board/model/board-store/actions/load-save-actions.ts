@@ -5,12 +5,31 @@ import { semanticNodeSchema } from '@/domain/schemas/semantic-node.schema'
 import { ValidationService } from '@/domain/services/validation-service'
 import { useAppStore } from '@/features/project/model/app-store'
 import { db } from '@/infrastructure/db/dexie'
+import { readBoardSnapshot } from '@/infrastructure/db/recovery'
 import { boardRepo } from '@/infrastructure/db/repositories/board-repo'
 import { relationRepo } from '@/infrastructure/db/repositories/relation-repo'
 import { semanticNodeRepo } from '@/infrastructure/db/repositories/semantic-node-repo'
 import { nowIso } from '@/shared/lib/dates'
 import { resolveParentContext } from '@/features/board/model/board-store/parent-context'
 import type { BoardState, BoardStoreGet, BoardStoreSet } from '@/features/board/model/board-store/types'
+
+function toTimestamp(iso: string | undefined): number {
+  if (!iso) return 0
+  const parsed = Date.parse(iso)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function isRecoveryNewer(recoveryIso: string, currentIso: string | undefined): boolean {
+  return toTimestamp(recoveryIso) > toTimestamp(currentIso)
+}
+
+async function resolveParentContextSafe(board: Board) {
+  try {
+    return await resolveParentContext(board)
+  } catch {
+    return undefined
+  }
+}
 
 export function createLoadBoardAction(set: BoardStoreSet, get: BoardStoreGet): BoardState['loadBoard'] {
   return async (projectId, boardId) => {
@@ -27,15 +46,25 @@ export function createLoadBoardAction(set: BoardStoreSet, get: BoardStoreGet): B
     })
 
     try {
-      const [board, nodes, relations] = await Promise.all([
+      const [dexieBoard, dexieNodes, dexieRelations] = await Promise.all([
         boardRepo.getById(boardId),
         semanticNodeRepo.listByBoard(boardId),
         relationRepo.listByBoard(boardId)
       ])
+      const recovery = readBoardSnapshot(projectId, boardId)
 
       if (get().loadRequestKey !== loadRequestKey) {
         return
       }
+
+      const hasValidDexieBoard = !!dexieBoard && dexieBoard.projectId === projectId
+      const shouldUseRecovery =
+        !!recovery &&
+        (!hasValidDexieBoard || isRecoveryNewer(recovery.board.updatedAt, dexieBoard?.updatedAt))
+
+      const board = shouldUseRecovery ? recovery?.board : dexieBoard
+      const nodes = shouldUseRecovery ? (recovery?.nodes ?? []) : dexieNodes
+      const relations = shouldUseRecovery ? (recovery?.relations ?? []) : dexieRelations
 
       if (!board || board.projectId !== projectId) {
         set({
@@ -51,7 +80,7 @@ export function createLoadBoardAction(set: BoardStoreSet, get: BoardStoreGet): B
         return
       }
 
-      const parentContext = await resolveParentContext(board)
+      const parentContext = await resolveParentContextSafe(board)
 
       if (get().loadRequestKey !== loadRequestKey) {
         return
@@ -63,14 +92,41 @@ export function createLoadBoardAction(set: BoardStoreSet, get: BoardStoreGet): B
         parentContext,
         nodes,
         relations,
-        dirty: false,
+        dirty: shouldUseRecovery,
         error: undefined,
         loadRequestKey: undefined
       })
 
       useAppStore.getState().setLastContext(projectId, boardId)
+
+      if (shouldUseRecovery) {
+        void get().saveCurrentBoard()
+      }
     } catch (error) {
       if (get().loadRequestKey !== loadRequestKey) {
+        return
+      }
+
+      const recovery = readBoardSnapshot(projectId, boardId)
+      if (recovery) {
+        const parentContext = await resolveParentContextSafe(recovery.board)
+
+        if (get().loadRequestKey !== loadRequestKey) {
+          return
+        }
+
+        set({
+          loading: false,
+          currentBoard: recovery.board,
+          parentContext,
+          nodes: recovery.nodes,
+          relations: recovery.relations,
+          dirty: true,
+          error: undefined,
+          loadRequestKey: undefined
+        })
+        useAppStore.getState().setLastContext(projectId, boardId)
+        void get().saveCurrentBoard()
         return
       }
 

@@ -2,17 +2,19 @@ import { Copy, Trash2, ExternalLink } from 'lucide-react'
 
 interface NodeActionMenuProps {
   position: { x: number; y: number }
-  canOpenDetail: boolean
+  canShowSecondaryAction: boolean
+  secondaryActionLabel: string
   onDuplicate: () => void
-  onOpenDetail: () => void
+  onSecondaryAction: () => void
   onDelete: () => void
 }
 
 export function NodeActionMenu({
   position,
-  canOpenDetail,
+  canShowSecondaryAction,
+  secondaryActionLabel,
   onDuplicate,
-  onOpenDetail,
+  onSecondaryAction,
   onDelete
 }: NodeActionMenuProps): JSX.Element {
   return (
@@ -34,14 +36,14 @@ export function NodeActionMenu({
         <Copy size={18} />
       </button>
 
-      {canOpenDetail && (
+      {canShowSecondaryAction && (
         <button
           type="button"
           className="node-action-menu__btn"
-          onClick={onOpenDetail}
-          title="Open detail board"
-          aria-label="Open detail board"
-          data-ui-log="Node action – Open detail board"
+          onClick={onSecondaryAction}
+          title={secondaryActionLabel}
+          aria-label={secondaryActionLabel}
+          data-ui-log={`Node action – ${secondaryActionLabel}`}
         >
           <ExternalLink size={18} />
         </button>

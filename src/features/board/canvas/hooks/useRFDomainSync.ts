@@ -11,6 +11,11 @@ import type { SemanticLevel } from '@/domain/models/board'
 import type { Relation } from '@/domain/models/relation'
 import type { SemanticNode } from '@/domain/models/semantic-node'
 import { fromRFChanges, toRFEdges, toRFNodes } from '@/features/board/canvas/reactflow-adapter'
+import {
+  createDomainSyncSnapshot,
+  resolveDomainSyncSkip,
+  type DomainSyncSnapshot
+} from '@/features/board/canvas/hooks/useRFDomainSync/snapshot'
 
 interface UseRFDomainSyncInput {
   projectId: string
@@ -41,6 +46,7 @@ export function useRFDomainSync({
 }: UseRFDomainSyncInput): UseRFDomainSyncResult {
   const isApplyingDomainRef = useRef(false)
   const mountedBoardIdentity = useRef(`${projectId}:${boardId}`)
+  const onNodeContextMenuRef = useRef(onNodeContextMenu)
   const latestPropsRef = useRef({
     projectId,
     boardId,
@@ -59,13 +65,13 @@ export function useRFDomainSync({
     }
   }, [projectId, boardId, level, semanticNodes, relations])
 
-  const handleNodeContextMenu = useCallback(
-    (nodeId: string, screenX: number, screenY: number) => {
-      if (!onNodeContextMenu) return
-      onNodeContextMenu(nodeId, screenX, screenY)
-    },
-    [onNodeContextMenu]
-  )
+  useEffect(() => {
+    onNodeContextMenuRef.current = onNodeContextMenu
+  }, [onNodeContextMenu])
+
+  const handleNodeContextMenu = useCallback((nodeId: string, screenX: number, screenY: number) => {
+    onNodeContextMenuRef.current?.(nodeId, screenX, screenY)
+  }, [])
 
   const mapNodes = useCallback(
     (nodeList: SemanticNode[]) =>
@@ -85,8 +91,10 @@ export function useRFDomainSync({
     nodes: initialNodes,
     edges: initialEdges
   })
-  const skipDomainSyncRef = useRef(false)
+  const pendingExpectedSnapshotRef = useRef<DomainSyncSnapshot | null>(null)
   const pendingDomainSyncRef = useRef(false)
+  const isDraggingRef = useRef(false)
+  const hasDeferredDomainSyncRef = useRef(false)
   const syncFrameRef = useRef<number | null>(null)
   const latestDomainStateRef = useRef({ nodes: semanticNodes, relations })
 
@@ -108,8 +116,21 @@ export function useRFDomainSync({
   }, [mapNodes, setEdges, setNodes])
 
   const attemptDomainSync = useCallback(() => {
-    if (skipDomainSyncRef.current) {
-      skipDomainSyncRef.current = false
+    if (isDraggingRef.current) {
+      hasDeferredDomainSyncRef.current = true
+      return
+    }
+
+    const latest = latestPropsRef.current
+    const currentBoardIdentity = `${latest.projectId}:${latest.boardId}`
+    const skipDecision = resolveDomainSyncSkip(
+      pendingExpectedSnapshotRef.current,
+      currentBoardIdentity,
+      latest.nodes,
+      latest.relations
+    )
+    pendingExpectedSnapshotRef.current = skipDecision.nextPendingSnapshot
+    if (skipDecision.shouldSkip) {
       return
     }
 
@@ -133,20 +154,22 @@ export function useRFDomainSync({
   }, [runDomainSync])
 
   useEffect(() => {
+    latestDomainStateRef.current = { nodes: semanticNodes, relations }
     attemptDomainSync()
+  }, [semanticNodes, relations, attemptDomainSync])
+
+  useEffect(() => {
     return () => {
+      pendingExpectedSnapshotRef.current = null
+      hasDeferredDomainSyncRef.current = false
+      isDraggingRef.current = false
       if (syncFrameRef.current !== null) {
         cancelAnimationFrame(syncFrameRef.current)
         syncFrameRef.current = null
         pendingDomainSyncRef.current = false
       }
     }
-  }, [attemptDomainSync])
-
-  useEffect(() => {
-    latestDomainStateRef.current = { nodes: semanticNodes, relations }
-    attemptDomainSync()
-  }, [semanticNodes, relations, attemptDomainSync])
+  }, [])
 
   const emitCanvasChange = useCallback(() => {
     if (isApplyingDomainRef.current) return
@@ -168,7 +191,11 @@ export function useRFDomainSync({
 
       const applied = onCanvasChange(latest.boardId, mapped.nodes, mapped.relations)
       if (applied === true) {
-        skipDomainSyncRef.current = true
+        pendingExpectedSnapshotRef.current = createDomainSyncSnapshot(
+          latestBoardIdentity,
+          mapped.nodes,
+          mapped.relations
+        )
       }
     } finally {
       isApplyingDomainRef.current = false
@@ -181,21 +208,41 @@ export function useRFDomainSync({
 
       if (isApplyingDomainRef.current) return
 
+      const positionChanges = changes.filter(
+        (change): change is NodeChange & { type: 'position'; dragging?: boolean } =>
+          change.type === 'position'
+      )
+      const hasDraggingPositionChange = positionChanges.some((change) => change.dragging === true)
+      const hasDragEndChange = positionChanges.some((change) => change.dragging !== true)
+
+      if (hasDraggingPositionChange) {
+        isDraggingRef.current = true
+      }
+
+      if (hasDragEndChange) {
+        isDraggingRef.current = false
+      }
+
       const latest = latestPropsRef.current
       const latestBoardIdentity = `${latest.projectId}:${latest.boardId}`
       if (latestBoardIdentity !== mountedBoardIdentity.current) return
 
       const hasRelevantChanges = changes.some(
-        (change) => change.type === 'position' || change.type === 'dimensions' || change.type === 'remove'
+        (change) => change.type === 'dimensions' || change.type === 'remove'
       )
+      const shouldEmitCanvasChange = hasRelevantChanges || hasDragEndChange
 
-      if (!hasRelevantChanges) return
+      if (!shouldEmitCanvasChange) return
 
       requestAnimationFrame(() => {
         emitCanvasChange()
+        if (hasDeferredDomainSyncRef.current) {
+          hasDeferredDomainSyncRef.current = false
+          attemptDomainSync()
+        }
       })
     },
-    [onNodesChange, emitCanvasChange]
+    [onNodesChange, emitCanvasChange, attemptDomainSync]
   )
 
   const handleEdgesChange = useCallback(

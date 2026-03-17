@@ -56,6 +56,7 @@ interface BoardDialogsProps {
   editingInternalsNode?: SemanticNode
   setEditingInternalsNodeId: (value: string | null) => void
   onSaveInternals: (nodeId: string, dataPatch: Record<string, unknown>) => void
+  onPersistBoardCommit: () => void
 }
 
 export function BoardDialogs({
@@ -79,7 +80,8 @@ export function BoardDialogs({
   completeNodeCreation,
   editingInternalsNode,
   setEditingInternalsNodeId,
-  onSaveInternals
+  onSaveInternals,
+  onPersistBoardCommit
 }: BoardDialogsProps): JSX.Element {
   return (
     <>
@@ -128,6 +130,7 @@ export function BoardDialogs({
         onSave={(dataPatch) => {
           if (!editingInternalsNode) return
           onSaveInternals(editingInternalsNode.id, dataPatch)
+          onPersistBoardCommit()
           setEditingInternalsNodeId(null)
         }}
       />

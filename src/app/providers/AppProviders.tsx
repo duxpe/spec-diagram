@@ -2,6 +2,7 @@ import { ReactNode, useEffect } from 'react'
 import { BrowserRouter } from 'react-router-dom'
 import { useUiStore } from '@/features/board/model/ui-store'
 import { useProjectStore } from '@/features/project/model/project-store'
+import { initializeRecoverySubscriptions } from '@/infrastructure/db/recovery-subscriptions'
 import { isUiLoggingEnabled, logUiEvent } from '@/shared/lib/ui-logger'
 
 interface AppProvidersProps {
@@ -12,6 +13,10 @@ export function AppProviders({ children }: AppProvidersProps): JSX.Element {
   const bootstrap = useProjectStore((state) => state.bootstrap)
   const themeMode = useUiStore((state) => state.themeMode)
   const resolveActiveTheme = useUiStore((state) => state.resolveActiveTheme)
+
+  useEffect(() => {
+    initializeRecoverySubscriptions()
+  }, [])
 
   useEffect(() => {
     void bootstrap()

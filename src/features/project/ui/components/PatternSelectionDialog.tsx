@@ -12,7 +12,7 @@ interface PatternSelectionDialogProps {
   onSubmit: (
     name: string,
     description: string | undefined,
-    pattern: ArchitecturePattern,
+    pattern: ArchitecturePattern | undefined,
     brief?: Project['brief']
   ) => void
 }
@@ -30,6 +30,11 @@ function joinListDraft(items?: string[]): string {
   return items?.join('\n') ?? ''
 }
 
+function getPatternName(pattern?: ArchitecturePattern): string {
+  if (!pattern) return 'Custom system'
+  return PATTERN_CATALOG[pattern]?.name ?? 'Custom system'
+}
+
 export function PatternSelectionDialog({
   open,
   onClose,
@@ -37,6 +42,7 @@ export function PatternSelectionDialog({
   initialProject,
   onSubmit
 }: PatternSelectionDialogProps): JSX.Element | null {
+  const isEditMode = mode === 'edit'
   const initialBrief = getProjectBriefDraft(initialProject?.brief)
   const [name, setName] = useState(initialProject?.name ?? '')
   const [description, setDescription] = useState(initialProject?.description ?? '')
@@ -80,12 +86,17 @@ export function PatternSelectionDialog({
   const handleSubmit = (event: FormEvent<HTMLFormElement>): void => {
     event.preventDefault()
     const trimmedName = name.trim()
-    if (!trimmedName || !selectedPattern) return
+    if (!trimmedName) return
+
+    const patternForSubmit = isEditMode
+      ? initialProject?.architecturePattern
+      : (selectedPattern ?? undefined)
+    if (!isEditMode && !patternForSubmit) return
 
     onSubmit(
       trimmedName,
       description.trim() || undefined,
-      selectedPattern,
+      patternForSubmit,
       buildProjectBrief({
         goal,
         context,
@@ -165,6 +176,18 @@ export function PatternSelectionDialog({
                     onChange={(e) => setDescription(e.target.value)}
                   />
                 </label>
+                {isEditMode ? (
+                  <label>
+                    Project Type
+                    <input
+                      type="text"
+                      value={getPatternName(initialProject?.architecturePattern)}
+                      readOnly
+                      disabled
+                      aria-label="Project type"
+                    />
+                  </label>
+                ) : null}
               </div>
 
               <div className="pattern-dialog__brief">
@@ -227,24 +250,35 @@ export function PatternSelectionDialog({
                 <button type="button" onClick={handleClose} data-ui-log="Pattern selection – Cancel">
                   Cancel
                 </button>
-                <button
-                  type="button"
-                  className="btn--primary"
-                  onClick={() => {
-                    if (name.trim()) {
-                      setStep(2)
-                    }
-                  }}
-                  disabled={!name.trim()}
-                  data-ui-log="Pattern selection – Next: Pattern choice"
-                >
-                  Next
-                </button>
+                {isEditMode ? (
+                  <button
+                    type="submit"
+                    className="btn--primary"
+                    disabled={!name.trim()}
+                    data-ui-log="Pattern selection – Save project"
+                  >
+                    Save project
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn--primary"
+                    onClick={() => {
+                      if (name.trim()) {
+                        setStep(2)
+                      }
+                    }}
+                    disabled={!name.trim()}
+                    data-ui-log="Pattern selection – Next: Pattern choice"
+                  >
+                    Next
+                  </button>
+                )}
               </div>
             </>
           )}
 
-          {step === 2 && (
+          {!isEditMode && step === 2 && (
             <>
               <div className="pattern-dialog__grid">
                 {PATTERNS.map((pattern) => (
@@ -276,9 +310,9 @@ export function PatternSelectionDialog({
                   type="submit"
                   className="btn--primary"
                   disabled={!name.trim() || !selectedPattern}
-                  data-ui-log={`Pattern selection – ${mode === 'edit' ? 'Save project' : 'Create project'}`}
+                  data-ui-log="Pattern selection – Create project"
                 >
-                  {mode === 'edit' ? 'Save project' : 'Create project'}
+                  Create project
                 </button>
               </div>
             </>

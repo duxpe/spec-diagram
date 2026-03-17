@@ -8,6 +8,7 @@ import { ArchitecturePattern, Project, ProjectBrief } from '@/domain/models/proj
 import { BoardService } from '@/domain/services/board-service'
 import { ExportService } from '@/features/transfer/model/export-service'
 import { useAppStore } from '@/features/project/model/app-store'
+import { removeProjectRecovery, replayRecoveryIntoDexie } from '@/infrastructure/db/recovery'
 import { nowIso } from '@/shared/lib/dates'
 import { createId } from '@/shared/lib/ids'
 
@@ -50,6 +51,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({ loading: true, error: undefined })
 
     try {
+      await replayRecoveryIntoDexie()
+
       const projects = await projectRepo.list()
       const { lastProjectId } = useAppStore.getState()
       const fallbackProject = projects[0]
@@ -111,9 +114,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       return undefined
     }
 
+    const { architecturePattern: _ignoredArchitecturePattern, ...safePatch } = patch
+
     const nextProject: Project = {
       ...currentProject,
-      ...patch,
+      ...safePatch,
       updatedAt: nowIso()
     }
 
@@ -206,6 +211,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           await db.exports.where('projectId').equals(projectId).delete()
         }
       )
+      removeProjectRecovery(projectId)
 
       const projects = await projectRepo.list()
       const nextProject = projects[0]

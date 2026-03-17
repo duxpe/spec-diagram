@@ -5,6 +5,7 @@ import { createLoadBoardAction, createSaveCurrentBoardAction } from '@/features/
 import {
   createCreateNodeAction,
   createDeleteNodeAction,
+  createDuplicateNodeAction,
   createMoveNodeAction,
   createUpdateNodeAction
 } from '@/features/board/model/board-store/actions/node-actions'
@@ -33,6 +34,7 @@ export const useBoardStore = create<BoardState>((set, get) => ({
   createNode: createCreateNodeAction(set, get),
   updateNode: createUpdateNodeAction(set, get),
   moveNode: createMoveNodeAction(get),
+  duplicateNode: createDuplicateNodeAction(set, get),
   deleteNode: createDeleteNodeAction(set, get),
 
   createRelation: createCreateRelationAction(set, get),

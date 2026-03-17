@@ -49,7 +49,7 @@ export function ProjectsPage(): JSX.Element {
   const handleCreateProject = async (
     name: string,
     description: string | undefined,
-    pattern: ArchitecturePattern,
+    pattern: ArchitecturePattern | undefined,
     brief?: Project['brief']
   ): Promise<void> => {
     const project = await createProject(name, description, pattern, brief)
@@ -61,13 +61,11 @@ export function ProjectsPage(): JSX.Element {
     projectIdToUpdate: string,
     name: string,
     description: string | undefined,
-    pattern: ArchitecturePattern,
     brief?: Project['brief']
   ): Promise<void> => {
     await updateProject(projectIdToUpdate, {
       name,
       description,
-      architecturePattern: pattern,
       brief
     })
     setProjectBeingEdited(null)
@@ -213,9 +211,9 @@ export function ProjectsPage(): JSX.Element {
         mode="edit"
         initialProject={projectBeingEdited ?? undefined}
         onClose={() => setProjectBeingEdited(null)}
-        onSubmit={(name, description, pattern, brief) => {
+        onSubmit={(name, description, _pattern, brief) => {
           if (!projectBeingEdited) return
-          void handleUpdateProject(projectBeingEdited.id, name, description, pattern, brief)
+          void handleUpdateProject(projectBeingEdited.id, name, description, brief)
         }}
       />
       <ConfirmationDialog

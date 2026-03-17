@@ -10,6 +10,7 @@ interface UseNodeCreationFlowInput {
   boardId: string
   createNode: BoardState['createNode']
   createRelation: BoardState['createRelation']
+  persistCurrentBoard: () => void
   onNodeSelect: (nodeId?: string) => void
   setConnectionSuggestionState: (value: ConnectionSuggestionState | null) => void
 }
@@ -19,6 +20,7 @@ export function useNodeCreationFlow({
   boardId,
   createNode,
   createRelation,
+  persistCurrentBoard,
   onNodeSelect,
   setConnectionSuggestionState
 }: UseNodeCreationFlowInput) {
@@ -36,6 +38,7 @@ export function useNodeCreationFlow({
 
       if (!newNode) return
       onNodeSelect(newNode.id)
+      persistCurrentBoard()
       return
     }
 
@@ -73,6 +76,7 @@ export function useNodeCreationFlow({
     onNodeSelect(newNode.id)
     setPendingNodeCreation(null)
     setConnectionSuggestionState(null)
+    persistCurrentBoard()
   }
 
   return {

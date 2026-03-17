@@ -27,7 +27,9 @@ interface BoardTransientOverlaysProps {
   appearanceDialogNodeId?: string
   onCloseNodeMenu: () => void
   onDeleteSelectedNode: () => void
+  onDuplicateSelectedNode: () => Promise<void>
   onOpenSelectedDetail: () => void
+  onEditSelectedInternals: () => void
   edgeMenuState: { edgeId: string; x: number; y: number } | null
   setEdgeMenuState: (value: { edgeId: string; x: number; y: number } | null) => void
   editingRelationId: string | null
@@ -84,7 +86,9 @@ export function BoardTransientOverlays({
   appearanceDialogNodeId,
   onCloseNodeMenu,
   onDeleteSelectedNode,
+  onDuplicateSelectedNode,
   onOpenSelectedDetail,
+  onEditSelectedInternals,
   edgeMenuState,
   setEdgeMenuState,
   editingRelationId,
@@ -105,15 +109,31 @@ export function BoardTransientOverlays({
   pendingRelation,
   setPendingRelation
 }: BoardTransientOverlaysProps): JSX.Element {
+  const canEditSelectedInternals =
+    !!selectedNode &&
+    selectedNode.level === 'N2' &&
+    ['class', 'interface', 'api_contract'].includes(selectedNode.type)
+  const canOpenSelectedDetail = selectedNode ? canOpenDetail(selectedNode) : false
+  const canShowSecondaryAction = canOpenSelectedDetail || canEditSelectedInternals
+  const secondaryActionLabel = canEditSelectedInternals ? 'Edit internals' : 'Open detail board'
+
   return (
     <>
       {selectedNodeId && nodeMenuPos && !appearanceDialogNodeId ? (
         <NodeActionMenu
           position={nodeMenuPos}
-          canOpenDetail={selectedNode ? canOpenDetail(selectedNode) : false}
-          onDuplicate={onCloseNodeMenu}
-          onOpenDetail={() => {
+          canShowSecondaryAction={canShowSecondaryAction}
+          secondaryActionLabel={secondaryActionLabel}
+          onDuplicate={async () => {
             onCloseNodeMenu()
+            await onDuplicateSelectedNode()
+          }}
+          onSecondaryAction={() => {
+            onCloseNodeMenu()
+            if (canEditSelectedInternals) {
+              onEditSelectedInternals()
+              return
+            }
             onOpenSelectedDetail()
           }}
           onDelete={onDeleteSelectedNode}

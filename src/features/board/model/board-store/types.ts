@@ -42,6 +42,7 @@ export interface BoardState {
   }) => SemanticNode | undefined
   updateNode: (id: string, patch: Partial<Omit<SemanticNode, 'id' | 'projectId' | 'boardId'>>) => void
   moveNode: (id: string, x: number, y: number) => void
+  duplicateNode: (nodeId: string) => Promise<SemanticNode | undefined>
   createRelation: (
     sourceNodeId: string,
     targetNodeId: string,

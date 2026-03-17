@@ -40,6 +40,7 @@ export function BoardPage(): JSX.Element {
   const nodes = useBoardStore((state) => state.nodes)
   const relations = useBoardStore((state) => state.relations)
   const createNode = useBoardStore((state) => state.createNode)
+  const duplicateNode = useBoardStore((state) => state.duplicateNode)
   const updateNode = useBoardStore((state) => state.updateNode)
   const deleteNode = useBoardStore((state) => state.deleteNode)
   const applyCanvasState = useBoardStore((state) => state.applyCanvasState)
@@ -102,6 +103,9 @@ export function BoardPage(): JSX.Element {
     boardId: boardId ?? '',
     createNode,
     createRelation,
+    persistCurrentBoard: () => {
+      void saveCurrentBoard()
+    },
     onNodeSelect: handleNodeSelect,
     setConnectionSuggestionState
   })
@@ -236,9 +240,21 @@ export function BoardPage(): JSX.Element {
             handleNodeSelect(undefined)
           }
         }}
+        onDuplicateSelectedNode={async () => {
+          if (!selectedNodeId) return
+          const duplicated = await duplicateNode(selectedNodeId)
+          if (!duplicated) return
+          handleNodeSelect(duplicated.id)
+          void saveCurrentBoard()
+        }}
         onOpenSelectedDetail={() => {
           if (selectedNodeId) {
             void handleOpenDetail(selectedNodeId)
+          }
+        }}
+        onEditSelectedInternals={() => {
+          if (selectedNodeId) {
+            setEditingInternalsNodeId(selectedNodeId)
           }
         }}
         edgeMenuState={edgeMenuState}
@@ -285,6 +301,9 @@ export function BoardPage(): JSX.Element {
         setEditingInternalsNodeId={setEditingInternalsNodeId}
         onSaveInternals={(nodeId, dataPatch) => {
           updateNode(nodeId, { data: dataPatch })
+        }}
+        onPersistBoardCommit={() => {
+          void saveCurrentBoard()
         }}
       />
     </>
