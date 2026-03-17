@@ -93,7 +93,9 @@ export function AppearanceIconTab({
               onClick={() => syncNodeAppearance({ icon: option.id })}
               data-ui-log={`Inspector appearance – Choose icon ${option.label}`}
             >
-              <GenericNodeIcon iconId={option.id} size={16} />
+              <span className="icon-picker-card__icon" aria-hidden="true">
+                <GenericNodeIcon iconId={option.id} size={18} />
+              </span>
               <span>{option.label}</span>
             </button>
           ))}
@@ -115,7 +117,16 @@ export function AppearanceIconTab({
               }
               data-ui-log={`Inspector appearance – Choose icon ${option.label}`}
             >
-              <Icon icon={option.icon} width={16} height={16} />
+              <span className="icon-picker-card__icon icon-picker-card__icon--cloud" aria-hidden="true">
+                <Icon
+                  icon={option.icon}
+                  width={20}
+                  height={20}
+                  style={{
+                    display: 'block'
+                  }}
+                />
+              </span>
               <span>{option.label}</span>
             </button>
           ))}
