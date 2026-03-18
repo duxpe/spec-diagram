@@ -184,6 +184,37 @@ describe('board-store canvas sync actions', () => {
     useProjectStore.setState({ currentProject: undefined })
   })
 
+  it('allows all relation types for free mode in N1', () => {
+    const nodeA = makeNode('node_a')
+    const nodeB = makeNode('node_b')
+    useProjectStore.setState({
+      currentProject: {
+        id: 'ws_1',
+        name: 'Project',
+        rootBoardId: 'board_1',
+        boardIds: ['board_1'],
+        architecturePattern: 'free_mode',
+        createdAt: now,
+        updatedAt: now
+      }
+    })
+
+    useBoardStore.setState({
+      currentBoard: makeBoard(),
+      nodes: [nodeA, nodeB],
+      relations: [],
+      dirty: false,
+      error: undefined
+    })
+
+    useBoardStore.getState().createRelation('node_a', 'node_b', 'implements')
+
+    expect(useBoardStore.getState().relations).toHaveLength(1)
+    expect(useBoardStore.getState().relations[0]?.type).toBe('implements')
+    expect(useBoardStore.getState().error).toBeUndefined()
+    useProjectStore.setState({ currentProject: undefined })
+  })
+
   it('blocks relation type that is not allowed in N2', () => {
     const nodeA = makeNode('node_a', { level: 'N2', type: 'class' })
     const nodeB = makeNode('node_b', { level: 'N2', type: 'interface' })

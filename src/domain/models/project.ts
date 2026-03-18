@@ -1,4 +1,5 @@
 export type ArchitecturePattern =
+  | 'free_mode'
   | 'hexagonal'
   | 'layered_n_tier'
   | 'microservices'

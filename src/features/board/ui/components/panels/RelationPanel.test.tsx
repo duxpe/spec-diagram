@@ -68,4 +68,20 @@ describe('RelationPanel', () => {
     expect(relationTypeSelect).not.toHaveTextContent('writes')
   })
 
+  it('shows unrestricted relation types in N1 for free mode', () => {
+    render(
+      <RelationPanel
+        level="N1"
+        nodes={nodes}
+        architecturePattern="free_mode"
+        onCreateRelation={vi.fn()}
+      />
+    )
+
+    const relationTypeSelect = screen.getByLabelText('Type')
+    expect(relationTypeSelect).toHaveTextContent('implements')
+    expect(relationTypeSelect).toHaveTextContent('exposes port')
+    expect(relationTypeSelect).toHaveTextContent('depends on')
+  })
+
 })

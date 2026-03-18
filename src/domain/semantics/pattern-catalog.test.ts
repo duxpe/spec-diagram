@@ -3,6 +3,7 @@ import type { ArchitecturePattern } from '@/domain/models/project'
 import { getPatternDefinition, PATTERN_CATALOG } from '@/domain/semantics/pattern-catalog'
 
 const EXPECTED_PATTERNS: ArchitecturePattern[] = [
+  'free_mode',
   'hexagonal',
   'layered_n_tier',
   'microservices',

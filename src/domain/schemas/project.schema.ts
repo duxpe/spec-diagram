@@ -4,6 +4,7 @@ const nonEmptyTrimmedText = z.string().trim().min(1)
 const optionalTextList = z.array(nonEmptyTrimmedText).optional()
 
 export const architecturePatternSchema = z.enum([
+  'free_mode',
   'hexagonal',
   'layered_n_tier',
   'microservices',

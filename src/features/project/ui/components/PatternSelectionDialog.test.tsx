@@ -43,4 +43,29 @@ describe('PatternSelectionDialog', () => {
       undefined
     )
   })
+
+  it('submits free mode when selected in create flow', () => {
+    const onSubmit = vi.fn()
+
+    render(
+      <PatternSelectionDialog
+        open
+        mode="create"
+        onClose={vi.fn()}
+        onSubmit={onSubmit}
+      />
+    )
+
+    fireEvent.change(screen.getByLabelText('Project Name'), { target: { value: 'Sandbox' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Next' }))
+    fireEvent.click(screen.getByRole('button', { name: /Free Mode/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Create project' }))
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      'Sandbox',
+      undefined,
+      'free_mode',
+      undefined
+    )
+  })
 })

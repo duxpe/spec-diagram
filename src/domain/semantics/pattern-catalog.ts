@@ -1,4 +1,5 @@
 import type { ArchitecturePattern } from '@/domain/models/project'
+import freeMode from '@/domain/semantics/pattern-catalog/patterns/free-mode'
 import hexagonal from '@/domain/semantics/pattern-catalog/patterns/hexagonal'
 import layeredNTier from '@/domain/semantics/pattern-catalog/patterns/layered-n-tier'
 import microservices from '@/domain/semantics/pattern-catalog/patterns/microservices'
@@ -17,6 +18,7 @@ export type {
 } from '@/domain/semantics/pattern-catalog/types'
 
 export const PATTERN_CATALOG: Record<ArchitecturePattern, PatternDefinition> = {
+  free_mode: freeMode,
   hexagonal,
   layered_n_tier: layeredNTier,
   microservices,

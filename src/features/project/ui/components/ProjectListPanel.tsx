@@ -17,6 +17,7 @@ const dateFormatter = new Intl.DateTimeFormat('en-US', {
 })
 
 const PATTERN_LABELS: Record<ArchitecturePattern, string> = {
+  free_mode: 'Free Mode',
   hexagonal: 'Hexagonal',
   layered_n_tier: 'Layered N-Tier',
   microservices: 'Microservices',
