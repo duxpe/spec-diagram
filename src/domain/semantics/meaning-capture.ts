@@ -5,7 +5,6 @@ import type { ProjectBrief } from '@/domain/models/project'
 export interface MeaningFieldConfig {
   key:
     | 'purpose'
-    | 'primaryResponsibility'
     | 'role'
     | 'summary'
     | 'inputs'
@@ -33,7 +32,6 @@ export interface ProjectBriefDraft {
 export interface NodeMeaningDraft {
   title: string
   purpose: string
-  primaryResponsibility: string
   role: string
   summary: string
   inputs: string
@@ -98,7 +96,6 @@ export function getDefaultNodeMeaningDraft(
   return {
     title,
     purpose: asText(meaning?.purpose),
-    primaryResponsibility: asText(meaning?.primaryResponsibility),
     role: asText(meaning?.role ?? patternRole),
     summary: asText(meaning?.summary),
     inputs: asLines(meaning?.inputs),
@@ -112,7 +109,6 @@ export function getDefaultNodeMeaningDraft(
 export function buildNodeMeaning(draft: NodeMeaningDraft): SemanticNodeMeaning {
   return {
     purpose: draft.purpose.trim() || undefined,
-    primaryResponsibility: draft.primaryResponsibility.trim() || undefined,
     role: draft.role.trim() || undefined,
     summary: draft.summary.trim() || undefined,
     inputs: parseLines(draft.inputs),
@@ -138,22 +134,12 @@ export function getNodeMeaningFields(
   const fields: MeaningFieldConfig[] = [
     {
       key: 'purpose',
-      label: 'Purpose / why it exists',
-      placeholder: 'Why this element exists in the system',
+      label: 'Purpose',
+      placeholder: 'What this element does and why it exists',
       kind: 'textarea',
       required: true
     }
   ]
-
-  if (level === 'N1' && !['decision', 'free_note_input', 'free_note_output'].includes(type)) {
-    fields.push({
-      key: 'primaryResponsibility',
-      label: 'Primary responsibility',
-      placeholder: 'What this block is mainly responsible for',
-      kind: 'text',
-      required: true
-    })
-  }
 
   if (type === 'decision') {
     fields.push({
@@ -228,16 +214,16 @@ export function applyMeaningToNodeData(
   switch (type) {
     case 'system':
       nextData.goal = meaning.purpose ?? draft.title
-      nextData.primaryResponsibilities = meaning.primaryResponsibility
-        ? [meaning.primaryResponsibility]
+      nextData.primaryResponsibilities = meaning.purpose
+        ? [meaning.purpose]
         : Array.isArray(nextData.primaryResponsibilities)
           ? nextData.primaryResponsibilities
-          : ['Define primary responsibility']
+          : ['Define purpose']
       if (meaning.summary) nextData.businessContext = meaning.summary
       if (meaning.constraints) nextData.boundaries = meaning.constraints
       break
     case 'container_service':
-      nextData.responsibility = meaning.primaryResponsibility ?? meaning.purpose ?? draft.title
+      nextData.responsibility = meaning.purpose ?? draft.title
       if (meaning.inputs) nextData.inputs = meaning.inputs
       if (meaning.outputs) nextData.outputs = meaning.outputs
       break
@@ -247,7 +233,7 @@ export function applyMeaningToNodeData(
       break
     case 'port':
     case 'adapter':
-      nextData.responsibility = meaning.primaryResponsibility ?? meaning.purpose ?? draft.title
+      nextData.responsibility = meaning.purpose ?? draft.title
       if (meaning.inputs) nextData.inputs = meaning.inputs
       if (meaning.outputs) nextData.outputs = meaning.outputs
       break
@@ -256,7 +242,7 @@ export function applyMeaningToNodeData(
       if (meaning.decisionNote) nextData.rationale = meaning.decisionNote
       break
     case 'class':
-      nextData.responsibility = meaning.primaryResponsibility ?? meaning.purpose ?? draft.title
+      nextData.responsibility = meaning.purpose ?? draft.title
       break
     case 'interface':
       nextData.purpose = meaning.purpose ?? draft.title

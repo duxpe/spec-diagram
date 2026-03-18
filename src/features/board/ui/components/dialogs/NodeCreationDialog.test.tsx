@@ -24,7 +24,6 @@ describe('NodeCreationDialog', () => {
       description: undefined,
       meaning: {
         purpose: undefined,
-        primaryResponsibility: undefined,
         role: undefined,
         summary: undefined,
         inputs: undefined,

@@ -74,14 +74,13 @@ describe('NodeInspector', () => {
     expect(screen.queryByLabelText('Goal')).not.toBeInTheDocument()
     expect(screen.queryByLabelText('Primary responsibilities')).not.toBeInTheDocument()
 
-    fireEvent.change(screen.getByLabelText('Purpose / why it exists'), {
+    fireEvent.change(screen.getByLabelText('Purpose'), {
       target: { value: 'Clarify the business goal' }
     })
 
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
       meaning: {
         purpose: 'Clarify the business goal',
-        primaryResponsibility: undefined,
         role: undefined,
         summary: undefined,
         inputs: undefined,
@@ -93,7 +92,7 @@ describe('NodeInspector', () => {
       description: 'Clarify the business goal',
       data: {
         goal: 'Clarify the business goal',
-        primaryResponsibilities: ['Provide orchestration']
+        primaryResponsibilities: ['Clarify the business goal']
       }
     })
   })
@@ -213,7 +212,7 @@ describe('NodeInspector', () => {
     )
 
     expect(screen.getByText('This node stays lightweight. Add the actual note text in technical details.')).toBeInTheDocument()
-    expect(screen.queryByLabelText('Purpose / why it exists')).not.toBeInTheDocument()
+    expect(screen.queryByLabelText('Purpose')).not.toBeInTheDocument()
   })
 
   it('renders appearance controls and persists valid appearance changes', () => {
@@ -221,8 +220,8 @@ describe('NodeInspector', () => {
 
     render(<NodeInspector node={baseNode} onUpdateNode={onUpdateNode} onOpenDetail={vi.fn()} />)
 
-    fireEvent.click(screen.getByRole('button', { name: 'Editar Aparência' }))
-    const appearanceDialog = screen.getByRole('dialog', { name: 'Aparência' })
+    fireEvent.click(screen.getByRole('button', { name: 'Edit appearance' }))
+    const appearanceDialog = screen.getByRole('dialog', { name: 'Appearance' })
 
     fireEvent.change(within(appearanceDialog).getByLabelText('Provider visual'), { target: { value: 'aws' } })
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', {
@@ -263,8 +262,8 @@ describe('NodeInspector', () => {
       />
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Editar Aparência' }))
-    const appearanceDialog = screen.getByRole('dialog', { name: 'Aparência' })
+    fireEvent.click(screen.getByRole('button', { name: 'Edit appearance' }))
+    const appearanceDialog = screen.getByRole('dialog', { name: 'Appearance' })
     fireEvent.click(within(appearanceDialog).getByRole('button', { name: 'Reset visual' }))
     expect(onUpdateNode).toHaveBeenCalledWith('node_1', { appearance: undefined })
   })

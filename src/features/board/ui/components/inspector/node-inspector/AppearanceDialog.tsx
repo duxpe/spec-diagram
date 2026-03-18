@@ -51,7 +51,7 @@ export function AppearanceDialog({
         className="dialog-card node-appearance-dialog"
         role="dialog"
         aria-modal="true"
-        aria-label="Aparência"
+        aria-label="Appearance"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="dialog-card__header node-appearance-dialog__header">
@@ -68,7 +68,7 @@ export function AppearanceDialog({
               </span>
             </span>
             <div>
-              <h2>Aparência</h2>
+              <h2>Appearance</h2>
               <p className="node-appearance__provider-summary">{appearanceProviderSummary}</p>
             </div>
           </div>

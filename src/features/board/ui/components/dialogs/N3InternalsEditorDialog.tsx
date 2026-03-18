@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import type { SemanticNode } from '@/domain/models/semantic-node'
 import { getPayloadIssuesForNodeType } from '@/domain/schemas/semantic-node-payload.schema'
 import { ClassInternalsSection } from '@/features/board/ui/components/dialogs/n3-internals-editor/ClassInternalsSection'
@@ -98,6 +99,8 @@ export function N3InternalsEditorDialog({
     return `Edit internals: ${node.title}`
   }, [node])
 
+  useEscapeKey(onClose, open && Boolean(eligible) && Boolean(node))
+
   if (!open || !eligible || !node) return null
 
   const openNoteEditor = (target: NoteTarget): void => {
@@ -170,14 +173,14 @@ export function N3InternalsEditorDialog({
         <header className="dialog-card__header n3-internals-dialog__header">
           <div>
             <h2>{dialogTitle}</h2>
-            <p className="n3-internals-dialog__subtitle">Structured N3 editing attached to this N2 element.</p>
+            <p className="n3-internals-dialog__subtitle">Structured code-level details for this component.</p>
           </div>
           <button
             type="button"
             className="n3-internals-dialog__close"
             onClick={onClose}
             aria-label="Close internals editor"
-            data-ui-log="N3 internals – Close dialog"
+            data-ui-log="Internals editor – Close dialog"
           >
             <X size={18} />
           </button>
@@ -221,14 +224,14 @@ export function N3InternalsEditorDialog({
         {payloadError ? <p className="error-text n3-internals-dialog__error">{payloadError}</p> : null}
 
         <div className="dialog-card__actions">
-          <button type="button" onClick={onClose} data-ui-log="N3 internals – Cancel">
+          <button type="button" onClick={onClose} data-ui-log="Internals editor – Cancel">
             Cancel
           </button>
           <button
             type="button"
             className="btn--primary"
             onClick={handleSave}
-            data-ui-log="N3 internals – Save"
+            data-ui-log="Internals editor – Save"
           >
             Save
           </button>

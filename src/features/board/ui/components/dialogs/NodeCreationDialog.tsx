@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useMemo, useState } from 'react'
 import type { SemanticLevel } from '@/domain/models/board'
 import type { SemanticNodeType } from '@/domain/models/semantic-node'
 import { buildNodeMeaning, getDefaultNodeMeaningDraft, getNodeMeaningFields, type NodeMeaningDraft } from '@/domain/semantics/meaning-capture'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 
 interface NodeCreationDialogProps {
   open: boolean
@@ -39,17 +40,15 @@ export function NodeCreationDialog({
     setShowAdvanced(false)
   }, [defaultTitle, level, patternRole, type])
 
-  if (!open) return null
-
-  const reset = (): void => {
+  const handleClose = useCallback((): void => {
     setDraft(getDefaultNodeMeaningDraft(level, type, defaultTitle, patternRole))
     setShowAdvanced(false)
-  }
-
-  const handleClose = (): void => {
-    reset()
     onClose()
-  }
+  }, [level, type, defaultTitle, patternRole, onClose])
+
+  useEscapeKey(handleClose, open)
+
+  if (!open) return null
 
   const missingRequired = fields.some((field) => {
     if (!field.required) return false
@@ -68,7 +67,8 @@ export function NodeCreationDialog({
       meaning,
       meaningDraft: draft
     })
-    reset()
+    setDraft(getDefaultNodeMeaningDraft(level, type, defaultTitle, patternRole))
+    setShowAdvanced(false)
   }
 
   const handleDefineLater = (): void => {
@@ -83,7 +83,8 @@ export function NodeCreationDialog({
       meaning: buildNodeMeaning(deferredDraft),
       meaningDraft: deferredDraft
     })
-    reset()
+    setDraft(getDefaultNodeMeaningDraft(level, type, defaultTitle, patternRole))
+    setShowAdvanced(false)
   }
 
   return (
@@ -120,7 +121,7 @@ export function NodeCreationDialog({
                 <textarea
                   rows={field.key === 'purpose' ? 3 : 2}
                   value={draft[field.key]}
-                  placeholder={field.placeholder}
+                  placeholder={field.kind === 'list' ? `${field.placeholder} (one per line)` : field.placeholder}
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, [field.key]: event.target.value }))
                   }

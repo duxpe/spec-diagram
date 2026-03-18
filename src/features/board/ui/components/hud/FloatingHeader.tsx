@@ -41,7 +41,7 @@ export function FloatingHeader({
         <div className="floating-header__brand-icon">
           <LayoutGrid size={16} />
         </div>
-        <span>SysDs-SG</span>
+        <span>SpecDiagram</span>
       </div>
 
       <div className="floating-header__divider" />
@@ -50,7 +50,7 @@ export function FloatingHeader({
         <span>{projectName}</span>
         <span>/</span>
         <span>{boardName}</span>
-        <span className="floating-header__level">{level}</span>
+        <span className="floating-header__level">{level === 'N1' ? 'Overview' : 'Details'}</span>
         {patternLabel ? (
           <span className="floating-header__pattern-badge">{patternLabel}</span>
         ) : null}

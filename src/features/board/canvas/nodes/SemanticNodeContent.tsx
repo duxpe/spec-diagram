@@ -19,7 +19,7 @@ interface SemanticNodeContentProps {
 // Header height must match ShapeBackground
 const HEADER_HEIGHT = 10
 const ICON_CHIP_SIZE = 46
-const ICON_SIZE = 26
+const ICON_SIZE = 30
 
 const ACCENT_UI_MAP: Record<
   AccentColorToken,
@@ -159,7 +159,7 @@ export function SemanticNodeContent({
       {/* Icon chip (top-left, below header) */}
       <button
         type="button"
-        aria-label="Editar Aparência"
+        aria-label="Edit appearance"
         data-ui-log="Node chip – Open appearance drawer"
         onClick={onOpenAppearance}
         style={{
@@ -187,9 +187,7 @@ export function SemanticNodeContent({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            overflow: 'visible',
-            padding: '2px',
-            boxSizing: 'border-box'
+            overflow: 'visible'
           }}
         >
           {providerServiceData ? (

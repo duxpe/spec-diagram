@@ -53,7 +53,6 @@ interface BoardTransientOverlaysProps {
     meaningDraft?: {
       title: string
       purpose: string
-      primaryResponsibility: string
       role: string
       summary: string
       inputs: string

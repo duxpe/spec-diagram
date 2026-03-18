@@ -3,7 +3,7 @@ import type { Project } from '@/domain/models/project'
 import type { RelationDescriptor } from '@/features/transfer/model/prompt-export-service/types'
 import type { SemanticNode } from '@/domain/models/semantic-node'
 
-export const MISSING_TEXT = 'Nao informado'
+export const MISSING_TEXT = 'Not specified'
 
 export function textValue(value: unknown): string {
   if (typeof value === 'string' && value.trim().length > 0) return value.trim()
@@ -20,7 +20,7 @@ export function listValue(value: unknown): string[] {
 }
 
 export function compareText(a: string, b: string): number {
-  return a.localeCompare(b, 'pt-BR', { sensitivity: 'base' })
+  return a.localeCompare(b, 'en', { sensitivity: 'base' })
 }
 
 export function compareNodes(a: SemanticNode, b: SemanticNode): number {

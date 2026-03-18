@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ArrowLeftRight } from 'lucide-react'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import type { RelationType, Relation } from '@/domain/models/relation'
 import type { SemanticNode } from '@/domain/models/semantic-node'
 import type { ArchitecturePattern } from '@/domain/models/project'
@@ -55,6 +56,8 @@ export function EditRelationDialog({
       }
     }
   }, [reversed, allowedTypes, type])
+
+  useEscapeKey(onClose)
 
   const handleSubmit = (e: React.FormEvent): void => {
     e.preventDefault()

@@ -31,7 +31,6 @@ interface BoardDialogsProps {
     description?: string
     meaning: {
       purpose?: string
-      primaryResponsibility?: string
       role?: string
       summary?: string
       inputs?: string[]
@@ -43,7 +42,6 @@ interface BoardDialogsProps {
     meaningDraft: {
       title: string
       purpose: string
-      primaryResponsibility: string
       role: string
       summary: string
       inputs: string

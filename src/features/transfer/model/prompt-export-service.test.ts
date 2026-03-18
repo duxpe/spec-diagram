@@ -66,7 +66,6 @@ function buildFixture() {
       description: 'Orquestra pagamentos',
       meaning: {
         purpose: 'Coordenar o fluxo de pagamento ponta a ponta',
-        primaryResponsibility: 'Orquestrar autorizacao e captura',
         inputs: ['payment_id', 'customer_id'],
         outputs: ['payment_status']
       },
@@ -123,8 +122,7 @@ function buildFixture() {
       type: 'class',
       title: 'AccountService',
       meaning: {
-        purpose: 'Aplicar regras da conta',
-        primaryResponsibility: 'Executar regras de dominio da conta'
+        purpose: 'Aplicar regras da conta'
       },
       x: 20,
       y: 20,
@@ -219,9 +217,9 @@ describe('prompt-export-service', () => {
     expect(systemPrompt?.markdown).toContain('### class - AccountService')
     expect(systemPrompt?.markdown).toContain('#### method - execute')
     expect(systemPrompt?.markdown).toContain('#### attribute - accountId')
-    expect(systemPrompt?.markdown).toContain('## Contratos, interfaces e integracoes')
+    expect(systemPrompt?.markdown).toContain('## Contracts, interfaces, and integrations')
     expect(systemPrompt?.markdown).toContain('Reduzir falhas de pagamento')
-    expect(systemPrompt?.markdown).toContain('Orquestrar autorizacao e captura')
+    expect(systemPrompt?.markdown).toContain('Coordenar o fluxo de pagamento ponta a ponta')
   })
 
   it('is deterministic even when input arrays are shuffled', () => {

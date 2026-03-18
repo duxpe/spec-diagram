@@ -24,6 +24,8 @@ export function registerOfflineIcons(): void {
   const icons = simpleIconsData.icons as Record<string, { body: string }>
   addCollection({
     prefix: 'simple-icons',
+    width: 24,
+    height: 24,
     icons: Object.fromEntries(NEEDED_ICONS.flatMap((id) => {
       const icon = icons[id]
       return icon ? [[id, icon] as const] : []

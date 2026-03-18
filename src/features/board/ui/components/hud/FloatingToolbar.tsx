@@ -1,14 +1,12 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import {
-  MousePointer2,
   Shapes,
   Save,
   Download,
   Upload,
   ZoomIn,
   ZoomOut,
-  Maximize2,
-  Link2
+  Maximize2
 } from 'lucide-react'
 import { GenericNodeIcon } from '@/shared/ui/icons/semantic-icons'
 import { SemanticLevel } from '@/domain/models/board'
@@ -134,16 +132,6 @@ export function FloatingToolbar({
   return (
     <nav className="floating-toolbar" aria-label="Board tools">
       <div className="floating-toolbar__section">
-        <button
-          type="button"
-          className="floating-toolbar__btn active"
-          title="Select (V)"
-          aria-label="Selection tool"
-          data-ui-log="Floating toolbar – Selection tool"
-        >
-          <MousePointer2 size={20} />
-        </button>
-
         <div style={{ position: 'relative' }}>
           <button
             ref={buttonRef}
@@ -203,15 +191,6 @@ export function FloatingToolbar({
           )}
         </div>
 
-        <button
-          type="button"
-          className="floating-toolbar__btn"
-          title="Create relation"
-          aria-label="Create relation between nodes"
-          data-ui-log="Floating toolbar – Create relation"
-        >
-          <Link2 size={20} />
-        </button>
       </div>
 
       <div className="floating-toolbar__divider" />

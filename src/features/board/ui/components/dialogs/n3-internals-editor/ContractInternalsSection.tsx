@@ -185,7 +185,7 @@ export function ContractInternalsSection({
                   <button
                     type="button"
                     onClick={() => onOpenNoteEditor({ scope: 'endpoint', localId: row.localId })}
-                    data-ui-log={`N3 internals – ${row.note ? 'Edit' : 'Add'} endpoint note`}
+                    data-ui-log={`Internals editor – ${row.note ? 'Edit' : 'Add'} endpoint note`}
                   >
                     {row.note ? 'Edit note' : 'Add note'}
                   </button>
@@ -196,7 +196,7 @@ export function ContractInternalsSection({
                       type="button"
                       onClick={() => setEndpoints((prev) => moveItem(prev, index, 'up'))}
                       aria-label="Move endpoint up"
-                      data-ui-log="N3 internals – Move endpoint up"
+                      data-ui-log="Internals editor – Move endpoint up"
                     >
                       <ArrowUp size={14} />
                     </button>
@@ -204,7 +204,7 @@ export function ContractInternalsSection({
                       type="button"
                       onClick={() => setEndpoints((prev) => moveItem(prev, index, 'down'))}
                       aria-label="Move endpoint down"
-                      data-ui-log="N3 internals – Move endpoint down"
+                      data-ui-log="Internals editor – Move endpoint down"
                     >
                       <ArrowDown size={14} />
                     </button>
@@ -212,7 +212,7 @@ export function ContractInternalsSection({
                       type="button"
                       onClick={() => setEndpoints((prev) => prev.filter((entry) => entry.localId !== row.localId))}
                       aria-label="Delete endpoint"
-                      data-ui-log="N3 internals – Delete endpoint"
+                      data-ui-log="Internals editor – Delete endpoint"
                     >
                       <Trash2 size={14} />
                     </button>
@@ -227,7 +227,7 @@ export function ContractInternalsSection({
           type="button"
           className="n3-table__add"
           onClick={() => setEndpoints((prev) => [...prev, { ...EMPTY_ENDPOINT, localId: makeLocalId() }])}
-          data-ui-log="N3 internals – Add endpoint"
+          data-ui-log="Internals editor – Add endpoint"
         >
           <Plus size={14} /> Add endpoint
         </button>

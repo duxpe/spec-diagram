@@ -1,3 +1,5 @@
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
+
 interface ConfirmationDialogProps {
   open: boolean
   title: string
@@ -19,6 +21,8 @@ export function ConfirmationDialog({
   onClose,
   onConfirm
 }: ConfirmationDialogProps): JSX.Element | null {
+  useEscapeKey(onClose, open)
+
   if (!open) return null
 
   return (

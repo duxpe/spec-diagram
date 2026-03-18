@@ -4,6 +4,7 @@ import { useUiStore } from '@/features/board/model/ui-store'
 import { useProjectStore } from '@/features/project/model/project-store'
 import { initializeRecoverySubscriptions } from '@/infrastructure/db/recovery-subscriptions'
 import { isUiLoggingEnabled, logUiEvent } from '@/shared/lib/ui-logger'
+import { ErrorBoundary } from '@/shared/ui/ErrorBoundary'
 
 interface AppProvidersProps {
   children: ReactNode
@@ -71,5 +72,9 @@ export function AppProviders({ children }: AppProvidersProps): JSX.Element {
     return () => document.removeEventListener('click', handleButtonClick)
   }, [])
 
-  return <BrowserRouter>{children}</BrowserRouter>
+  return (
+    <ErrorBoundary>
+      <BrowserRouter>{children}</BrowserRouter>
+    </ErrorBoundary>
+  )
 }
