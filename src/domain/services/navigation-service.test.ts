@@ -6,11 +6,7 @@ describe('NavigationService', () => {
     expect(NavigationService.inferChildLevel('N1')).toBe('N2')
   })
 
-  it('infers child level from N2 to N3', () => {
-    expect(NavigationService.inferChildLevel('N2')).toBe('N3')
-  })
-
-  it('returns null for N3', () => {
-    expect(NavigationService.inferChildLevel('N3')).toBeNull()
+  it('returns null for N2', () => {
+    expect(NavigationService.inferChildLevel('N2')).toBeNull()
   })
 })

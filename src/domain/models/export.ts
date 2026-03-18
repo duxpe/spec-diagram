@@ -1,7 +1,7 @@
 import { Board } from '@/domain/models/board'
 import { Relation } from '@/domain/models/relation'
 import { SemanticNode } from '@/domain/models/semantic-node'
-import { Workspace } from '@/domain/models/workspace'
+import { Project } from '@/domain/models/project'
 
 export type ExportPromptType = 'spec_prompt' | 'task_prompt'
 
@@ -14,17 +14,17 @@ export interface PromptExportItem {
 }
 
 export interface PromptExportBundle {
-  workspaceId: string
-  workspaceName: string
+  projectId: string
+  projectName: string
   exportType: ExportPromptType
   exportedAt: string
   items: PromptExportItem[]
 }
 
-export interface WorkspaceExportFile {
-  version: '1.0.0'
+export interface ProjectExportFile {
+  version: '2.0.0'
   exportedAt: string
-  workspace: Workspace
+  project: Project
   boards: Board[]
   nodes: SemanticNode[]
   relations: Relation[]
@@ -32,7 +32,7 @@ export interface WorkspaceExportFile {
 
 export interface ExportHistoryEntry {
   id: string
-  workspaceId: string
+  projectId: string
   boardId?: string
   kind: 'json_snapshot'
   payload: string

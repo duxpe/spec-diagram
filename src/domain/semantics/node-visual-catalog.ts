@@ -21,7 +21,7 @@ const DEFAULT_PROVIDER: VisualProvider = 'none'
 const DEFAULTS_BY_TYPE: Record<SemanticNodeType, VisualDefaults> = {
   system: { shapeVariant: 'rectangle', icon: 'grid', accentColor: 'cyan' },
   container_service: { shapeVariant: 'rectangle', icon: 'cube', accentColor: 'teal' },
-  database: { shapeVariant: 'oval', icon: 'database', accentColor: 'amber' },
+  database: { shapeVariant: 'cylinder', icon: 'database', accentColor: 'amber' },
   external_system: { shapeVariant: 'rectangle', icon: 'globe', accentColor: 'gray' },
   api_contract: { shapeVariant: 'rhombus', icon: 'brackets', accentColor: 'indigo' },
   decision: { shapeVariant: 'diamond', icon: 'git-branch', accentColor: 'orange' },
@@ -29,8 +29,6 @@ const DEFAULTS_BY_TYPE: Record<SemanticNodeType, VisualDefaults> = {
   interface: { shapeVariant: 'rectangle', icon: 'layers', accentColor: 'purple' },
   port: { shapeVariant: 'oval', icon: 'plug', accentColor: 'cyan' },
   adapter: { shapeVariant: 'trapezoid', icon: 'bridge', accentColor: 'teal' },
-  method: { shapeVariant: 'oval', icon: 'function-square', accentColor: 'blue' },
-  attribute: { shapeVariant: 'oval', icon: 'key-round', accentColor: 'neutral' },
   free_note_input: { shapeVariant: 'cloud', icon: 'arrow-down', accentColor: 'green' },
   free_note_output: { shapeVariant: 'cloud', icon: 'arrow-up', accentColor: 'cyan' }
 }
@@ -49,7 +47,15 @@ const GENERIC_ICON_OPTIONS: NodeVisualOption[] = [
   { id: 'function-square', label: 'Function' },
   { id: 'key-round', label: 'Key' },
   { id: 'arrow-down', label: 'Arrow Down' },
-  { id: 'arrow-up', label: 'Arrow Up' }
+  { id: 'arrow-up', label: 'Arrow Up' },
+  { id: 'user', label: 'User' },
+  { id: 'shield', label: 'Shield' },
+  { id: 'gear', label: 'Gear' },
+  { id: 'message-queue', label: 'Message Queue' },
+  { id: 'puzzle', label: 'Puzzle' },
+  { id: 'server', label: 'Server' },
+  { id: 'funnel', label: 'Funnel' },
+  { id: 'window', label: 'Window' }
 ]
 
 const CLOUD_SERVICE_OPTIONS: CloudServiceOption[] = [
@@ -138,7 +144,10 @@ const SHAPE_OPTIONS = [
   { value: 'rhombus', label: 'Rhombus' },
   { value: 'trapezoid', label: 'Trapezoid' },
   { value: 'hexagon', label: 'Hexagon' },
-  { value: 'cloud', label: 'Cloud' }
+  { value: 'cloud', label: 'Cloud' },
+  { value: 'cylinder', label: 'Cylinder' },
+  { value: 'stick_figure', label: 'Stick Figure' },
+  { value: 'layer_rectangle', label: 'Layer' }
 ] as const
 
 const ACCENT_OPTIONS = [

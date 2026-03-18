@@ -6,14 +6,14 @@ describe('BoardService', () => {
     const board = BoardService.createRootBoard('ws_1')
 
     expect(board.level).toBe('N1')
-    expect(board.workspaceId).toBe('ws_1')
+    expect(board.projectId).toBe('ws_1')
     expect(board.nodeIds).toEqual([])
     expect(board.relationIds).toEqual([])
   })
 
   it('creates child board from parent level', () => {
     const childBoard = BoardService.createChildBoard({
-      workspaceId: 'ws_1',
+      projectId: 'ws_1',
       parentBoardId: 'board_1',
       parentNodeId: 'node_1',
       parentLevel: 'N1'
@@ -24,21 +24,21 @@ describe('BoardService', () => {
     expect(childBoard.parentNodeId).toBe('node_1')
   })
 
-  it('throws when creating child board from N3', () => {
+  it('throws when creating child board from N2', () => {
     expect(() =>
       BoardService.createChildBoard({
-        workspaceId: 'ws_1',
+        projectId: 'ws_1',
         parentBoardId: 'board_1',
         parentNodeId: 'node_1',
-        parentLevel: 'N3'
+        parentLevel: 'N2'
       })
-    ).toThrowError('N3 nodes cannot open deeper boards in MVP')
+    ).toThrowError('N2 nodes cannot open deeper boards in MVP')
   })
 
   it('throws when relation attempts cross-board nodes', () => {
     expect(() =>
       BoardService.createRelation({
-        workspaceId: 'ws_1',
+        projectId: 'ws_1',
         boardId: 'board_1',
         level: 'N1',
         sourceNodeId: 'node_1',
@@ -51,7 +51,7 @@ describe('BoardService', () => {
 
   it('creates N1 node with valid semantic defaults', () => {
     const node = BoardService.createNode({
-      workspaceId: 'ws_1',
+      projectId: 'ws_1',
       boardId: 'board_1',
       level: 'N1',
       type: 'system'
@@ -65,10 +65,29 @@ describe('BoardService', () => {
     )
   })
 
+  it('preserves explicit meaning fields during node creation', () => {
+    const node = BoardService.createNode({
+      projectId: 'ws_1',
+      boardId: 'board_1',
+      level: 'N1',
+      type: 'container_service',
+      title: 'Payments API',
+      meaning: {
+        purpose: 'Accept payment requests',
+        primaryResponsibility: 'Validate and orchestrate payment intake'
+      }
+    })
+
+    expect(node.meaning).toEqual({
+      purpose: 'Accept payment requests',
+      primaryResponsibility: 'Validate and orchestrate payment intake'
+    })
+  })
+
   it('blocks invalid node type for N1 level', () => {
     expect(() =>
       BoardService.createNode({
-        workspaceId: 'ws_1',
+        projectId: 'ws_1',
         boardId: 'board_1',
         level: 'N1',
         type: 'class'
@@ -79,7 +98,7 @@ describe('BoardService', () => {
   it('blocks invalid relation type for N1 level', () => {
     expect(() =>
       BoardService.createRelation({
-        workspaceId: 'ws_1',
+        projectId: 'ws_1',
         boardId: 'board_1',
         level: 'N1',
         sourceNodeId: 'node_1',
@@ -93,7 +112,7 @@ describe('BoardService', () => {
 
   it('creates N2 node with valid semantic defaults', () => {
     const node = BoardService.createNode({
-      workspaceId: 'ws_1',
+      projectId: 'ws_1',
       boardId: 'board_2',
       level: 'N2',
       type: 'class'
@@ -109,7 +128,7 @@ describe('BoardService', () => {
   it('blocks invalid relation type for N2 level', () => {
     expect(() =>
       BoardService.createRelation({
-        workspaceId: 'ws_1',
+        projectId: 'ws_1',
         boardId: 'board_2',
         level: 'N2',
         sourceNodeId: 'node_1',
@@ -121,34 +140,4 @@ describe('BoardService', () => {
     ).toThrowError('Relation type "reads" is not allowed in N2')
   })
 
-  it('creates N3 node with valid semantic defaults', () => {
-    const node = BoardService.createNode({
-      workspaceId: 'ws_1',
-      boardId: 'board_3',
-      level: 'N3',
-      type: 'method'
-    })
-
-    expect(node.data).toEqual(
-      expect.objectContaining({
-        signature: expect.any(String),
-        purpose: expect.any(String)
-      })
-    )
-  })
-
-  it('blocks invalid relation type for N3 level', () => {
-    expect(() =>
-      BoardService.createRelation({
-        workspaceId: 'ws_1',
-        boardId: 'board_3',
-        level: 'N3',
-        sourceNodeId: 'node_1',
-        targetNodeId: 'node_2',
-        sourceBoardId: 'board_3',
-        targetBoardId: 'board_3',
-        type: 'reads'
-      })
-    ).toThrowError('Relation type "reads" is not allowed in N3')
-  })
 })

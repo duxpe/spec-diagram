@@ -8,11 +8,13 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit -p tsconfig.app.json",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
     "@fontsource/plus-jakarta-sans": "^5.2.8",
+    "@iconify-json/simple-icons": "^1.2.73",
     "@iconify/react": "^6.0.2",
     "@xyflow/react": "^12.10.1",
     "dexie": "^4.0.11",

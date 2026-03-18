@@ -1,0 +1,30 @@
+import { ChangeEvent, useState } from 'react'
+
+interface ProjectImportPanelProps {
+  onImport: (jsonInput: string) => Promise<void>
+}
+
+export function ProjectImportPanel({ onImport }: ProjectImportPanelProps): JSX.Element {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleChange = async (event: ChangeEvent<HTMLInputElement>): Promise<void> => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    setIsLoading(true)
+    try {
+      const content = await file.text()
+      await onImport(content)
+    } finally {
+      setIsLoading(false)
+      event.target.value = ''
+    }
+  }
+
+  return (
+    <label className="projects-gallery__import-button">
+      <input type="file" accept="application/json" onChange={handleChange} disabled={isLoading} />
+      <span>{isLoading ? 'Importing...' : 'Import project JSON'}</span>
+    </label>
+  )
+}

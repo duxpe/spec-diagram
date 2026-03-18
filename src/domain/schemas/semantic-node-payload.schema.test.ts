@@ -4,7 +4,7 @@ import {
   getPayloadSchemaForNodeType
 } from '@/domain/schemas/semantic-node-payload.schema'
 
-describe('semantic-node-payload schema (N1/N2/N3)', () => {
+describe('semantic-node-payload schema (N1/N2)', () => {
   it('accepts valid payloads for all N1 node types', () => {
     expect(() =>
       getPayloadSchemaForNodeType('system').parse({
@@ -66,7 +66,22 @@ describe('semantic-node-payload schema (N1/N2/N3)', () => {
   it('accepts valid payloads for all N2 node types', () => {
     expect(() =>
       getPayloadSchemaForNodeType('class').parse({
-        responsibility: 'Aggregate account state'
+        responsibility: 'Aggregate account state',
+        internals: {
+          methods: [
+            {
+              returnType: 'Account',
+              name: 'getById',
+              parameters: 'id: UUID'
+            }
+          ],
+          attributes: [
+            {
+              type: 'UUID',
+              name: 'accountId'
+            }
+          ]
+        }
       })
     ).not.toThrow()
 
@@ -80,27 +95,17 @@ describe('semantic-node-payload schema (N1/N2/N3)', () => {
       getPayloadSchemaForNodeType('api_contract').parse({
         kind: 'http',
         inputSummary: ['accountId path param'],
-        outputSummary: ['account payload']
-      })
-    ).not.toThrow()
-  })
-
-  it('accepts valid payloads for all N3 node types', () => {
-    expect(() =>
-      getPayloadSchemaForNodeType('method').parse({
-        signature: 'execute(input): output',
-        purpose: 'Process command',
-        visibility: 'public',
-        async: true
-      })
-    ).not.toThrow()
-
-    expect(() =>
-      getPayloadSchemaForNodeType('attribute').parse({
-        typeSignature: 'AccountId',
-        purpose: 'Store current account id',
-        visibility: 'private',
-        required: true
+        outputSummary: ['account payload'],
+        internals: {
+          endpoints: [
+            {
+              httpMethod: 'GET',
+              url: '/accounts/{id}',
+              requestFormat: 'path param',
+              responseFormat: 'application/json'
+            }
+          ]
+        }
       })
     ).not.toThrow()
   })
@@ -131,19 +136,21 @@ describe('semantic-node-payload schema (N1/N2/N3)', () => {
     )
   })
 
-  it('returns field-specific issues when required N3 fields are missing', () => {
-    expect(getPayloadIssuesForNodeType('method', {})).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'signature' }),
-        expect.objectContaining({ field: 'purpose' })
-      ])
-    )
-
-    expect(getPayloadIssuesForNodeType('attribute', {})).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ field: 'typeSignature' }),
-        expect.objectContaining({ field: 'purpose' })
-      ])
-    )
+  it('returns field-specific issues for invalid N2 internals', () => {
+    expect(
+      getPayloadIssuesForNodeType('class', {
+        responsibility: 'Aggregate account state',
+        internals: {
+          methods: [
+            {
+              returnType: '',
+              name: 'getById',
+              parameters: 'id: UUID'
+            }
+          ]
+        }
+      })
+    ).toEqual(expect.arrayContaining([expect.objectContaining({ field: 'internals.methods.0.returnType' })]))
   })
+
 })

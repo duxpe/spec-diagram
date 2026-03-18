@@ -1,6 +1,18 @@
 import { SemanticLevel } from '@/domain/models/board'
 import type { NodeAppearance } from '@/domain/models/node-appearance'
 
+export interface SemanticNodeMeaning {
+  purpose?: string
+  primaryResponsibility?: string
+  role?: string
+  summary?: string
+  inputs?: string[]
+  outputs?: string[]
+  constraints?: string[]
+  decisionNote?: string
+  errorNote?: string
+}
+
 export type SemanticNodeType =
   | 'system'
   | 'container_service'
@@ -12,20 +24,20 @@ export type SemanticNodeType =
   | 'interface'
   | 'port'
   | 'adapter'
-  | 'method'
-  | 'attribute'
   | 'free_note_input'
   | 'free_note_output'
 
 export interface SemanticNode {
   id: string
-  workspaceId: string
+  projectId: string
   boardId: string
   parentNodeId?: string
   level: SemanticLevel
   type: SemanticNodeType
+  patternRole?: string
   title: string
   description?: string
+  meaning?: SemanticNodeMeaning
   x: number
   y: number
   width: number

@@ -34,7 +34,7 @@ describe('node-appearance.schema', () => {
   it('keeps semantic node backward compatible when appearance is absent', () => {
     const result = semanticNodeSchema.safeParse({
       id: 'node_1',
-      workspaceId: 'ws_1',
+      projectId: 'ws_1',
       boardId: 'board_1',
       level: 'N1',
       type: 'system',

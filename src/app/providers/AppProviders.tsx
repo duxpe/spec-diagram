@@ -1,16 +1,22 @@
 import { ReactNode, useEffect } from 'react'
 import { BrowserRouter } from 'react-router-dom'
-import { useUiStore } from '@/state/ui-store'
-import { useWorkspaceStore } from '@/state/workspace-store'
+import { useUiStore } from '@/features/board/model/ui-store'
+import { useProjectStore } from '@/features/project/model/project-store'
+import { initializeRecoverySubscriptions } from '@/infrastructure/db/recovery-subscriptions'
+import { isUiLoggingEnabled, logUiEvent } from '@/shared/lib/ui-logger'
 
 interface AppProvidersProps {
   children: ReactNode
 }
 
 export function AppProviders({ children }: AppProvidersProps): JSX.Element {
-  const bootstrap = useWorkspaceStore((state) => state.bootstrap)
+  const bootstrap = useProjectStore((state) => state.bootstrap)
   const themeMode = useUiStore((state) => state.themeMode)
   const resolveActiveTheme = useUiStore((state) => state.resolveActiveTheme)
+
+  useEffect(() => {
+    initializeRecoverySubscriptions()
+  }, [])
 
   useEffect(() => {
     void bootstrap()
@@ -35,6 +41,35 @@ export function AppProviders({ children }: AppProvidersProps): JSX.Element {
     mediaQuery.addEventListener('change', listener)
     return () => mediaQuery.removeEventListener('change', listener)
   }, [themeMode, resolveActiveTheme])
+
+  useEffect(() => {
+    if (!isUiLoggingEnabled()) return
+
+    const handleButtonClick = (event: MouseEvent): void => {
+      const target = event.target as HTMLElement | null
+      if (!target) return
+      const actionable = target.closest<HTMLElement>('[data-ui-log]')
+      if (!actionable) return
+
+      const labelText =
+        actionable.getAttribute('data-ui-log') ??
+        actionable.getAttribute('aria-label') ??
+        actionable.getAttribute('title') ??
+        actionable.textContent?.trim()?.replace(/\s+/g, ' ')
+
+      const actionName = labelText || 'UI action'
+      const datasetEntries = Object.entries(actionable.dataset)
+      const dataset = datasetEntries.length > 0 ? Object.fromEntries(datasetEntries) : undefined
+
+      logUiEvent(`Button used: ${actionName}`, {
+        tag: actionable.tagName.toLowerCase(),
+        ...(dataset ? { dataset } : {})
+      })
+    }
+
+    document.addEventListener('click', handleButtonClick)
+    return () => document.removeEventListener('click', handleButtonClick)
+  }, [])
 
   return <BrowserRouter>{children}</BrowserRouter>
 }

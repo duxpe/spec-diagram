@@ -7,7 +7,10 @@ export const nodeShapeVariantSchema = z.enum([
   'rhombus',
   'trapezoid',
   'hexagon',
-  'cloud'
+  'cloud',
+  'cylinder',
+  'stick_figure',
+  'layer_rectangle'
 ])
 
 export const genericIconIdSchema = z.enum([
@@ -24,7 +27,15 @@ export const genericIconIdSchema = z.enum([
   'function-square',
   'key-round',
   'arrow-down',
-  'arrow-up'
+  'arrow-up',
+  'user',
+  'shield',
+  'gear',
+  'message-queue',
+  'puzzle',
+  'server',
+  'funnel',
+  'window'
 ])
 
 export const visualProviderSchema = z.enum(['none', 'aws', 'azure', 'gcp'])

@@ -1,0 +1,51 @@
+import type { PatternDefinition } from '../types'
+
+const microservices: PatternDefinition = {
+  id: 'microservices',
+  name: 'Microservices',
+  description: 'Independently deployable services communicating through APIs and messaging, each with its own data store.',
+  n1Nodes: [
+    { type: 'container_service', patternRole: 'microservice', label: 'Microservice', marker: 'SVC',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'cube', accentColor: 'blue' } },
+    { type: 'container_service', patternRole: 'api_gateway', label: 'API Gateway', marker: 'GW',
+      defaultAppearance: { shapeVariant: 'trapezoid', icon: 'server', accentColor: 'indigo' } },
+    { type: 'database', patternRole: 'datastore', label: 'Data Store', marker: 'DB',
+      defaultAppearance: { shapeVariant: 'cylinder', icon: 'database', accentColor: 'amber' } },
+    { type: 'external_system', patternRole: 'external_system', label: 'External System', marker: 'EXT',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'globe', accentColor: 'gray' } },
+    { type: 'container_service', patternRole: 'message_broker', label: 'Message Broker', marker: 'BRK',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'message-queue', accentColor: 'purple' } },
+    { type: 'container_service', patternRole: 'service_registry', label: 'Service Registry', marker: 'REG',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'gear', accentColor: 'teal' } },
+    { type: 'container_service', patternRole: 'config_service', label: 'Config Service', marker: 'CFG',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'gear', accentColor: 'neutral' } },
+    { type: 'container_service', patternRole: 'observability', label: 'Observability Stack', marker: 'OBS',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'layers', accentColor: 'green' } },
+    { type: 'container_service', patternRole: 'auth_service', label: 'Identity / Auth Service', marker: 'ATH',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'shield', accentColor: 'orange' } },
+    { type: 'decision', patternRole: 'decision', label: 'Decision', marker: 'DEC',
+      defaultAppearance: { shapeVariant: 'diamond', icon: 'git-branch', accentColor: 'orange' } },
+    { type: 'free_note_input', patternRole: 'note_in', label: 'Free Note Input', marker: 'IN' },
+    { type: 'free_note_output', patternRole: 'note_out', label: 'Free Note Output', marker: 'OUT' },
+  ],
+  n1Relations: [
+    { type: 'routes_to', label: 'Routes To', sourceRoles: ['api_gateway'], targetRoles: ['microservice'] },
+    { type: 'calls', label: 'Calls', sourceRoles: ['microservice'], targetRoles: ['microservice'] },
+    { type: 'communicates_with', label: 'Communicates With', sourceRoles: ['microservice'], targetRoles: ['microservice', 'external_system'] },
+    { type: 'reads', label: 'Reads From', sourceRoles: ['microservice'], targetRoles: ['datastore'] },
+    { type: 'writes', label: 'Writes To', sourceRoles: ['microservice'], targetRoles: ['datastore'] },
+    { type: 'publishes_to', label: 'Publishes To', sourceRoles: ['microservice'], targetRoles: ['message_broker'] },
+    { type: 'subscribes_to', label: 'Subscribes To', sourceRoles: ['microservice'], targetRoles: ['message_broker'] },
+    { type: 'authenticates_with', label: 'Authenticates With', sourceRoles: ['microservice', 'api_gateway'], targetRoles: ['auth_service'] },
+    { type: 'registers_in', label: 'Registers In', sourceRoles: ['microservice'], targetRoles: ['service_registry'] },
+    { type: 'depends_on', label: 'Depends On' },
+    { type: 'uses', label: 'Uses' },
+  ],
+  nextNodeSuggestions: [
+    { sourceRole: 'api_gateway', suggestedTargetRoles: ['microservice', 'auth_service'], defaultRelationType: 'routes_to' },
+    { sourceRole: 'microservice', suggestedTargetRoles: ['datastore', 'message_broker', 'external_system', 'microservice'], defaultRelationType: 'calls' },
+    { sourceRole: 'message_broker', suggestedTargetRoles: ['microservice'], defaultRelationType: 'subscribes_to' },
+  ],
+}
+
+export default microservices

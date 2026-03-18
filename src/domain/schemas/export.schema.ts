@@ -2,17 +2,17 @@ import { z } from 'zod'
 import { boardSchema } from '@/domain/schemas/board.schema'
 import { relationSchema } from '@/domain/schemas/relation.schema'
 import { semanticNodeSchema } from '@/domain/schemas/semantic-node.schema'
-import { workspaceSchema } from '@/domain/schemas/workspace.schema'
+import { projectSchema } from '@/domain/schemas/project.schema'
 
-export const workspaceExportFileSchema = z
+export const projectExportFileSchema = z
   .object({
-    version: z.literal('1.0.0'),
+    version: z.literal('2.0.0'),
     exportedAt: z.string().datetime(),
-    workspace: workspaceSchema,
+    project: projectSchema,
     boards: z.array(boardSchema),
     nodes: z.array(semanticNodeSchema),
     relations: z.array(relationSchema)
   })
   .strict()
 
-export type WorkspaceExportFileSchema = z.infer<typeof workspaceExportFileSchema>
+export type ProjectExportFileSchema = z.infer<typeof projectExportFileSchema>

@@ -1,0 +1,51 @@
+import type { PatternDefinition } from '../types'
+
+const hexagonal: PatternDefinition = {
+  id: 'hexagonal',
+  name: 'Hexagonal Architecture',
+  description: 'Ports & Adapters — isolates domain logic from external dependencies through explicit ports and adapters.',
+  n1Nodes: [
+    { type: 'system', patternRole: 'application_core', label: 'Application Core', marker: 'COR',
+      defaultAppearance: { shapeVariant: 'hexagon', icon: 'grid', accentColor: 'cyan' } },
+    { type: 'port', patternRole: 'inbound_port', label: 'Inbound Port', marker: 'IPT',
+      defaultAppearance: { shapeVariant: 'oval', icon: 'plug', accentColor: 'teal' } },
+    { type: 'port', patternRole: 'outbound_port', label: 'Outbound Port', marker: 'OPT',
+      defaultAppearance: { shapeVariant: 'oval', icon: 'plug', accentColor: 'teal' } },
+    { type: 'adapter', patternRole: 'inbound_adapter', label: 'Inbound Adapter', marker: 'IAD',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'bridge', accentColor: 'blue' } },
+    { type: 'adapter', patternRole: 'outbound_adapter', label: 'Outbound Adapter', marker: 'OAD',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'bridge', accentColor: 'blue' } },
+    { type: 'external_system', patternRole: 'external_actor', label: 'External Actor', marker: 'EXT',
+      defaultAppearance: { shapeVariant: 'rectangle', icon: 'globe', accentColor: 'gray' } },
+    { type: 'database', patternRole: 'persistence', label: 'Persistence Store', marker: 'DB',
+      defaultAppearance: { shapeVariant: 'cylinder', icon: 'database', accentColor: 'amber' } },
+    { type: 'decision', patternRole: 'decision', label: 'Decision', marker: 'DEC',
+      defaultAppearance: { shapeVariant: 'diamond', icon: 'git-branch', accentColor: 'orange' } },
+    { type: 'free_note_input', patternRole: 'note_in', label: 'Free Note Input', marker: 'IN',
+      defaultAppearance: { shapeVariant: 'cloud', icon: 'arrow-down', accentColor: 'green' } },
+    { type: 'free_note_output', patternRole: 'note_out', label: 'Free Note Output', marker: 'OUT',
+      defaultAppearance: { shapeVariant: 'cloud', icon: 'arrow-up', accentColor: 'cyan' } },
+  ],
+  n1Relations: [
+    { type: 'exposes_port', label: 'Exposes Port', sourceRoles: ['application_core'], targetRoles: ['inbound_port', 'outbound_port'] },
+    { type: 'implemented_by_adapter', label: 'Implemented by Adapter', sourceRoles: ['inbound_port', 'outbound_port'], targetRoles: ['inbound_adapter', 'outbound_adapter'] },
+    { type: 'invokes', label: 'Invokes', sourceRoles: ['inbound_adapter'], targetRoles: ['inbound_port'] },
+    { type: 'calls', label: 'Calls', sourceRoles: ['inbound_port'], targetRoles: ['application_core'] },
+    { type: 'uses', label: 'Uses', sourceRoles: ['application_core'], targetRoles: ['outbound_port'] },
+    { type: 'depends_on', label: 'Depends On' },
+    { type: 'reads', label: 'Reads From', sourceRoles: ['outbound_adapter'], targetRoles: ['persistence'] },
+    { type: 'writes', label: 'Writes To', sourceRoles: ['outbound_adapter'], targetRoles: ['persistence'] },
+    { type: 'communicates_with', label: 'Communicates With', sourceRoles: ['outbound_adapter'], targetRoles: ['external_actor'] },
+    { type: 'publishes_to', label: 'Publishes To' },
+    { type: 'subscribes_to', label: 'Subscribes To' },
+  ],
+  nextNodeSuggestions: [
+    { sourceRole: 'application_core', suggestedTargetRoles: ['inbound_port', 'outbound_port', 'persistence', 'external_actor'], defaultRelationType: 'exposes_port' },
+    { sourceRole: 'inbound_port', suggestedTargetRoles: ['inbound_adapter', 'application_core', 'external_actor'], defaultRelationType: 'implemented_by_adapter' },
+    { sourceRole: 'outbound_port', suggestedTargetRoles: ['outbound_adapter', 'application_core'], defaultRelationType: 'implemented_by_adapter' },
+    { sourceRole: 'inbound_adapter', suggestedTargetRoles: ['inbound_port', 'external_actor'], defaultRelationType: 'invokes' },
+    { sourceRole: 'outbound_adapter', suggestedTargetRoles: ['persistence', 'external_actor', 'outbound_port'], defaultRelationType: 'writes' },
+  ],
+}
+
+export default hexagonal

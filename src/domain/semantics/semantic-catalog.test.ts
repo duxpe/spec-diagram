@@ -47,29 +47,14 @@ describe('semantic-catalog', () => {
     expect(allowedRelationTypes).not.toContain('writes')
   })
 
-  it('returns N3 node and relation whitelists for N3 boards', () => {
-    const allowedNodeTypes = getAllowedNodeTypes('N3')
-    const allowedRelationTypes = getAllowedRelationTypes('N3')
-
-    expect(allowedNodeTypes).toEqual(
-      expect.arrayContaining(['method', 'attribute', 'free_note_input', 'free_note_output'])
-    )
-    expect(allowedNodeTypes).not.toContain('class')
-
-    expect(allowedRelationTypes).toEqual(expect.arrayContaining(['uses', 'depends_on', 'exposes']))
-    expect(allowedRelationTypes).not.toContain('calls')
-    expect(allowedRelationTypes).not.toContain('implements')
-  })
-
   it('enforces N1 drill-down eligibility', () => {
     expect(canOpenDetail({ level: 'N1', type: 'system' })).toBe(true)
     expect(canOpenDetail({ level: 'N1', type: 'decision' })).toBe(false)
-    expect(canOpenDetail({ level: 'N3', type: 'method' })).toBe(false)
   })
 
   it('enforces N2 drill-down eligibility', () => {
-    expect(canOpenDetail({ level: 'N2', type: 'class' })).toBe(true)
-    expect(canOpenDetail({ level: 'N2', type: 'api_contract' })).toBe(true)
+    expect(canOpenDetail({ level: 'N2', type: 'class' })).toBe(false)
+    expect(canOpenDetail({ level: 'N2', type: 'api_contract' })).toBe(false)
     expect(canOpenDetail({ level: 'N2', type: 'free_note_input' })).toBe(false)
   })
 
@@ -87,26 +72,19 @@ describe('semantic-catalog', () => {
     const apiContractData = getDefaultNodeData('N2', 'api_contract')
 
     expect(classData).toMatchObject({
-      responsibility: expect.any(String)
+      responsibility: expect.any(String),
+      internals: {
+        methods: [],
+        attributes: []
+      }
     })
     expect(apiContractData).toMatchObject({
       kind: 'http',
       inputSummary: expect.any(Array),
-      outputSummary: expect.any(Array)
-    })
-  })
-
-  it('provides valid default payload for N3 types', () => {
-    const methodData = getDefaultNodeData('N3', 'method')
-    const attributeData = getDefaultNodeData('N3', 'attribute')
-
-    expect(methodData).toMatchObject({
-      signature: expect.any(String),
-      purpose: expect.any(String)
-    })
-    expect(attributeData).toMatchObject({
-      typeSignature: expect.any(String),
-      purpose: expect.any(String)
+      outputSummary: expect.any(Array),
+      internals: {
+        endpoints: []
+      }
     })
   })
 
