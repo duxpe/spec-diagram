@@ -1,7 +1,8 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useState } from 'react'
 import { buildProjectBrief, getProjectBriefDraft } from '@/domain/semantics/meaning-capture'
 import { ArchitecturePattern, Project } from '@/domain/models/project'
 import { PATTERN_CATALOG, PatternDefinition } from '@/domain/semantics/pattern-catalog'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import { ListInput } from '@/shared/ui/inputs/ListInput'
 
 interface PatternSelectionDialogProps {
@@ -57,6 +58,23 @@ export function PatternSelectionDialog({
   const [nfrs, setNfrs] = useState(initialBrief.nfrs)
   const [globalDecisions, setGlobalDecisions] = useState(initialBrief.globalDecisions)
   const [step, setStep] = useState<1 | 2>(1)
+
+  const handleClose = useCallback((): void => {
+    setName(initialProject?.name ?? '')
+    setDescription(initialProject?.description ?? '')
+    setSelectedPattern(initialProject?.architecturePattern ?? null)
+    setGoal(initialBrief.goal)
+    setContext(initialBrief.context)
+    setScopeIn(initialBrief.scopeIn)
+    setScopeOut(initialBrief.scopeOut)
+    setConstraints(initialBrief.constraints)
+    setNfrs(initialBrief.nfrs)
+    setGlobalDecisions(initialBrief.globalDecisions)
+    setStep(1)
+    onClose()
+  }, [initialProject, initialBrief, onClose])
+
+  useEscapeKey(handleClose, open)
 
   useEffect(() => {
     setName(initialProject?.name ?? '')
@@ -118,21 +136,6 @@ export function PatternSelectionDialog({
     setNfrs('')
     setGlobalDecisions('')
     setStep(1)
-  }
-
-  const handleClose = (): void => {
-    setName(initialProject?.name ?? '')
-    setDescription(initialProject?.description ?? '')
-    setSelectedPattern(initialProject?.architecturePattern ?? null)
-    setGoal(initialBrief.goal)
-    setContext(initialBrief.context)
-    setScopeIn(initialBrief.scopeIn)
-    setScopeOut(initialBrief.scopeOut)
-    setConstraints(initialBrief.constraints)
-    setNfrs(initialBrief.nfrs)
-    setGlobalDecisions(initialBrief.globalDecisions)
-    setStep(1)
-    onClose()
   }
 
   return (

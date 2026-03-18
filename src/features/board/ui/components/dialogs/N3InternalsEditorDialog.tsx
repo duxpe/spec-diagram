@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { X } from 'lucide-react'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 import type { SemanticNode } from '@/domain/models/semantic-node'
 import { getPayloadIssuesForNodeType } from '@/domain/schemas/semantic-node-payload.schema'
 import { ClassInternalsSection } from '@/features/board/ui/components/dialogs/n3-internals-editor/ClassInternalsSection'
@@ -97,6 +98,8 @@ export function N3InternalsEditorDialog({
     if (!node) return 'Edit internals'
     return `Edit internals: ${node.title}`
   }, [node])
+
+  useEscapeKey(onClose, open && Boolean(eligible) && Boolean(node))
 
   if (!open || !eligible || !node) return null
 

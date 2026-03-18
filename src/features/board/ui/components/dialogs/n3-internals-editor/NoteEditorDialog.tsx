@@ -1,4 +1,5 @@
 import { FilePenLine } from 'lucide-react'
+import { useEscapeKey } from '@/shared/hooks/useEscapeKey'
 
 interface NoteEditorDialogProps {
   open: boolean
@@ -15,6 +16,8 @@ export function NoteEditorDialog({
   onClose,
   onSave
 }: NoteEditorDialogProps): JSX.Element | null {
+  useEscapeKey(onClose, open)
+
   if (!open) return null
 
   return (
