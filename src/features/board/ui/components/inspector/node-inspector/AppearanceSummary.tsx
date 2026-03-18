@@ -21,14 +21,14 @@ export function AppearanceSummary({
         </span>
       </div>
       <div className="node-appearance-summary__details">
-        <p className="node-appearance-summary__title">Aparência</p>
+        <p className="node-appearance-summary__title">Appearance</p>
         <p className="node-appearance-summary__provider">{appearanceProviderSummary}</p>
       </div>
       <button
         type="button"
         className="node-appearance-summary__button node-appearance-summary__trigger"
         onClick={onOpenAppearanceDialog}
-        aria-label="Editar Aparência"
+        aria-label="Edit appearance"
         data-ui-log="Inspector – Open appearance dialog"
       >
         <Palette size={18} />

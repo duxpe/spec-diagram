@@ -33,7 +33,7 @@ export function NoteEditorDialog({
           <button
             type="button"
             onClick={onClose}
-            data-ui-log="N3 internals – Cancel note"
+            data-ui-log="Internals editor – Cancel note"
           >
             Cancel
           </button>
@@ -41,7 +41,7 @@ export function NoteEditorDialog({
             type="button"
             className="btn--primary"
             onClick={onSave}
-            data-ui-log="N3 internals – Save note"
+            data-ui-log="Internals editor – Save note"
           >
             Save note
           </button>

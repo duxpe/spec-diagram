@@ -47,7 +47,7 @@ describe('prompt-export markdown renderer', () => {
     const spec = renderPromptMarkdown(baseContext, 'spec_prompt')
     const task = renderPromptMarkdown(baseContext, 'task_prompt')
 
-    expect(spec).toContain('# Prompt de Spec - Root service')
-    expect(task).toContain('# Prompt de Tasks - Root service')
+    expect(spec).toContain('# Spec Prompt - Root service')
+    expect(task).toContain('# Task Prompt - Root service')
   })
 })

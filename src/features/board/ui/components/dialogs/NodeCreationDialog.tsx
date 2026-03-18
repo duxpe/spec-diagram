@@ -120,7 +120,7 @@ export function NodeCreationDialog({
                 <textarea
                   rows={field.key === 'purpose' ? 3 : 2}
                   value={draft[field.key]}
-                  placeholder={field.placeholder}
+                  placeholder={field.kind === 'list' ? `${field.placeholder} (one per line)` : field.placeholder}
                   onChange={(event) =>
                     setDraft((current) => ({ ...current, [field.key]: event.target.value }))
                   }

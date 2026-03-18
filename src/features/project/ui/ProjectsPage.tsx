@@ -1,5 +1,6 @@
 import { ChangeEvent, useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, Link } from 'react-router-dom'
+import { Plus, Upload } from 'lucide-react'
 import { ConfirmationDialog } from '@/shared/ui/dialogs/ConfirmationDialog'
 import { PatternSelectionDialog } from '@/features/project/ui/components/PatternSelectionDialog'
 import { ProjectListPanel } from '@/features/project/ui/components/ProjectListPanel'
@@ -129,75 +130,67 @@ export function ProjectsPage(): JSX.Element {
 
   return (
     <div className="projects-screen">
-      <div className="projects-screen__content">
-        <section className="projects-hero">
-          <div className="projects-hero__copy">
-            <p className="projects-hero__eyebrow">System Designer Specs Generator Tool</p>
-            <h1>SysDs-SG</h1>
-            <p>
-              Design systems visually, specify only what you need, and export structured
-              prompts to generate specs in any LLM you want.
-            </p>
-          </div>
-          <div className="projects-hero__actions">
-              <label className="projects-hero__search">
-                <span className="projects-hero__search-icon" aria-hidden="true">
-                  ⌕
-                </span>
-                <input
-                  type="search"
-                  placeholder="Search projects"
-                  aria-label="Search projects"
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                />
-              </label>
-            <button
-              type="button"
-              className="btn--primary projects-hero__action"
-              onClick={() => setPatternDialogOpen(true)}
-              data-ui-log="Project page – New project"
-            >
-              <span aria-hidden="true">+</span>
-              New project
-            </button>
-          </div>
-        </section>
-
-        <section className="projects-gallery">
-          <div className="projects-gallery__heading">
-            <div>
-              <h2>Projects</h2>
-              <p>Select or manage projects</p>
-            </div>
-          </div>
-
-          <ProjectListPanel
-            projects={filteredProjects}
-            currentProjectId={currentProject?.id}
-            onOpenProject={(projectIdToOpen) => {
-              void handleOpenProject(projectIdToOpen)
-            }}
-            onEditProject={(project) => {
-              setProjectBeingEdited(project)
-            }}
-            onRemoveProject={(projectIdToRemove, projectName) => {
-              requestProjectDeletion(projectIdToRemove, projectName)
+      {/* ---- Top nav ---- */}
+      <header className="projects-nav">
+        <Link to="/" className="projects-nav__logo">
+          SpecDiagram
+        </Link>
+        <div className="projects-nav__actions">
+          <ProjectImportPanel
+            onImport={async (jsonInput) => {
+              await handleImportProject(jsonInput)
             }}
           />
+          <button
+            type="button"
+            className="btn--primary"
+            onClick={() => setPatternDialogOpen(true)}
+            data-ui-log="Project page – New project"
+          >
+            <Plus size={16} />
+            New project
+          </button>
+        </div>
+      </header>
 
-          <div className="projects-gallery__actions">
-            <ProjectImportPanel
-              onImport={async (jsonInput) => {
-                await handleImportProject(jsonInput)
-              }}
-            />
-            <span className="projects-gallery__import-note">Import from file (JSON)</span>
+      {/* ---- Page content ---- */}
+      <main className="projects-main">
+        {/* ---- Toolbar ---- */}
+        <div className="projects-toolbar">
+          <div className="projects-toolbar__heading">
+            <h1>Projects</h1>
+            {projects.length > 0 ? (
+              <span className="projects-toolbar__count">{projects.length}</span>
+            ) : null}
           </div>
-        </section>
+          <div className="projects-toolbar__search">
+            <input
+              type="search"
+              placeholder="Search projects..."
+              aria-label="Search projects"
+              value={searchTerm}
+              onChange={handleSearchChange}
+            />
+          </div>
+        </div>
+
+        {/* ---- Project grid ---- */}
+        <ProjectListPanel
+          projects={filteredProjects}
+          currentProjectId={currentProject?.id}
+          onOpenProject={(projectIdToOpen) => {
+            void handleOpenProject(projectIdToOpen)
+          }}
+          onEditProject={(project) => {
+            setProjectBeingEdited(project)
+          }}
+          onRemoveProject={(projectIdToRemove, projectName) => {
+            requestProjectDeletion(projectIdToRemove, projectName)
+          }}
+        />
 
         {error ? <div className="projects-error">{error}</div> : null}
-      </div>
+      </main>
 
       <PatternSelectionDialog
         open={isPatternDialogOpen}

@@ -73,14 +73,12 @@ describe('BoardService', () => {
       type: 'container_service',
       title: 'Payments API',
       meaning: {
-        purpose: 'Accept payment requests',
-        primaryResponsibility: 'Validate and orchestrate payment intake'
+        purpose: 'Accept payment requests'
       }
     })
 
     expect(node.meaning).toEqual({
-      purpose: 'Accept payment requests',
-      primaryResponsibility: 'Validate and orchestrate payment intake'
+      purpose: 'Accept payment requests'
     })
   })
 

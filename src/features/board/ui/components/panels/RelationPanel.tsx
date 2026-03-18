@@ -71,7 +71,7 @@ export function RelationPanel({
     [sourceNodeId, targetNodeId, relationType, relationTypes]
   )
 
-  const handleSwapDirection = (): void => {
+  const handleReverseDirection = (): void => {
     const prevSource = sourceNodeId
     setSourceNodeId(targetNodeId)
     setTargetNodeId(prevSource)
@@ -106,8 +106,8 @@ export function RelationPanel({
         <div style={{ display: 'flex', justifyContent: 'center', margin: '4px 0' }}>
           <button
             type="button"
-            onClick={handleSwapDirection}
-            title="Swap direction"
+            onClick={handleReverseDirection}
+            title="Reverse direction"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -119,10 +119,10 @@ export function RelationPanel({
               fontSize: '0.78rem',
               gap: 4
             }}
-            data-ui-log="Relation panel – Swap direction"
+            data-ui-log="Relation panel – Reverse direction"
           >
             <ArrowLeftRight size={14} />
-            Swap
+            Reverse
           </button>
         </div>
 

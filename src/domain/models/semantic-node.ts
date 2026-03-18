@@ -3,7 +3,6 @@ import type { NodeAppearance } from '@/domain/models/node-appearance'
 
 export interface SemanticNodeMeaning {
   purpose?: string
-  primaryResponsibility?: string
   role?: string
   summary?: string
   inputs?: string[]

@@ -33,6 +33,13 @@ export const semanticNodeMeaningSchema = z
     errorNote: z.string().trim().min(1).optional()
   })
   .strict()
+  .transform(({ primaryResponsibility, ...rest }) => {
+    if (primaryResponsibility && !rest.purpose) {
+      return { ...rest, purpose: primaryResponsibility }
+    }
+    const { ...cleaned } = rest
+    return cleaned
+  })
 
 export const semanticNodeSchema = z
   .object({

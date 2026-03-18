@@ -13,18 +13,18 @@ import {
 import type { ExportContext } from '@/features/transfer/model/prompt-export-service/types'
 
 function renderN2Blocks(context: ExportContext): string {
-  if (context.n2Nodes.length === 0) return '- Nenhum componente N2 registrado para este bloco N1.'
+  if (context.n2Nodes.length === 0) return '- No internal components registered for this block.'
 
   return context.n2Nodes
     .map((n2) => {
       const lines = [
         `### ${n2.node.type} - ${textValue(n2.node.title)}`,
-        `- Descricao: ${firstMeaningText(n2.node, ['purpose', 'summary'], [])}`,
-        '- Payload semantico:',
+        `- Description: ${firstMeaningText(n2.node, ['purpose', 'summary'], [])}`,
+        '- Semantic payload:',
         ...formatNodeData(n2.node.data).map((line) => `  ${line}`),
-        '- Relacoes do componente:',
+        '- Component relations:',
         ...formatRelations(n2.relations).map((line) => `  ${line}`),
-        '- Blocos N3:',
+        '- Code-level details:',
         ...formatNodes(n2.n3Nodes).map((line) => `  ${line}`)
       ]
 
@@ -35,7 +35,7 @@ function renderN2Blocks(context: ExportContext): string {
 
 function renderN3Details(context: ExportContext): string {
   const withDetails = context.n2Nodes.filter((n2) => n2.n3Nodes.length > 0)
-  if (withDetails.length === 0) return '- Nenhum detalhe N3 registrado.'
+  if (withDetails.length === 0) return '- No code-level details registered.'
 
   return withDetails
     .map((n2) => {
@@ -43,8 +43,8 @@ function renderN3Details(context: ExportContext): string {
         .map((n3) => {
           const lines = [
             `#### ${n3.type} - ${textValue(n3.title)}`,
-            `- Descricao: ${textValue(n3.description)}`,
-            '- Payload semantico:',
+            `- Description: ${textValue(n3.description)}`,
+            '- Semantic payload:',
             ...formatNodeData(n3.data).map((line) => `  ${line}`)
           ]
 
@@ -52,7 +52,7 @@ function renderN3Details(context: ExportContext): string {
         })
         .join('\n\n')
 
-      return `### Detalhes de ${textValue(n2.node.title)}\n${n3Markdown}`
+      return `### Details for ${textValue(n2.node.title)}\n${n3Markdown}`
     })
     .join('\n\n')
 }
@@ -72,7 +72,7 @@ function renderContractsAndIntegrations(context: ExportContext): string {
         'inputSummary',
         'outputSummary'
       ])
-      return `- ${entry.node.type}: ${entry.node.title} -> ${firstMeaningText(entry.node, ['purpose', 'primaryResponsibility'], []) || summary}`
+      return `- ${entry.node.type}: ${entry.node.title} -> ${firstMeaningText(entry.node, ['purpose'], []) || summary}`
     })
     .join('\n')
 }
@@ -111,128 +111,128 @@ function renderSpecPromptMarkdown(context: ExportContext): string {
   const meaningOutputs = context.rootNode.meaning?.outputs?.join('; ') ?? expectedOutputs
 
   return [
-    `# Prompt de Spec - ${context.rootNode.title}`,
+    `# Spec Prompt - ${context.rootNode.title}`,
     '',
-    'Gere uma spec tecnica detalhada e implementavel usando apenas os dados abaixo.',
+    'Generate a detailed and implementable technical spec using only the data below.',
     '',
-    'Regras:',
-    '- Nao invente informacoes ausentes.',
-    '- Nao mencione ferramentas, editor visual, canvas ou processo de modelagem.',
-    '- Use somente os dados fornecidos.',
-    '- Registre lacunas em "Open Questions / Assumptions".',
-    '- Responda em Markdown.',
+    'Rules:',
+    '- Do not invent missing information.',
+    '- Do not mention tools, visual editor, canvas, or modeling process.',
+    '- Use only the provided data.',
+    '- Record gaps in "Open Questions / Assumptions".',
+    '- Respond in Markdown.',
     '',
-    '## Contexto geral do projeto',
-    `- Nome: ${textValue(context.project.name)}`,
-    `- Objetivo: ${projectBriefValue(context.project, 'goal', context.project.description)}`,
-    `- Contexto geral: ${projectBriefValue(context.project, 'context', context.rootBoard.description)}`,
-    `- Escopo relevante: ${projectBriefValue(context.project, 'scopeIn')}`,
-    '- Restricoes globais:',
+    '## General project context',
+    `- Name: ${textValue(context.project.name)}`,
+    `- Goal: ${projectBriefValue(context.project, 'goal', context.project.description)}`,
+    `- General context: ${projectBriefValue(context.project, 'context', context.rootBoard.description)}`,
+    `- Relevant scope: ${projectBriefValue(context.project, 'scopeIn')}`,
+    '- Global constraints:',
     projectBriefValue(context.project, 'constraints'),
-    '- Decisoes globais:',
+    '- Global decisions:',
     projectBriefValue(context.project, 'globalDecisions'),
     '',
-    '## Elemento principal',
-    `- Tipo: ${context.rootNode.type}`,
-    `- Nome: ${textValue(context.rootNode.title)}`,
-    `- Descricao: ${firstMeaningText(context.rootNode, ['purpose', 'summary'], [])}`,
-    `- Responsabilidade: ${firstMeaningText(context.rootNode, ['primaryResponsibility', 'purpose'], ['responsibility', 'goal', 'purpose', 'decision'])}`,
-    `- Entradas esperadas: ${meaningInputs}`,
-    `- Saidas esperadas: ${meaningOutputs}`,
-    '- Relacoes externas:',
+    '## Main element',
+    `- Type: ${context.rootNode.type}`,
+    `- Name: ${textValue(context.rootNode.title)}`,
+    `- Description: ${firstMeaningText(context.rootNode, ['purpose', 'summary'], [])}`,
+    `- Responsibility: ${firstMeaningText(context.rootNode, ['purpose'], ['responsibility', 'goal', 'purpose', 'decision'])}`,
+    `- Expected inputs: ${meaningInputs}`,
+    `- Expected outputs: ${meaningOutputs}`,
+    '- External relations:',
     ...formatRelations(context.rootRelations),
-    '- Decisoes associadas:',
+    '- Associated decisions:',
     renderGlobalDecisions(context),
-    '- Observacoes:',
+    '- Notes:',
     renderGlobalNotes(context),
     '',
-    '## Componentes internos',
+    '## Internal components',
     renderN2Blocks(context),
     '',
-    '## Detalhes internos dos componentes',
+    '## Internal component details',
     renderN3Details(context),
     '',
-    '## Contratos, interfaces e integracoes',
+    '## Contracts, interfaces, and integrations',
     renderContractsAndIntegrations(context),
     '',
-    '## Regras e restricoes',
-    '- Regras funcionais: Priorize as regras descritas no payload semantico de cada bloco.',
-    '- Restricoes tecnicas: Use apenas informacoes explicitadas nas secoes acima.',
-    '- Restricoes de dominio: Nao extrapolar comportamento sem evidencia do contexto.',
-    '- Requisitos nao funcionais: Apontar lacunas quando nao houver detalhes.',
+    '## Rules and constraints',
+    '- Functional rules: Prioritize the rules described in the semantic payload of each block.',
+    '- Technical constraints: Use only information explicitly stated in the sections above.',
+    '- Domain constraints: Do not extrapolate behavior without evidence from context.',
+    '- Non-functional requirements: Flag gaps when details are missing.',
     '',
-    '## Estrutura obrigatoria da resposta',
-    '1. Objetivo',
-    '2. Papel arquitetural',
-    '3. Escopo',
-    '4. Visao estrutural',
-    '5. Responsabilidades',
-    '6. Componentes internos',
-    '7. Classes, interfaces, contratos e detalhes internos',
-    '8. Fluxo de funcionamento',
-    '9. Regras e invariantes',
-    '10. Dependencias e integracoes',
-    '11. Decisoes tecnicas relevantes',
+    '## Required response structure',
+    '1. Objective',
+    '2. Architectural role',
+    '3. Scope',
+    '4. Structural view',
+    '5. Responsibilities',
+    '6. Internal components',
+    '7. Classes, interfaces, contracts, and internal details',
+    '8. Operational flow',
+    '9. Rules and invariants',
+    '10. Dependencies and integrations',
+    '11. Relevant technical decisions',
     '12. Open Questions / Assumptions',
-    '13. Riscos de implementacao',
-    '14. Criterios de aceite',
-    '15. Resumo operacional para implementacao',
-    '16. Sequencia sugerida de implementacao'
+    '13. Implementation risks',
+    '14. Acceptance criteria',
+    '15. Operational summary for implementation',
+    '16. Suggested implementation sequence'
   ].join('\n')
 }
 
 function renderTaskPromptMarkdown(context: ExportContext): string {
   return [
-    `# Prompt de Tasks - ${context.rootNode.title}`,
+    `# Task Prompt - ${context.rootNode.title}`,
     '',
-    'Voce e um engenheiro de software senior responsavel por decompor uma spec em tarefas executaveis.',
+    'You are a senior software engineer responsible for decomposing a spec into executable tasks.',
     '',
-    'Com base no contexto abaixo, gere tasks tecnicas de implementacao.',
+    'Based on the context below, generate technical implementation tasks.',
     '',
-    '## Contexto do bloco',
-    `- Nome: ${textValue(context.rootNode.title)}`,
-    `- Tipo: ${context.rootNode.type}`,
-    `- Objetivo: ${projectBriefValue(context.project, 'goal', context.project.description)}`,
-    `- Responsabilidades: ${firstMeaningText(context.rootNode, ['primaryResponsibility', 'purpose'], ['responsibility', 'goal', 'purpose', 'decision'])}`,
+    '## Block context',
+    `- Name: ${textValue(context.rootNode.title)}`,
+    `- Type: ${context.rootNode.type}`,
+    `- Goal: ${projectBriefValue(context.project, 'goal', context.project.description)}`,
+    `- Responsibilities: ${firstMeaningText(context.rootNode, ['purpose'], ['responsibility', 'goal', 'purpose', 'decision'])}`,
     '',
-    '## Contexto geral do projeto',
+    '## General project context',
     `- Project: ${textValue(context.project.name)}`,
-    `- Board raiz: ${textValue(context.rootBoard.name)}`,
-    `- Contexto adicional: ${projectBriefValue(context.project, 'context', context.rootBoard.description)}`,
+    `- Root board: ${textValue(context.rootBoard.name)}`,
+    `- Additional context: ${projectBriefValue(context.project, 'context', context.rootBoard.description)}`,
     '',
-    '## Relacoes externas do bloco',
+    '## External block relations',
     ...formatRelations(context.rootRelations),
     '',
-    '## Detalhamento interno (N2)',
+    '## Implementation structure',
     renderN2Blocks(context),
     '',
-    '## Detalhamento fino (N3)',
+    '## Code-level details',
     renderN3Details(context),
     '',
-    '## Contratos e integracoes',
+    '## Contracts and integrations',
     renderContractsAndIntegrations(context),
     '',
-    '## Restricoes e decisoes',
-    '- Decisoes arquiteturais relevantes:',
+    '## Constraints and decisions',
+    '- Relevant architectural decisions:',
     renderGlobalDecisions(context),
-    '- Dependencias conhecidas:',
+    '- Known dependencies:',
     ...formatRelations(context.rootRelations),
-    '- Inputs/outputs esperados:',
+    '- Expected inputs/outputs:',
     renderGlobalNotes(context),
-    '- Casos de erro conhecidos:',
+    '- Known error cases:',
     context.n2Nodes
       .flatMap((entry) => entry.n3Nodes)
       .flatMap((entry) => listValue(entry.data.errorCases))
       .map((value) => `- ${value}`)
       .join('\n') || `- ${MISSING_TEXT}`,
     '',
-    '## Formato da resposta esperado',
-    '- Separe por epicos ou grupos logicos.',
-    '- Gere tasks pequenas e objetivas.',
-    '- Inclua criterios de aceite por task.',
-    '- Aponte dependencias entre tasks.',
-    '- Escreva em portugues.',
-    '- Nao invente contexto nao fornecido; use Open Questions / Assumptions para lacunas.'
+    '## Expected response format',
+    '- Separate by epics or logical groups.',
+    '- Generate small, objective tasks.',
+    '- Include acceptance criteria per task.',
+    '- Indicate dependencies between tasks.',
+    '- Write in English.',
+    '- Do not invent context not provided; use Open Questions / Assumptions for gaps.'
   ].join('\n')
 }
 

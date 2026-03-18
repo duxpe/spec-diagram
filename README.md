@@ -1,6 +1,6 @@
-# System Designer Specs Generator
+# SpecDiagram
 
-Project-first architecture for visual system design and prompt/spec export.
+Draw Diagrams and export as Specifications for AI Assisted Code Development.
 
 ## Prerequisites
 

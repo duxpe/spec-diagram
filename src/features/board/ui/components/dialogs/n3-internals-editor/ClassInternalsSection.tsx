@@ -38,7 +38,7 @@ export function ClassInternalsSection({
           type="button"
           className={activeClassTab === 'methods' ? 'dialog-tabs__tab active' : 'dialog-tabs__tab'}
           onClick={() => setActiveClassTab('methods')}
-          data-ui-log="N3 internals – Switch to methods tab"
+          data-ui-log="Internals editor – Switch to methods tab"
         >
           Methods
         </button>
@@ -46,7 +46,7 @@ export function ClassInternalsSection({
           type="button"
           className={activeClassTab === 'attributes' ? 'dialog-tabs__tab active' : 'dialog-tabs__tab'}
           onClick={() => setActiveClassTab('attributes')}
-          data-ui-log="N3 internals – Switch to attributes tab"
+          data-ui-log="Internals editor – Switch to attributes tab"
         >
           Attributes
         </button>
@@ -109,7 +109,7 @@ export function ClassInternalsSection({
                       <button
                         type="button"
                         onClick={() => onOpenNoteEditor({ scope: 'method', localId: row.localId })}
-                        data-ui-log={`N3 internals – ${row.note ? 'Edit' : 'Add'} method note`}
+                        data-ui-log={`Internals editor – ${row.note ? 'Edit' : 'Add'} method note`}
                       >
                         {row.note ? 'Edit note' : 'Add note'}
                       </button>
@@ -120,7 +120,7 @@ export function ClassInternalsSection({
                           type="button"
                           onClick={() => setMethods((prev) => moveItem(prev, index, 'up'))}
                           aria-label="Move method up"
-                          data-ui-log="N3 internals – Move method up"
+                          data-ui-log="Internals editor – Move method up"
                         >
                           <ArrowUp size={14} />
                         </button>
@@ -128,7 +128,7 @@ export function ClassInternalsSection({
                           type="button"
                           onClick={() => setMethods((prev) => moveItem(prev, index, 'down'))}
                           aria-label="Move method down"
-                          data-ui-log="N3 internals – Move method down"
+                          data-ui-log="Internals editor – Move method down"
                         >
                           <ArrowDown size={14} />
                         </button>
@@ -136,7 +136,7 @@ export function ClassInternalsSection({
                           type="button"
                           onClick={() => setMethods((prev) => prev.filter((entry) => entry.localId !== row.localId))}
                           aria-label="Delete method"
-                          data-ui-log="N3 internals – Delete method"
+                          data-ui-log="Internals editor – Delete method"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -150,7 +150,7 @@ export function ClassInternalsSection({
               type="button"
               className="n3-table__add"
               onClick={() => setMethods((prev) => [...prev, { ...EMPTY_METHOD, localId: makeLocalId() }])}
-              data-ui-log="N3 internals – Add method"
+              data-ui-log="Internals editor – Add method"
             >
               <Plus size={14} /> Add method
             </button>
@@ -215,7 +215,7 @@ export function ClassInternalsSection({
                       <button
                         type="button"
                         onClick={() => onOpenNoteEditor({ scope: 'attribute', localId: row.localId })}
-                        data-ui-log={`N3 internals – ${row.note ? 'Edit' : 'Add'} attribute note`}
+                        data-ui-log={`Internals editor – ${row.note ? 'Edit' : 'Add'} attribute note`}
                       >
                         {row.note ? 'Edit note' : 'Add note'}
                       </button>
@@ -226,7 +226,7 @@ export function ClassInternalsSection({
                           type="button"
                           onClick={() => setAttributes((prev) => moveItem(prev, index, 'up'))}
                           aria-label="Move attribute up"
-                          data-ui-log="N3 internals – Move attribute up"
+                          data-ui-log="Internals editor – Move attribute up"
                         >
                           <ArrowUp size={14} />
                         </button>
@@ -234,7 +234,7 @@ export function ClassInternalsSection({
                           type="button"
                           onClick={() => setAttributes((prev) => moveItem(prev, index, 'down'))}
                           aria-label="Move attribute down"
-                          data-ui-log="N3 internals – Move attribute down"
+                          data-ui-log="Internals editor – Move attribute down"
                         >
                           <ArrowDown size={14} />
                         </button>
@@ -242,7 +242,7 @@ export function ClassInternalsSection({
                           type="button"
                           onClick={() => setAttributes((prev) => prev.filter((entry) => entry.localId !== row.localId))}
                           aria-label="Delete attribute"
-                          data-ui-log="N3 internals – Delete attribute"
+                          data-ui-log="Internals editor – Delete attribute"
                         >
                           <Trash2 size={14} />
                         </button>
@@ -256,7 +256,7 @@ export function ClassInternalsSection({
               type="button"
               className="n3-table__add"
               onClick={() => setAttributes((prev) => [...prev, { ...EMPTY_ATTRIBUTE, localId: makeLocalId() }])}
-              data-ui-log="N3 internals – Add attribute"
+              data-ui-log="Internals editor – Add attribute"
             >
               <Plus size={14} /> Add attribute
             </button>

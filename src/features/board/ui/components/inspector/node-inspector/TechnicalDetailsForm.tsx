@@ -50,14 +50,6 @@ export function TechnicalDetailsForm({
     case 'database':
       return (
         <>
-          <label htmlFor="node-purpose">Purpose</label>
-          <input
-            id="node-purpose"
-            type="text"
-            value={asString(draftData.purpose)}
-            onChange={(event) => syncNodeData({ purpose: event.target.value })}
-          />
-          <FieldError message={fieldErrorByName.get('purpose')} />
           <label htmlFor="node-storage-model">Storage model</label>
           <select
             id="node-storage-model"
@@ -76,14 +68,6 @@ export function TechnicalDetailsForm({
     case 'external_system':
       return (
         <>
-          <label htmlFor="node-purpose">Purpose</label>
-          <input
-            id="node-purpose"
-            type="text"
-            value={asString(draftData.purpose)}
-            onChange={(event) => syncNodeData({ purpose: event.target.value })}
-          />
-          <FieldError message={fieldErrorByName.get('purpose')} />
           <label htmlFor="node-interaction-type">Interaction type</label>
           <select
             id="node-interaction-type"
@@ -111,14 +95,6 @@ export function TechnicalDetailsForm({
             <option value="outbound">outbound</option>
           </select>
           <FieldError message={fieldErrorByName.get('direction')} />
-          <label htmlFor="node-responsibility">Responsibility</label>
-          <input
-            id="node-responsibility"
-            type="text"
-            value={asString(draftData.responsibility)}
-            onChange={(event) => syncNodeData({ responsibility: event.target.value })}
-          />
-          <FieldError message={fieldErrorByName.get('responsibility')} />
           <label htmlFor="node-protocol">Protocol</label>
           <input
             id="node-protocol"
@@ -133,14 +109,6 @@ export function TechnicalDetailsForm({
     case 'adapter':
       return (
         <>
-          <label htmlFor="node-responsibility">Responsibility</label>
-          <input
-            id="node-responsibility"
-            type="text"
-            value={asString(draftData.responsibility)}
-            onChange={(event) => syncNodeData({ responsibility: event.target.value })}
-          />
-          <FieldError message={fieldErrorByName.get('responsibility')} />
           <label htmlFor="node-technology">Technology</label>
           <input
             id="node-technology"
@@ -166,14 +134,6 @@ export function TechnicalDetailsForm({
     case 'decision':
       return (
         <>
-          <label htmlFor="node-decision">Decision</label>
-          <textarea
-            id="node-decision"
-            rows={2}
-            value={asString(draftData.decision)}
-            onChange={(event) => syncNodeData({ decision: event.target.value })}
-          />
-          <FieldError message={fieldErrorByName.get('decision')} />
           <label htmlFor="node-status">Status</label>
           <select
             id="node-status"
@@ -184,15 +144,6 @@ export function TechnicalDetailsForm({
             <option value="accepted">accepted</option>
             <option value="deprecated">deprecated</option>
           </select>
-          <label htmlFor="node-rationale">Rationale</label>
-          <textarea
-            id="node-rationale"
-            rows={2}
-            value={asString(draftData.rationale)}
-            onChange={(event) =>
-              syncNodeData({ rationale: event.target.value.trim() ? event.target.value : undefined })
-            }
-          />
         </>
       )
     case 'free_note_input':

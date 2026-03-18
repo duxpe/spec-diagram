@@ -5,7 +5,6 @@ import { useNodeCreationFlow } from '@/features/board/ui/board-page/hooks/useNod
 const baseMeaningDraft = {
   title: 'Node',
   purpose: 'Purpose',
-  primaryResponsibility: 'Responsibility',
   role: 'Role',
   summary: 'Summary',
   inputs: 'input',
